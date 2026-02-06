@@ -1,0 +1,63 @@
+/* --- Dashboard Layout --- */
+.dash-header-section {
+    background-color: rgba(239, 239, 239, 0.876);
+    transition: background-color 0.3s ease;
+}
+
+/* --- Stat Cards --- */
+.dash-stat-card {
+    background: rgb(255, 255, 255);
+    padding: 20px;
+    border-radius: 20px;
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    height: 155px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.3s ease;
+}
+
+.dash-stat-title { color: #64748b; font-size: 14px; font-weight: 500; }
+.dash-stat-value { font-size: 32px; font-weight: 700; margin: 0; color: #1e293b; }
+.dash-stat-subtext { color: #94a3b8; font-size: 11px; }
+
+/* --- Recent Activity --- */
+.dash-activity-item {
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+.dash-activity-text { margin: 0; font-size: 14px; color: #555; }
+.dash-activity-time { font-size: 12px; color: gray; }
+
+/* =========================================================
+   DARK MODE OVERRIDES (Only triggers when .dark-mode is active)
+   ========================================================= */
+
+.dark-mode .dash-header-section {
+    background-color: #121212 !important;
+}
+
+.dark-mode .dash-stat-card, 
+.dark-mode .chart-container, 
+.dark-mode .card {
+    background-color: #1a1a1a !important;
+    border-color: #333 !important;
+}
+
+.dark-mode .dash-stat-value, 
+.dark-mode .dash-activity-text,
+.dark-mode h1, .dark-mode h3, .dark-mode h4, .dark-mode p {
+    color: #ffffff !important;
+}
+
+.dark-mode .dash-stat-title,
+.dark-mode .dash-stat-subtext,
+.dark-mode .dash-activity-time {
+    color: #94a3b8 !important;
+}
+
+.dark-mode .dash-activity-item {
+    border-bottom-color: #333 !important;
+}
