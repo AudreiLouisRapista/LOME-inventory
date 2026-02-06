@@ -22,7 +22,7 @@
                             <button type="button" class="btn btn-primary" data-bs-toggle="modal"
                                 data-bs-target="#addTeacherModal"
                                 style="float: right; border-radius: 20px; background-color: #4CAF50; border: none; padding: 10px 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
-                                Register Products
+                                Register Product
                             </button>
 
                             <div class="modal fade" id="addTeacherModal" tabindex="-1"
