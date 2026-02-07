@@ -237,9 +237,9 @@
 
                 {{-- Delivery --}}
                 <li class="nav-item">
-                    <a href="{{ route('view_schedule') }}"
-                        class="nav-link {{ Route::is('view_schedule') ? 'active' : '' }}"
-                        style="display:flex; align-items:center; gap:10px; color:{{ Route::is('view_schedule') ? '#333' : '#fff' }}; background:{{ Route::is('view_schedule') ? '#fff' : 'transparent' }};">
+                    <a href="{{ route('view_section') }}"
+                        class="nav-link {{ Route::is('view_section') ? 'active' : '' }}"
+                        style="display:flex; align-items:center; gap:10px; color:{{ Route::is('view_section') ? '#333' : '#fff' }}; background:{{ Route::is('view_section') ? '#fff' : 'transparent' }};">
                         <i class="bi bi-truck"></i> Delivery
                     </a>
                 </li>

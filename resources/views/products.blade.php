@@ -39,51 +39,78 @@
                                             <form method="POST" action="{{ route('save_product') }}"
                                                 enctype="multipart/form-data">
                                                 @csrf
+
                                                 <div class="row mb-3">
                                                     <div class="col-md-6">
-                                                        <label class="form-label">Product Name:</label>
-                                                        <input type="text" name="product_name" class="form-control"
-                                                            value="{{ old('product_name') }}" required>
-                                                    </div>
-                                                    <div class="col-md-6">
                                                         <label for="category">Category</label>
-                                                        <select name="category_id" id="category" class="form-control"
+                                                        <select name="category_ID" id="category" class="form-control"
                                                             required>
                                                             <option value="">-- Select Category --</option>
 
                                                             @foreach ($categories as $category)
-                                                                <option value="{{ $category->category_id }}">
-                                                                    {{ strtoupper($category->name) }}
+                                                                <option value="{{ $category->category_ID }}">
+                                                                    {{ strtoupper($category->category_name) }}
                                                                 </option>
                                                             @endforeach
 
                                                         </select>
                                                     </div>
+
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Product Name:</label>
+                                                        <input type="text" name="product_name" class="form-control"
+                                                            value="{{ old('product_name') }}" required>
+                                                    </div>
+
                                                 </div>
 
                                                 <div class="row mb-3">
                                                     <div class="col-md-6">
-                                                        <label class="form-label">Units:</label>
-                                                        <input type="number" name="product_unit" class="form-control"
-                                                            value="{{ old('product_unit') }}" required>
+                                                        <label class="form-label">Date of Expiry:</label>
+                                                        <input type="date" name="product_exp" class="form-control"
+                                                            value="{{ old('product_exp') }}" required>
                                                     </div>
+
                                                     <div class="col-md-6">
-                                                        <label class="form-label">Select Units:</label>
-                                                        <select name="product_unit_type" class="form-select" required>
-                                                            <option value="">-- Select --</option>
-                                                            <option value="Liter">Liter</option>
-                                                            <option value="Pcs">Pcs</option>
-                                                            <option value="ml">ml</option>
+                                                        <label class="form-label">Price:</label>
+                                                        <input type="number" name="product_price" class="form-control"
+                                                            value="{{ old('product_price') }}" required>
+                                                    </div>
+
+                                                </div>
+
+
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Cost:</label>
+                                                    <input type="number" name="product_cost" class="form-control"
+                                                        value="{{ old('product_cost') }}" required>
+                                                </div>
+
+
+                                                <div class="row mb-3">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Unit Amount:</label>
+                                                        <input type="number" name="product_unit_amount"
+                                                            class="form-control" value="{{ old('product_unit_amount') }}"
+                                                            required>
+                                                    </div>
+                                                    {{-- <div class="col-md-6">
+                                                        <label for="unit">Unit</label>
+                                                        <select name="unit_ID" id="unit" class="form-control" required>
+                                                            <option value="">-- Select Unit --</option>
+
+                                                            @foreach ($units as $unit)
+                                                                <option value="{{ $unit->unit_ID }}">
+                                                                    {{ strtoupper($unit->unit_title) }}
+                                                                </option>
+                                                            @endforeach
 
                                                         </select>
-                                                    </div>
+                                                    </div> --}}
+                                                </div>
 
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label">Quantity:</label>
-                                                    <input type="number" name="product_qts" class="form-control"
-                                                        value="{{ old('product_qts') }}" required>
-                                                </div>
+
+
                                                 <button type="submit" class="btn btn-primary w-100 mt-3">Register</button>
                                             </form>
                                         </div>
@@ -100,134 +127,59 @@
                                         <th>Product ID</th>
                                         <th>Name</th>
                                         <th>Category</th>
-                                        <th>Units</th>
-                                        <th>Quantity</th>
-                                        <th>Status</th>
-                                        <th>Action</th>
+                                        <th>Cost</th>
+                                        <th>Price</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody style="text-align: center;">
-                                    @foreach ($view_products as $product)
-                                        <tr>
-                                            <td>
-                                                {{ $product->product_id }}
-                                            </td>
-                                            <td>{{ $product->product_name }}</td>
-                                            <td>{{ $product->name }}</td>
-                                            <td> <span class="badge"
-                                                    style="background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-weight: 500; border-radius: 6px; padding: 5px 10px; font-size: 14px;">
-                                                    {{ $product->product_unit }} {{ $product->product_unit_type }}
-                                                </span></td>
-                                            <td>{{ $product->product_qts }}</td>
-                                            <td> </td>
-                                            <td class="text-center">
-                                                <div class="d-flex justify-content-center gap-2">
-                                                    <button class="btn btn-sm"
-                                                        style="background-color: #f0fdf4; color: #06bd4c; border: 1px solid #dcfce7; border-radius: 8px; padding: 6px 10px; transition: 0.3s;"
-                                                        onmouseover="this.style.backgroundColor='#dcfce7'"
-                                                        onmouseout="this.style.backgroundColor='#f0fdf4'"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#UpdateProductModal{{ $product->product_id }}">
-                                                        <i class="bi bi-pen" style="font-size: 14px;"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
 
-                                        {{-- <div class="modal fade" id="deleteTeacherModal{{ $teacher->teachers_id }}"
-                                            tabindex="-1" aria-hidden="true">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                    <div class="modal-header bg-danger">
-                                                        <h5 class="modal-title">Unassigned Teacher</h5>
-                                                        <button type="button" class="btn-close"
-                                                            data-bs-dismiss="modal"></button>
-                                                    </div>
-                                                    <div class="modal-body text-center">
-                                                        <p>Are you sure you want to Unassigned <b>{{ $teacher->name }}</b>?
-                                                            the status will be updated if the schedule of the Teacher
-                                                            is less than 5
-                                                        </p>
-                                                        <form method="POST" action="{{ route('deact_teacher') }}">
-                                                            @csrf
-                                                            <input type="hidden" name="teachers_id"
-                                                                value="{{ $teacher->teachers_id }}">
-                                                            <button type="submit"
-                                                                class="btn btn-danger">Unassigned</button>
-                                                            <button type="button" class="btn btn-secondary"
-                                                                data-bs-dismiss="modal">Cancel</button>
-                                                        </form>
-                                                    </div>
-                                                </div>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="modal fade" id="UpdateProductModal" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header bg-primary text-white">
+                                        <h5 class="modal-title">Update Product</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form id="updateProductForm" method="POST">
+                                        @csrf
+                                        <div class="modal-body">
+                                            <input type="hidden" id="edit_id">
+                                            <div class="mb-3">
+                                                <label class="form-label">Product Name</label>
+                                                <input type="text" id="edit_name" name="product_name"
+                                                    class="form-control" required>
                                             </div>
-                                        </div> --}}
-
-                                        <div class="modal fade" id="UpdateProductModal{{ $product->product_id }}"
-                                            tabindex="-1" aria-hidden="true">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                    <div class="modal-header bg-primary">
-                                                        <h5 class="modal-title">Update Product</h5>
-                                                        <button type="button" class="btn-close"
-                                                            data-bs-dismiss="modal"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <form method="POST" action="">
-                                                            {{-- {{ route('update_product', $product->product_id) }} --}}
-                                                            @csrf
-                                                            <div class="mb-3">
-                                                                <label class="form-label">Name</label>
-                                                                <input type="text" name="name"
-                                                                    value="{{ $product->product_name }}"
-                                                                    class="form-control" required>
-                                                            </div>
-                                                            <div class="mb-3">
-                                                                <label class="form-label">Category</label>
-                                                                <input type="text" name="category"
-                                                                    value="{{ $product->name }}" class="form-control"
-                                                                    required>
-                                                            </div>
-                                                            <div class="mb-3">
-                                                                <label class="form-label">Unit</label>
-                                                                <input type="text" name="unit"
-                                                                    value="{{ $product->product_unit }}"
-                                                                    class="form-control" required>
-                                                            </div>
-
-                                                    </div>
-
-                                                    <div class="mb-3">
-                                                        <label class="form-label">Product Name</label>
-                                                        <input type="text" name="product_name"
-                                                            value="{{ $product->product_name }}" class="form-control"
-                                                            required>
-                                                    </div>
-
-                                                    <div class="mb-3">
-                                                        <label class="form-label">Category</label>
-                                                        <input type="text" name="category"
-                                                            value="{{ $product->name }}" class="form-control" required>
-                                                    </div>
-
-                                                    <div class="mb-3">
-                                                        <label class="form-label">Unit</label>
-                                                        <input type="text" name="unit"
-                                                            value="{{ $product->product_unit }}" class="form-control"
-                                                            required>
-                                                    </div>
-                                                    <button type="submit" class="btn btn-primary w-100">Update</button>
-                                                    </form>
-                                                </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Category</label>
+                                                <input type="text" id="edit_category" name="category"
+                                                    class="form-control" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Price</label>
+                                                <input type="text" id="edit_price" name="price"
+                                                    class="form-control" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Cost</label>
+                                                <input type="text" id="edit_cost" name="cost" class="form-control"
+                                                    required>
                                             </div>
                                         </div>
+                                        <div class="modal-footer">
+                                            <button type="submit" class="btn btn-primary w-100">Update</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
-                        @endforeach
-                        </tbody>
-                        </table>
                     </div>
                 </div>
             </div>
-        </div>
         </div>
     </section>
 
@@ -299,31 +251,52 @@
 
     <script>
         $(document).ready(function() {
-            if ($.fn.DataTable.isDataTable('#example2')) {
-                $('#example2').DataTable().destroy();
-            }
-
             var table = $('#example2').DataTable({
-                "paging": true,
-                "lengthChange": false,
-                "searching": true,
-                "ordering": true,
-                "info": true,
-                "autoWidth": false,
-                "responsive": true,
-                "buttons": ["excel", "pdf", "print"],
-                // This 'dom' configuration groups Buttons (B) and Filter (f) in one row
-                "dom": '<"d-flex align-items-end justify-content-between mb-4"Bf>rtip',
-                "language": {
-                    "search": "", // Removes the default "Search:" text
-                    "searchPlaceholder": "Search Products..."
-                }
-            });
+                destroy: true, // use this to reinitialize the table if it already exists. use ths if you are using AJAX to load data and want to refresh the table with new data
+                processing: true, // This shows a loading indicator while the data is being fetched, enhancing user experience.
+                serverSide: true, // This enables the fast loading for 4k rows. instead of loading all data at once, it loads only the data needed for the current page.
+                language: {
+                    processing: '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Processing...</span></div>'
+                },
+                ajax: "{{ route('view_products') }}", // Ensure this matches your route name
 
-            // 1. Move buttons to the container first
-            table.buttons().container().appendTo('#example2_wrapper .col-md-6:eq(0)');
+                columns: [{
+                        data: 'product_ID',
+                        name: 'products.product_ID'
+                    },
+                    {
+                        data: 'product_name',
+                        name: 'products.product_name'
+                    },
+                    {
+                        data: 'name',
+                        name: 'category.category_name'
+                    },
+                    {
+                        data: 'product_cost',
+                        name: 'products.product_cost'
+                    },
+                    {
+                        data: 'product_price',
+                        name: 'products.product_price'
+                    },
+                    {
+                        data: 'action',
+                        name: 'action',
+                        orderable: false,
+                        searchable: false
+                    },
+                ],
+                // "dom": '<"d-flex align-items-end justify-content-between mb-4"Bf>rtip',
+                // "buttons": ["excel", "pdf", "print"]
+
+
+            });
 
 
         });
     </script>
+
+
+
 @endsection

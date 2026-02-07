@@ -49,14 +49,13 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     Route::get('/teachers', [MainController::class, 'teachers'])->name('teachers');
     Route::get('/view_products', [MainController::class, 'view_products'])->name('view_products');
     Route::get('/view_inventory', [MainController::class, 'view_inventory'])->name('view_inventory');
-    Route::get('/view_schedule', [MainController::class, 'view_schedule'])->name('view_schedule');
     Route::get('/view_grade1', [MainController::class, 'view_grade1'])->name('view_grade1');
     Route::get('/view_grade2', [MainController::class, 'view_grade2'])->name('view_grade2');
     Route::get('/teacher_status', [MainController::class, 'teacher_status'])->name('teacher_status');
     Route::get('/updateTeacherStatus', [MainController::class, 'updateTeacherStatus'])->name('updateTeacherStatus');
     Route::post('/save_product', [MainController::class, 'save_product'])->name('save_product');
     Route::get('/admin/add-product', [MainController::class, 'show_add_product_form'])->name('product.create');
-    Route::post('/save_schedule', [MainController::class, 'save_schedule'])->name('save_schedule');
+    Route::post('/save_inventory', [MainController::class, 'save_inventory'])->name('save_inventory');
     Route::post('/save_subjects', [MainController::class, 'save_subjects'])->name('save_subjects');
     Route::post('/save_student', [MainController::class, 'save_student'])->name('save_student');
     Route::post('/save_section', [MainController::class, 'save_section'])->name('save_section');
@@ -66,6 +65,8 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     Route::post('/update_subject', [MainController::class, 'update_subject'])->name('update_subject');
     Route::post('/update_section', [MainController::class, 'update_section'])->name('update_section');
     Route::post('/delete-schedule', [MainController::class, 'delete_schedule'])->name('delete_schedule');
+
+   Route::get('/get-products-by-category/{id}', [MainController::class, 'getProductsByCategory'])->name('get-products-by-category');
 
    // Add {id} to the URL
     Route::post('/admin-profile/{id}', [MainController::class, 'adminProfile'])->name('adminProfile');
