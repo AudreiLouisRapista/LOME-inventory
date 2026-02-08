@@ -7,6 +7,7 @@
         background: rgba(0, 0, 0, 0.96) !important;
         overflow: hidden !important;
 
+
         /* Smooth transition when resizing */
     }
 
@@ -171,11 +172,11 @@
 
     }
 
-    .nav-sidebar .nav-item .nav-link:hover {
+    .nav-sidebar .nav-item:hover {
         background: rgba(255, 255, 255, 0.2) !important;
         /* Subtle hover effect */
         color: #fff !important;
-        transform: translateX(5px);
+        transform: translateY(5px);
         /* Slight slide to the right */
         transition: all 0.3s ease;
     }

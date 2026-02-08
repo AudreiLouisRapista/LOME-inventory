@@ -523,6 +523,7 @@ public function view_products(Request $request) {
                 'products.product_name', 
                 'products.product_price',
                 'products.product_cost',
+                'products.category_ID',
                 'category.category_name as name'
             ]);
              return DataTables::of($data)
@@ -531,7 +532,12 @@ public function view_products(Request $request) {
                 return '<button class="btn btn-sm btn-outline-success edit-btn" 
                         data-id="'.$row->product_ID.'" 
                         data-name="'.$row->product_name.'" 
-                        data-category="'.$row->name.'">
+                        data-category="'.$row->name.'"
+                        data-category-ID="'.$row->category_ID.'"
+                        data-cost="'.$row->product_cost.'"
+                        data-price="'.$row->product_price.'">
+                      
+
                         <i class="bi bi-pen"></i></button>';
             })
             ->rawColumns(['action']) // Tells Yajra to render HTML, not just text
@@ -542,6 +548,10 @@ public function view_products(Request $request) {
 
     return view('products', compact('categories'));
 }
+
+
+
+
 
 public function save_product(Request $request)
 {
@@ -584,7 +594,27 @@ public function save_product(Request $request)
     return redirect()->back();
 }
 
+public function update_product(Request $request) {
 
+
+      
+    DB::table('products')
+        ->where('product_ID', $request->product_ID)
+        ->update([
+            'product_ID' => $request->product_ID,
+            'product_name' => $request->product_name,
+            'category_ID' => $request->category_ID,
+            'product_price' => $request->price,
+            'product_cost' => $request->cost,
+      
+        ]);
+        $this->logActivity(
+    'updated',
+    'Updated product ID ' . $request->product_ID . ' to ' . $request->product_name
+ );
+   return response()->json(['success' => 'Product updated successfully.']);
+
+}
 
 
 
@@ -902,7 +932,7 @@ public function update_subject(Request $request) {
         $this->logActivity(
     'updated',
     'Updated subject ID ' . $request->sub_id . ' to ' . $request->sub_name
-);
+ );
     return redirect()->back()->with('success', 'Subject updated successfully.');
 
 }

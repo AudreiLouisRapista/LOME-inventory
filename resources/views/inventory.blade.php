@@ -10,11 +10,12 @@
         <p style="margin-left: 50px;">Manage Inventory for the Products</p>
     </div>
 
-    <section class="content" style = "width: 1400 px; margin-left: 20px; margin-top: 20px;">
-        <div class="container-fluid;">
+    <section class="content">
+        <div class="container-fluid"
+            style="max-width: 100%; display: block; margin-left: 5px; margin-right: 5px; margin-top: 20px;">
             <div class="row">
                 <div class="col-12">
-                    <div class="card" style=" border-radius: 30px; background:#fff; padding:20px">
+                    <div class="card" style=" display: block; background:#fff; padding:20px">
                         <div class="card-header" style="background:#fff;">
                             <h5 class="card-title fs-4 fw-bold m-0">Inventory List</h5>
                             <!-- Button trigger modal -->
@@ -23,7 +24,7 @@
                             <button type="button" class="btn btn-primary" data-bs-toggle="modal"
                                 data-bs-target="#exampleModal"
                                 style="float: right; border-radius: 20px; background-color: #4CAF50; border: none; padding: 10px 20px; font-size: 16px; cursor: pointer; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); transition: background-color 0.3s ease;">
-                                Add Inventory
+                                Inventory
                             </button>
 
                             <!-- Modal -->
@@ -89,7 +90,7 @@
 
                         <!-- /.card-header -->
                         <div class="card-body" style="text-align: center;">
-                            <table id="example2" class="table table-bordered table-hover">
+                            <table id="example2" class="table table-bordered table-hover" style="width:100%">
                                 <thead>
                                     <tr>
                                         <th>Inventory ID</th>
@@ -120,50 +121,7 @@
             <!-- /.container-fluid -->
     </section>
 
-    <style>
-        /* 1. Fix the vertical distance (The "Too High" gap) */
-        .dataTables_wrapper .row:first-child {
-            margin-bottom: 0 !important;
-            padding-bottom: 0 !important;
-        }
 
-        /* 2. Style the search box to be sleek and professional */
-        .dataTables_filter {
-            margin: 0 !important;
-            /* Removes default spacing pushing it down */
-        }
-
-        .dataTables_filter input {
-            width: 250px !important;
-            height: 38px !important;
-            border: 1.5px solid #e2e8f0 !important;
-            border-radius: 12px !important;
-            /* Modern rounded look */
-            background-color: #f8fafc !important;
-            padding-left: 35px !important;
-            /* Space for an icon */
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' class='bi bi-search' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: 12px center;
-            transition: all 0.2s ease;
-        }
-
-        .dataTables_filter input:focus {
-            border-color: #3b82f6 !important;
-            background-color: #ffffff !important;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-            outline: none;
-        }
-
-        /* 3. Match the Button heights to the search box */
-        .dt-button {
-            height: 38px !important;
-            display: flex !important;
-            align-items: center !important;
-            font-weight: 500 !important;
-            border-radius: 12px !important;
-        }
-    </style>
 @endsection
 
 @section('tables')
@@ -248,7 +206,7 @@
                 if (categoryId) {
                     $.ajax({
                         // Ensure this route exists in web.php
-                        url: "/admin/get-products-by-category/" + categoryId,
+                        url: "/admin/get-products-by-category/" + categoryId, // USED FOR GET METHOD
                         type: 'GET',
                         dataType: 'json',
 
@@ -278,5 +236,8 @@
             });
         });
     </script>
+
+
+
 
 @endsection

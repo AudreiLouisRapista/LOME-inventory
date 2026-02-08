@@ -62,7 +62,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     Route::post('/deact_teacher', [MainController::class, 'deact_teacher'])->name('deact_teacher');
     Route::post('/delete_schedule', [MainController::class, 'delete_schedule'])->name('delete_schedule');
     Route::post('/update_schedule', [MainController::class, 'update_schedule'])->name('update_schedule');
-    Route::post('/update_subject', [MainController::class, 'update_subject'])->name('update_subject');
+    Route::post('/update_product', [MainController::class, 'update_product'])->name('update_product');
     Route::post('/update_section', [MainController::class, 'update_section'])->name('update_section');
     Route::post('/delete-schedule', [MainController::class, 'delete_schedule'])->name('delete_schedule');
 

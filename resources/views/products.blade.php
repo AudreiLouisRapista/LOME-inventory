@@ -10,11 +10,11 @@
         <p style="margin-left: 50px;">Manage products and their details</p>
     </div>
 
-    <section class="content" style="max-width: 1400px; margin-left: 20px; margin-top: 20px;">
+    <section class="content" style="max-width: 100%; display: block; margin-left: 5px; margin-top: 20px;">
         <div class="container-fluid">
             <div class="row">
                 <div class="col-12">
-                    <div class="card" style="background:#fff; padding:20px">
+                    <div class="card" style="background:#fff; display: block; padding:20px">
                         <div class="card-header" style="background:#fff;">
                             <h5 class="card-title fs-4 fw-bold m-0">Product List</h5>
 
@@ -121,7 +121,7 @@
                         </div>
 
                         <div class="card-body">
-                            <table id="example2" class="table table-bordered table-hover">
+                            <table id="example2" class="table table-bordered table-hover display block" style="width:100%">
                                 <thead style="text-align: center;">
                                     <tr>
                                         <th>Product ID</th>
@@ -145,10 +145,10 @@
                                         <h5 class="modal-title">Update Product</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
-                                    <form id="updateProductForm" method="POST">
+                                    <form id="updateProductForm" action="{{ route('update_product') }}" method="POST">
                                         @csrf
                                         <div class="modal-body">
-                                            <input type="hidden" id="edit_id">
+                                            <input type="hidden" name="product_ID" id="edit_id">
                                             <div class="mb-3">
                                                 <label class="form-label">Product Name</label>
                                                 <input type="text" id="edit_name" name="product_name"
@@ -156,19 +156,29 @@
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label">Category</label>
-                                                <input type="text" id="edit_category" name="category"
-                                                    class="form-control" required>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Price</label>
-                                                <input type="text" id="edit_price" name="price"
-                                                    class="form-control" required>
+                                                <select name="category_ID" id="edit_category" class="form-control"
+                                                    required>
+                                                    <option value="">-- Select Category --</option>
+
+                                                    @foreach ($categories as $category)
+                                                        <option value="{{ $category->category_ID }}">
+                                                            {{ strtoupper($category->category_name) }}
+                                                        </option>
+                                                    @endforeach
+
+                                                </select>
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label">Cost</label>
                                                 <input type="text" id="edit_cost" name="cost" class="form-control"
                                                     required>
                                             </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Price</label>
+                                                <input type="text" id="edit_price" name="price"
+                                                    class="form-control" required>
+                                            </div>
+
                                         </div>
                                         <div class="modal-footer">
                                             <button type="submit" class="btn btn-primary w-100">Update</button>
@@ -280,6 +290,8 @@
                         data: 'product_price',
                         name: 'products.product_price'
                     },
+
+
                     {
                         data: 'action',
                         name: 'action',
@@ -293,7 +305,46 @@
 
             });
 
+            $('#example2 tbody').on('click', '.edit-btn', function() {
 
+                var id = $(this).data('id');
+                var name = $(this).data('name');
+                var catID = $(this).data('category-id');
+                var price = $(this).data('price');
+                var cost = $(this).data('cost');
+
+                $('#edit_id').val(id);
+                $('#edit_name').val(name);
+                $('#edit_category').val(catID);
+                $('#edit_cost').val(cost);
+                $('#edit_price').val(price);
+
+
+                $('#UpdateProductModal').modal('show');
+            });
+
+            $('#updateProductForm').on('submit', function(e) {
+                e.preventDefault();
+
+                var actionUrl = $(this).attr(
+                'action'); // BEST OPTION IF THERE IS ACTION CRUD IN THE FUTURE. USUALLY USED FOR POST
+                var formdata = $(this).serialize();
+
+                $.ajax({
+                    url: actionUrl,
+                    method: 'POST',
+                    data: formdata,
+                    success: function(response) {
+                        $('#UpdateProductModal').modal('hide');
+                        table.ajax.reload(null,
+                            false); // Reload the DataTable without resetting the pagination
+                        alert('Product updated successfully!');
+                    },
+                    error: function(xhr) {
+                        alert('Something went wrong!');
+                    }
+                });
+            });
         });
     </script>
 
