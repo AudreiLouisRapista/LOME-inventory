@@ -327,7 +327,7 @@
                 e.preventDefault();
 
                 var actionUrl = $(this).attr(
-                'action'); // BEST OPTION IF THERE IS ACTION CRUD IN THE FUTURE. USUALLY USED FOR POST
+                    'action'); // BEST OPTION IF THERE IS ACTION CRUD IN THE FUTURE. USUALLY USED FOR POST
                 var formdata = $(this).serialize();
 
                 $.ajax({
