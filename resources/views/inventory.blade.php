@@ -9,6 +9,99 @@
         <h1 class="title" style="margin-left: 50px; ">Inventory Management</h1>
         <p style="margin-left: 50px;">Manage Inventory for the Products</p>
     </div>
+@endsection
+
+@section('content')
+    <div class="row mb-4 g-3" style="font-family: 'Inter', sans-serif;">
+        <div class="col-lg-3 col-6">
+            <div class="dash-stat-card"
+                style="background: white; padding: 20px; border-radius: 20px; border: 1px solid #f0f0f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); height: 155px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #64748b; font-size: 14px; font-weight: 500;">Total Products</span>
+
+                    </div>
+                </div>
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                        <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #1e293b;">{{ $totalProducts }}</h3>
+                        <div
+                            style="background: #f0fdf4; color: #16a34a; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                            ↗ 0.53%
+                        </div>
+                    </div>
+                    <small style="color: #94a3b8; font-size: 11px;">From last week</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-6">
+            <div class="dash-stat-card"
+                style="background: white; padding: 20px; border-radius: 20px; border: 1px solid #f0f0f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); height: 155px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #64748b; font-size: 14px; font-weight: 500;">Available Stock</span>
+
+                    </div>
+                </div>
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                        <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #1e293b;">2,137</h3>
+                        <div
+                            style="background: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                            ↘ 1.24%
+                        </div>
+                    </div>
+                    <small style="color: #94a3b8; font-size: 11px;">From last week</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-6">
+            <div class="dash-stat-card"
+                style="background: white; padding: 20px; border-radius: 20px; border: 1px solid #f0f0f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); height: 155px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #64748b; font-size: 14px; font-weight: 500;">Low Stock</span>
+
+                    </div>
+                </div>
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                        <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #1e293b;">{{ $lowStockProducts }}
+                        </h3>
+                        <div
+                            style="background: #f0fdf4; color: #16a34a; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                            ↗ 1.52%
+                        </div>
+                    </div>
+                    <small style="color: #94a3b8; font-size: 11px;">From last week</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-6">
+            <div class="dash-stat-card"
+                style="background: white; padding: 20px; border-radius: 20px; border: 1px solid #f0f0f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); height: 155px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #64748b; font-size: 14px; font-weight: 500;">Out of Stock</span>
+
+                    </div>
+                </div>
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                        <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #1e293b;">{{ $outOfStock }}</h3>
+                        <div
+                            style="background: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                            ↘ 1.55%
+                        </div>
+                    </div>
+                    <small style="color: #94a3b8; font-size: 11px;">From last week</small>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <section class="content">
         <div class="container-fluid"
@@ -182,7 +275,16 @@
                     },
                     {
                         data: 'status_title',
-                        name: 'status_title'
+                        name: 'status_title',
+                        render: function(data, type, row) {
+                            var customClass = ''; // Default color
+                            if (data === 'In Stock') customClass = 'status-in-stock';
+                            else if (data === 'Low Stock') customClass = 'status-low-stock';
+                            else if (data === 'Out of Stock') customClass = 'status-out-of-stock';
+
+                            return '<span class="badge ' + customClass + '">' + data +
+                                '</span>';
+                        }
 
                     },
                     {
@@ -237,7 +339,38 @@
         });
     </script>
 
+    <style>
+        .custom-badge {
+            padding: 5px 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            border-radius: 5px;
+        }
 
+        .status-in-stock {
+            background-color: #a5ffb6;
+            color: #234e52;
+            border: 1px solid #02c702;
+            padding: 5px 12px;
+            border-radius: 55px;
+        }
 
+        .status-low-stock {
+            background-color: #ffedca;
+            color: #a14022;
+            border: 1px solid #ffbc3f;
+            padding: 5px 12px;
+            border-radius: 55px;
+        }
+
+        .status-out-of-stock {
+            background-color: #ffdada;
+            color: #a41919;
+            border: 1px solid #ff1515;
+            padding: 5px 12px;
+            border-radius: 55px;
+        }
+    </style>
 
 @endsection

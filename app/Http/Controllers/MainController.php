@@ -498,7 +498,7 @@ public function update_teacher(Request $request) {
         ->where('teachers_id', $teachers_id)
         ->update($updateData);
 
-    // 4. Log the activity with the teacher's name
+    // 4. Log the activity with the teacher's nameF
     $this->logActivity(
         'updated',
         'Updated teacher info for: ' . $request->name . ' (ID: ' . $teachers_id . ')'
@@ -664,7 +664,7 @@ public function save_inventory(Request $request){
         'added',
         'Added inventory for product ID ' . $product_ID . ', category name ' . $categories->category_name
     );
-
+$totalProducts = DB::table('inventory')->count();
     session()->flash('save', 'Inventory saved successfully!');
     return redirect()->back();
 }
@@ -694,7 +694,7 @@ public function save_inventory(Request $request){
 
     public function updateTeacherStatus($teachers_id) {
 
-        $count = DB::table('schedules')
+        $count = DB::tabloutOfStockProductse('schedules')
         ->where('teachers_id', $teachers_id)
         ->count();
 
@@ -885,9 +885,15 @@ public function view_inventory(Request $request) {
             ->make(true);
     }
   
-     $categories = DB::table('category')->orderBy('category_name', 'ASC')->get();      
+     $categories = DB::table('category')->orderBy('category_name', 'ASC')->get();   
+     $totalProducts = DB::table('inventory')->count();   
+     $instockProducts = DB::table('inventory')->where('status_ID', 1)->count(); // In Stock
+     $lowStockProducts = DB::table('inventory')->where('status_ID', 2)->count(); // Low Stock
+     $outOfStock = DB::table('inventory')->where('status_ID', 3)->count(); // Out of Stock   
 
-    return view('inventory', compact( 'categories'));
+
+    return view('inventory', compact( 'categories', 'totalProducts', 'lowStockProducts', 'outOfStock', 'instockProducts' ));
+
 
 
 }

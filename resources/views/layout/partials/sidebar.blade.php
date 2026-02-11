@@ -4,7 +4,7 @@
         display: flex !important;
         flex-direction: column !important;
         height: 100vh !important;
-        background: rgba(0, 0, 0, 0.96) !important;
+        background: solid rgba(255, 255, 255, 0.96) !important;
         overflow: hidden !important;
 
 
@@ -19,7 +19,7 @@
         /* Prevents button from being squashed */
         width: 100%;
         padding: 15px 10px;
-        background: rgba(0, 0, 0, 0.1);
+        background: rgba(255, 255, 255, 0.1);
         /* Subtle visual boundary line */
         border-top: 1px solid rgba(255, 255, 255, 0.1);
         z-index: 99;
@@ -33,13 +33,14 @@
         width: 90%;
         margin: 0 auto;
         padding: 12px;
-        color: #fff !important;
-        background: #ff4757;
+        color: #fe0101 !important;
+        /* background: #ff4757; */
+        border: 1px solid #ff4757;
         border-radius: 12px;
         font-size: 14px;
         font-weight: 600;
         text-decoration: none;
-        box-shadow: 0 4px 12px rgba(255, 71, 87, 0.3);
+        box-shadow: 0 4px 12px rgba(255, 142, 151, 0.3);
         transition: 0.3s ease;
     }
 
@@ -153,15 +154,13 @@
         /* Suggested: White text for role on gradient background */
     }
 
-    .sidebar-collapse h5 {
+    /* .sidebar-collapse h5 {
         opacity: 0;
-        /* Makes it invisible */
         visibility: hidden;
-        /* Ensures it doesn’t take up space */
         margin-bottom: 50px;
-        /* Keep the gap even when hidden */
 
-    }
+    } */
+
 
     /* On hover over the entire sidebar, show the role (h5) */
     .sidebar-collapse .main-sidebar:hover h5 {
@@ -173,9 +172,9 @@
     }
 
     .nav-sidebar .nav-item:hover {
-        background: rgba(255, 255, 255, 0.2) !important;
+        background: rgba(104, 104, 104, 0.2) !important;
         /* Subtle hover effect */
-        color: #fff !important;
+        color: #6b6b6b !important;
         transform: translateY(5px);
         /* Slight slide to the right */
         transition: all 0.3s ease;
@@ -185,10 +184,8 @@
 <aside id="mainSidebar" class="main-sidebar sidebar-light-primary elevation-4">
 
     <div class="sidebar-brand d-flex align-items-center justify-content-center py-3">
-        <img class="rounded-circle shadow-sm"
-            src="{{ session('profile') ? asset(session('profile')) . '?' . time() : asset('dist/img/avatar.png') }}"
-            style="width:50px; height:50px; object-fit:cover; border:5px solid white;"
-            onerror="this.onerror=null; this.src='{{ asset('dist/img/avatar.png') }}';">
+        <img class="rounded-circle shadow-sm" src="{{ asset('dist/img/LOME_LOGO.png') }}" alt="LOME logo" height="60"
+            width="60" style="object-fit:cover;">
     </div>
     <h5>
         {{ session('user_role') }}
@@ -204,7 +201,7 @@
                 <li class="nav-item">
                     <a href="{{ route('admin.dashboard') }}"
                         class="nav-link {{ Route::is('admin.dashboard') ? 'active' : '' }}"
-                        style="display:flex; align-items:center; gap: 10px; color:{{ Route::is('admin.dashboard') ? '#333' : '#fff' }}; background:{{ Route::is('admin.dashboard') ? '#fff' : 'transparent' }};">
+                        style="display:flex; align-items:center; gap: 10px; color:{{ Route::is('admin.dashboard') ? '#fff' : '#333' }}; background:{{ Route::is('admin.dashboard') ? '#ff5757' : 'transparent' }};">
                         <i class="fas fa-th-large"></i> Dashboard
                     </a>
                 </li>
@@ -213,7 +210,7 @@
                 <li class="nav-item">
                     <a href="{{ route('admin_profile') }}"
                         class="nav-link {{ Route::is('admin_profile') ? 'active' : '' }}"
-                        style="display:flex; align-items:center; gap:10px;  color:{{ Route::is('admin_profile') ? '#333' : '#fff' }}; background:{{ Route::is('admin_profile') ? '#fff' : 'transparent' }};">
+                        style="display:flex; align-items:center; gap:10px;  color:{{ Route::is('admin_profile') ? '#fff' : '#333' }}; background:{{ Route::is('admin_profile') ? '#ff5757' : 'transparent' }};">
                         <i class="fas fa-user-cog"></i> Admin Profile
                     </a>
                 </li>
@@ -222,14 +219,14 @@
                 <li class="nav-item">
                     <a href="{{ route('view_inventory') }}"
                         class="nav-link {{ Route::is('view_inventory') ? 'active' : '' }}"
-                        style="display:flex; align-items:center; gap:10px;  color:{{ Route::is('view_inventory') ? '#333' : '#fff' }}; background:{{ Route::is('view_inventory') ? '#fff' : 'transparent' }};">
+                        style="display:flex; align-items:center; gap:10px;  color:{{ Route::is('view_inventory') ? '#fff' : '#333' }}; background:{{ Route::is('view_inventory') ? '#ff5757' : 'transparent' }};">
                         <i class="bi bi-box"></i> Inventory
                     </a>
                 </li>
 
                 <li class="nav-item">
                     <a href="{{ route('view_products') }}"class="nav-link {{ Route::is('view_products') ? 'active' : '' }}"
-                        style="display:flex; align-items:center; gap:10px;  color:{{ Route::is('view_products') ? '#333' : '#fff' }}; background:{{ Route::is('view_products') ? '#fff' : 'transparent' }};">
+                        style="display:flex; align-items:center; gap:10px;  color:{{ Route::is('view_products') ? '#fff' : '#333' }}; background:{{ Route::is('view_products') ? '#ff5757' : 'transparent' }};">
                         <i class="bi bi-boxes"></i> Products
                     </a>
                 </li>
@@ -240,19 +237,67 @@
                 <li class="nav-item">
                     <a href="{{ route('view_section') }}"
                         class="nav-link {{ Route::is('view_section') ? 'active' : '' }}"
-                        style="display:flex; align-items:center; gap:10px; color:{{ Route::is('view_section') ? '#333' : '#fff' }}; background:{{ Route::is('view_section') ? '#fff' : 'transparent' }};">
-                        <i class="bi bi-truck"></i> Delivery
+                        style="display:flex; align-items:center; gap:10px; color:{{ Route::is('view_section') ? '#fff' : '#333' }}; background:{{ Route::is('view_section') ? '#ff5757' : 'transparent' }};">
+                        <i class="bi bi-truck"></i> Supply
                     </a>
                 </li>
 
-                {{-- Reports --}}
+                @php
+                    // Check if any sub-item is active
+                    $teacher_parent_active = Route::is('view_section') || Route::is('view_section');
+
+                    // Consistent colors matching your other items
+                    $primary_indigo = '#ff5757';
+                    $text_dark = '#333';
+                    $text_white = '#fff';
+                @endphp
+
                 <li class="nav-item">
-                    <a href="{{ route('view_subject') }}"
-                        class="nav-link {{ Route::is('view_subject') ? 'active' : '' }}"
-                        style="display:flex; align-items:center; gap:10px;  color:{{ Route::is('view_subject') ? '#333' : '#fff' }}; background:{{ Route::is('view_subject') ? '#fff' : 'transparent' }};">
-                        <i class="bi bi-clipboard-check"></i> Reports
+                    {{-- Parent Link --}}
+                    <a href="#teachersCollapse" data-bs-toggle="collapse" role="button"
+                        class="nav-link {{ $teacher_parent_active ? 'active' : '' }}"
+                        style="display:flex; align-items:center; gap:10px; 
+               color:{{ $teacher_parent_active ? $text_white : $text_dark }}; 
+               background:{{ $teacher_parent_active ? $primary_indigo : 'transparent' }}; 
+               border-radius: 4px; transition: all 0.3s ease;">
+                        <i class="bi bi-clipboard-data"></i>
+                        <span>Reports</span>
+                        <i class="fas fa-caret-down ms-auto"></i>
+                    </a>
+
+                    {{-- Dropdown Content --}}
+                    <div id="teachersCollapse" class="collapse {{ $teacher_parent_active ? 'show' : '' }}"
+                        style="margin-left: 10px; border-left: 2px solid {{ $primary_indigo }}50; margin-top: 5px;">
+                        <ul class="nav flex-column" style="gap: 5px; padding-left: 10px;">
+                            <li class="nav-item">
+                                <a href="{{ route('view_section') }}" class="nav-link"
+                                    style="display:block; padding:8px 10px; font-size: 0.9rem; border-radius:4px;
+                    color:{{ Route::is('view_section') ? $text_white : $text_dark }}; 
+                    background:{{ Route::is('view_section') ? $primary_indigo : 'transparent' }};">
+                                    Inventory Report
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('view_section') }}" class="nav-link"
+                                    style="display:block; padding:8px 10px; font-size: 0.9rem; border-radius:4px;
+                    color:{{ Route::is('teacher_load_route_name') ? $text_white : $text_dark }}; 
+                    background:{{ Route::is('teacher_load_route_name') ? $primary_indigo : 'transparent' }};">
+                                    Product Report
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+
+                {{-- POS history --}}
+                <li class="nav-item">
+                    <a href="{{ route('pos-history') }}"
+                        class="nav-link {{ Route::is('pos-history') ? 'active' : '' }}"
+                        style="display:flex; align-items:center; gap:10px; color:{{ Route::is('pos-history') ? '#fff' : '#333' }}; background:{{ Route::is('pos-history') ? '#ff5757' : 'transparent' }};">
+                        <i class="bi bi-clock-history"></i> POS History
                     </a>
                 </li>
+
             </ul>
         </nav>
     </div>

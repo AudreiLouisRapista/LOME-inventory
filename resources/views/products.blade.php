@@ -28,90 +28,95 @@
                             <div class="modal fade" id="addTeacherModal" tabindex="-1"
                                 aria-labelledby="addTeacherModalLabel" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered modal-lg">
-                                    <div class="modal-content" style="border-radius: 20px;">
-                                        <div class="modal-header bg-primary">
-                                            <h5 class="modal-title" id="addTeacherModalLabel">Register Products</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    <div class="modal-content border-0 shadow-lg"
+                                        style="border-radius: 15px; overflow: hidden;">
+
+                                        <div class="modal-header bg-dark text-white py-3">
+                                            <h5 class="modal-title fw-bold" id="addTeacherModalLabel">
+                                                <i class="fas fa-box-open me-2"></i> Register New Product
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                                                 aria-label="Close"></button>
                                         </div>
-                                        <div class="modal-body">
+
+                                        <div class="modal-body p-4">
                                             @include('layout.partials.alerts')
+
                                             <form method="POST" action="{{ route('save_product') }}"
                                                 enctype="multipart/form-data">
                                                 @csrf
 
-                                                <div class="row mb-3">
+                                                <p class="text-muted small fw-bold text-uppercase mb-3 border-bottom pb-1">
+                                                    Basic Information</p>
+                                                <div class="row g-3 mb-4">
                                                     <div class="col-md-6">
-                                                        <label for="category">Category</label>
-                                                        <select name="category_ID" id="category" class="form-control"
-                                                            required>
-                                                            <option value="">-- Select Category --</option>
-
-                                                            @foreach ($categories as $category)
-                                                                <option value="{{ $category->category_ID }}">
-                                                                    {{ strtoupper($category->category_name) }}
+                                                        <label class="form-label fw-semibold">Category</label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text bg-light"><i
+                                                                    class="fas fa-tag"></i></span>
+                                                            <select name="category_ID" id="category"
+                                                                class="form-select border-start-0" required>
+                                                                <option value="" selected disabled>Select Category
                                                                 </option>
-                                                            @endforeach
-
-                                                        </select>
+                                                                @foreach ($categories as $category)
+                                                                    <option value="{{ $category->category_ID }}">
+                                                                        {{ strtoupper($category->category_name) }}
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
                                                     </div>
-
                                                     <div class="col-md-6">
-                                                        <label class="form-label">Product Name:</label>
+                                                        <label class="form-label fw-semibold">Product Name</label>
                                                         <input type="text" name="product_name" class="form-control"
+                                                            placeholder="e.g. Arabica Coffee Bean"
                                                             value="{{ old('product_name') }}" required>
                                                     </div>
-
                                                 </div>
 
-                                                <div class="row mb-3">
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">Date of Expiry:</label>
+                                                <p class="text-muted small fw-bold text-uppercase mb-3 border-bottom pb-1">
+                                                    Pricing & Expiry</p>
+                                                <div class="row g-3 mb-4">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label fw-semibold">Cost Price</label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text">$</span>
+                                                            <input type="number" name="product_cost" class="form-control"
+                                                                step="0.01" placeholder="0.00"
+                                                                value="{{ old('product_cost') }}" required>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label fw-semibold">Selling Price</label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text">$</span>
+                                                            <input type="number" name="product_price" class="form-control"
+                                                                step="0.01" placeholder="0.00"
+                                                                value="{{ old('product_price') }}" required>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label fw-semibold">Expiry Date</label>
                                                         <input type="date" name="product_exp" class="form-control"
                                                             value="{{ old('product_exp') }}" required>
                                                     </div>
-
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">Price:</label>
-                                                        <input type="number" name="product_price" class="form-control"
-                                                            value="{{ old('product_price') }}" required>
-                                                    </div>
-
                                                 </div>
 
 
-                                                <div class="col-md-6">
-                                                    <label class="form-label">Cost:</label>
-                                                    <input type="number" name="product_cost" class="form-control"
-                                                        value="{{ old('product_cost') }}" required>
+                                                <div class="stockQuantity">
+                                                    <label class="form-label fw-semibold">Stock Quantity / Unit
+                                                        Amount</label>
+                                                    <input type="number" name="product_unit_amount" class="form-control "
+                                                        placeholder="0" value="{{ old('product_unit_amount') }}" required>
                                                 </div>
 
 
-                                                <div class="row mb-3">
-                                                    <div class="col-md-6">
-                                                        <label class="form-label">Unit Amount:</label>
-                                                        <input type="number" name="product_unit_amount"
-                                                            class="form-control" value="{{ old('product_unit_amount') }}"
-                                                            required>
-                                                    </div>
-                                                    {{-- <div class="col-md-6">
-                                                        <label for="unit">Unit</label>
-                                                        <select name="unit_ID" id="unit" class="form-control" required>
-                                                            <option value="">-- Select Unit --</option>
-
-                                                            @foreach ($units as $unit)
-                                                                <option value="{{ $unit->unit_ID }}">
-                                                                    {{ strtoupper($unit->unit_title) }}
-                                                                </option>
-                                                            @endforeach
-
-                                                        </select>
-                                                    </div> --}}
+                                                <div class="d-flex justify-content-end gap-2 mt-4">
+                                                    <button type="button" class="btn btn-light px-4"
+                                                        data-bs-dismiss="modal">Cancel</button>
+                                                    <button type="submit"
+                                                        class="btn btn-primary px-5 fw-bold shadow-sm">Save Product</button>
                                                 </div>
-
-
-
-                                                <button type="submit" class="btn btn-primary w-100 mt-3">Register</button>
                                             </form>
                                         </div>
                                     </div>
@@ -121,7 +126,8 @@
                         </div>
 
                         <div class="card-body">
-                            <table id="example2" class="table table-bordered table-hover display block" style="width:100%">
+                            <table id="example2" class="table table-bordered table-hover display block"
+                                style="width:100%">
                                 <thead style="text-align: center;">
                                     <tr>
                                         <th>Product ID</th>
@@ -237,7 +243,42 @@
             font-weight: 500 !important;
             border-radius: 12px !important;
         }
+
+
+        /* Modern Input Styling */
+        .form-control,
+        .form-select {
+            border: 1px solid #e0e0e0;
+            padding: 0.6rem 0.75rem;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+            background-color: #fff;
+        }
+
+        /* Section divider text */
+        .text-muted.small.fw-bold {
+            letter-spacing: 0.05rem;
+            color: #6c757d !important;
+        }
+
+        /* Modal animation speed */
+        .modal.fade .modal-dialog {
+            transition: transform 0.3s ease-out;
+        }
+
+        .stockQuantity {
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            padding: 0.6rem 0.75rem;
+        }
     </style>
+
 @endsection
 
 @section('tables')

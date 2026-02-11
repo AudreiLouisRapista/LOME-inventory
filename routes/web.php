@@ -49,7 +49,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     Route::get('/teachers', [MainController::class, 'teachers'])->name('teachers');
     Route::get('/view_products', [MainController::class, 'view_products'])->name('view_products');
     Route::get('/view_inventory', [MainController::class, 'view_inventory'])->name('view_inventory');
-    Route::get('/view_grade1', [MainController::class, 'view_grade1'])->name('view_grade1');
+    Route::get('/pos-history', [MainController::class, 'pos_history'])->name('pos-history');
     Route::get('/view_grade2', [MainController::class, 'view_grade2'])->name('view_grade2');
     Route::get('/teacher_status', [MainController::class, 'teacher_status'])->name('teacher_status');
     Route::get('/updateTeacherStatus', [MainController::class, 'updateTeacherStatus'])->name('updateTeacherStatus');

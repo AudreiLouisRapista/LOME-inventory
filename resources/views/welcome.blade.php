@@ -57,14 +57,11 @@
             max-width: 50%;
             position: relative;
             background:
-                linear-gradient(135deg, #ff0000f4, #9e1515ef);
-
-
-
-            /* Fallback/Base color for the left side */
-            padding: 0;
+                linear-gradient(135deg, #ff0000f4, #8b0404);
+            color for the left side */ padding: 0;
             /* Remove padding from your original design */
         }
+
 
         .left-panel h1 {
             position: relative;
@@ -75,10 +72,10 @@
             font-weight: 900;
             text-align: left;
             margin-top: 150px;
-            top: 23px;
-            left: 110px;
-            font-style: italic;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            letter-spacing: 0.1em;
+            top: 25px;
+            left: 88px;
+            font-family: 'Times New Roman', Times, serif;
         }
 
         .left-panel-content .sub-text {
@@ -90,19 +87,28 @@
             text-align: left;
             position: absolute;
             font-weight: 650;
-            left: 20px;
+            left: 40px;
             right: 40px;
-            font-family: Arial, Helvetica, sans-serif;
+            top: 270px;
+            font-family: 'Times New Roman', Times, serif;
             text-align: center;
         }
 
-        .left-panel i {
-            position: absolute;
+        .left-panel-content .footer-text {
+            /* position: relative; */
+            /* z-index: 2; */
+            /* padding: 5px; */
             color: white;
-            font-size: 100px;
-            left: 180px;
-            top: 40px;
-
+            font-size: 12px;
+            text-align: left;
+            position: absolute;
+            font-weight: 400;
+            left: 40px;
+            right: 40px;
+            top: 312px;
+            letter-spacing: 0.2em;
+            font-family: Arial, Helvetica, sans-serif;
+            text-align: center;
         }
 
         /* --- Right Panel (Login Form Area) --- */
@@ -198,7 +204,7 @@
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            background: linear-gradient(135deg, #df0a0af4, #ef3c45ef);
+            background: linear-gradient(135deg, #f90505f4, #aa0b13);
             transition: background 0.3s;
         }
 
@@ -252,6 +258,7 @@
                 /* Center the text vertically */
                 text-align: center;
                 margin: 0;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 font-size: 32px;
                 left: 0;
                 /* Reset previous desktop left value */
@@ -308,9 +315,10 @@
     <div class="login-container">
         <div class="left-panel">
             <div class="left-panel-content">
-                <i class="bi bi-cart4"></i>
+                {{-- <i class="bi bi-cart3"></i> --}}
                 <h1>LOME</h1>
                 <p class="sub-text">Shop Mart</p>
+                <p class="footer-text">D'GLOMIE MARKETING CORPORATION</p>
             </div>
         </div>
 
