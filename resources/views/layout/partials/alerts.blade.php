@@ -20,11 +20,11 @@
         document.addEventListener('DOMContentLoaded', function() {
             Swal.fire({
                 icon: "warning",
-                title: "Schedule Conflict!",
+                title: "OPPPSSSS!",
                 text: "{{ session('error') }}",
                 confirmButtonColor: "#4e73df",
-                timer: 5000,
-                timerProgressBar: true
+                // timer: 5000,
+                // timerProgressBar: true
             });
         });
     </script>

@@ -63,8 +63,10 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     Route::post('/delete_schedule', [MainController::class, 'delete_schedule'])->name('delete_schedule');
     Route::post('/update_schedule', [MainController::class, 'update_schedule'])->name('update_schedule');
     Route::post('/update_product', [MainController::class, 'update_product'])->name('update_product');
+    Route::post('/update_inventory', [MainController::class, 'update_inventory'])->name('update_inventory');
     Route::post('/update_section', [MainController::class, 'update_section'])->name('update_section');
     Route::post('/delete-schedule', [MainController::class, 'delete_schedule'])->name('delete_schedule');
+    Route::post('/import-pos-sales', [MainController::class, 'import_pos_sales'])->name('import_pos_sales');
 
    Route::get('/get-products-by-category/{id}', [MainController::class, 'getProductsByCategory'])->name('get-products-by-category');
 

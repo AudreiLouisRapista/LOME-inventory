@@ -46,7 +46,7 @@
                 </div>
                 <div>
                     <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                        <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #1e293b;">2,137</h3>
+                        <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #1e293b;">{{ $totalQuantity }}</h3>
                         <div
                             style="background: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
                             ↘ 1.24%
@@ -119,7 +119,14 @@
                                 style="float: right; border-radius: 20px; background-color: #4CAF50; border: none; padding: 10px 20px; font-size: 16px; cursor: pointer; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); transition: background-color 0.3s ease;">
                                 Inventory
                             </button>
-
+                            <form action="{{ route('import_pos_sales') }}" method="POST" enctype="multipart/form-data"
+                                class="d-flex align-items-right" style="float: right; margin-right: 10px;">
+                                @csrf
+                                <input type="file" name="inventory_file" class="form-control me-2" required>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-file-earmark-excel"></i> Import
+                                </button>
+                            </form>
                             <!-- Modal -->
                             <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="addScheduleModalLabel"
                                 aria-hidden="true">
@@ -187,9 +194,12 @@
                                 <thead>
                                     <tr>
                                         <th>Inventory ID</th>
-                                        <th>Product Category</th>
                                         <th>Product Name</th>
+                                        <th>Product Category</th>
+                                        <th>Cost</th>
+                                        <th>Price</th>
                                         <th>Quantity</th>
+                                        <th>Total Sold</th>
                                         <th>Remaining Stock</th>
                                         <th>Status</th>
                                         <th>Action</th>
@@ -203,6 +213,56 @@
                             </table>
 
 
+                        </div>
+
+                        <div class="modal fade" id="UpdateProductModal" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header bg-primary text-white">
+                                        <h5 class="modal-title">Update Product</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form id="updateProductForm" action="{{ route('update_inventory') }}" method="POST">
+                                        @csrf
+                                        <div class="modal-body">
+                                            <input type="hidden" name="inventory_ID" id="edit_id">
+                                            <div class="mb-3">
+                                                <label class="form-label">Product Name</label>
+                                                <input type="text" id="edit_product_name" name="product_ID"
+                                                    class="form-control" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Category</label>
+                                                <select name="category_ID" id="edit_category" class="form-control"
+                                                    required>
+                                                    <option value="">-- Select Category --</option>
+
+                                                    @foreach ($categories as $category)
+                                                        <option value="{{ $category->category_ID }}">
+                                                            {{ strtoupper($category->category_name) }}
+                                                        </option>
+                                                    @endforeach
+
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Quantity</label>
+                                                <input type="number" id="edit_quantity" name="quantity"
+                                                    class="form-control" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Remaining Stock</label>
+                                                <input type="number" id="edit_remainingstock" name="remainingstock"
+                                                    class="form-control">
+                                            </div>
+
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="submit" class="btn btn-primary w-100">Update</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                         <!-- /.card-body -->
                     </div>
@@ -218,124 +278,163 @@
 @endsection
 
 @section('tables')
-    <script src="{{ asset('plugins/jquery/jquery.min.js') }}"></script>
-    <script src="{{ asset('plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
-    <script src="{{ asset('dist/js/adminlte.min.js') }}"></script>
-    <script src="{{ asset('plugins/datatables/jquery.dataTables.min.js') }}"></script>
-    <script src="{{ asset('plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
-    <script src="{{ asset('plugins/datatables-responsive/js/dataTables.responsive.min.js') }}"></script>
-    <script src="{{ asset('plugins/datatables-responsive/js/responsive.bootstrap4.min.js') }}"></script>
-    <script src="{{ asset('plugins/datatables-buttons/js/dataTables.buttons.min.js') }}"></script>
-    <script src="{{ asset('plugins/datatables-buttons/js/buttons.bootstrap4.min.js') }}"></script>
-    <script src="{{ asset('plugins/jszip/jszip.min.js') }}"></script>
-    <script src="{{ asset('plugins/pdfmake/pdfmake.min.js') }}"></script>
-    <script src="{{ asset('plugins/pdfmake/vfs_fonts.js') }}"></script>
-    <script src="{{ asset('plugins/datatables-buttons/js/buttons.html5.min.js') }}"></script>
-    <script src="{{ asset('plugins/datatables-buttons/js/buttons.print.min.js') }}"></script>
-    <script src="{{ asset('plugins/datatables-buttons/js/buttons.colVis.min.js') }}"></script>
-
-    <script src="{{ asset('dist/js/adminlte.min.js') }}"></script>
-
 
     <script>
         $(document).ready(function() {
-            // 1. Initialize DataTable
             var table = $('#example2').DataTable({
-                destroy: true,
-                processing: true,
-                serverSide: true,
-                ajax: {
-                    url: "{{ route('view_inventory') }}",
-                    type: 'GET',
-                    data: function(d) {
-                        // This passes filters to your table
-                        d.category_ID = $('#category_ID').val();
-                        d.product_ID = $('#product_ID').val();
-                    }
+                destroy: true, // use this to reinitialize the table if it already exists. use ths if you are using AJAX to load data and want to refresh the table with new data
+                processing: true, // This shows a loading indicator while the data is being fetched, enhancing user experience.
+                serverSide: true, // This enables the fast loading for 4k rows. instead of loading all data at once, it loads only the data needed for the current page.
+                language: {
+                    processing: '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Processing...</span></div>'
                 },
+                ajax: "{{ route('view_inventory') }}", // Ensure this matches your route name
+
                 columns: [{
                         data: 'inventory_ID',
-                        name: 'inventory_ID'
+                        name: 'inventory.inventory_ID'
+                    },
+                    {
+                        data: 'product_name',
+                        name: 'products.product_name'
                     },
                     {
                         data: 'name',
-                        name: 'name'
-                    }, // This matches "Product Category" in your UI
-                    {
-                        data: 'product_name',
-                        name: 'product_name'
+                        name: 'category.category_name'
                     },
                     {
-                        data: 'quantity',
-                        name: 'quantity'
+                        data: 'product_cost',
+                        name: 'products.product_cost'
                     },
                     {
-                        data: 'remaining_stock',
-                        name: 'remaining_stock'
+                        data: 'product_price',
+                        name: 'products.product_price'
+                    },
+
+                    {
+                        data: 'invt_quantity',
+                        name: 'inventory.invt_quantity'
                     },
                     {
-                        data: 'status_title',
-                        name: 'status_title',
+                        data: 'invt_totalSold',
+                        name: 'inventory.invt_totalSold'
+                    },
+                    {
+                        data: 'invt_remainingStock',
+                        name: 'inventory.invt_remainingStock'
+                    },
+
+                    {
+                        data: 'status_ID',
+                        name: 'inventory.status_ID',
                         render: function(data, type, row) {
-                            var customClass = ''; // Default color
-                            if (data === 'In Stock') customClass = 'status-in-stock';
-                            else if (data === 'Low Stock') customClass = 'status-low-stock';
-                            else if (data === 'Out of Stock') customClass = 'status-out-of-stock';
-
-                            return '<span class="badge ' + customClass + '">' + data +
-                                '</span>';
+                            if (data == 1) {
+                                return '<span class="status-in-stock">In Stock</span>';
+                            } else if (data == 2) {
+                                return '<span class="status-low-stock">Low Stock</span>';
+                            } else if (data == 3) {
+                                return '<span class="status-out-of-stock">Out of Stock</span>';
+                            } else {
+                                return '<span class="custom-badge" style="background-color: #e0e0e0; color: #333;">Unknown</span>';
+                            }
                         }
-
                     },
+
+
                     {
                         data: 'action',
                         name: 'action',
                         orderable: false,
                         searchable: false
-                    }
+                    },
                 ],
-                "dom": '<"d-flex align-items-end justify-content-between mb-4"Bf>rtip',
-                "buttons": ["excel", "pdf", "print"]
+                // "dom": '<"d-flex align-items-end justify-content-between mb-4"Bf>rtip',
+                // "buttons": ["excel", "pdf", "print"]
+
+
             });
 
-            // 2. Handle Category Change
-            $(document).on('change', '#category_ID', function() {
-                var categoryId = $(this).val();
-                var productSelect = $('#product_ID');
+            $('#example2 tbody').on('click', '.edit-btn', function() {
 
-                productSelect.empty().append('<option value="">-- Loading Products... --</option>');
+                var id = $(this).data('id');
+                var prodID = $(this).data('product-id');
+                var prodName = $(this).data('product-name');
+                var catID = $(this).data('category-id');
+                var qnty = $(this).data('quantity');
+                var rStock = $(this).data('remainingstock');
 
-                if (categoryId) {
-                    $.ajax({
-                        // Ensure this route exists in web.php
-                        url: "/admin/get-products-by-category/" + categoryId, // USED FOR GET METHOD
-                        type: 'GET',
-                        dataType: 'json',
+                $('#edit_id').val(id);
+                $('#edit_product_name').val(prodID);
+                $('#edit_category').val(catID);
+                $('#edit_quantity').val(qnty);
+                $('#edit_remainingstock').val(rStock);
 
-                        success: function(data) {
-                            console.log("Products loaded:", data); // Debugging line
-                            productSelect.empty().append(
-                                '<option value="">-- Select Product --</option>');
-                            $.each(data, function(key, value) {
-                                // CHECK: If your DB uses 'product_id' lowercase, change this!
-                                productSelect.append('<option value="' + value
-                                    .product_ID + '">' + value.product_name +
-                                    '</option>');
-                            });
-                            table.draw(); // Refresh the background table
-                        },
-                        error: function(xhr) {
-                            // This will print the actual PHP error in your F12 Console
-                            console.error("The Server says: " + xhr.responseText);
-                            productSelect.empty().append(
-                                '<option value="">Error loading products</option>');
-                        }
-                    });
-                } else {
-                    productSelect.empty().append('<option value="">-- Select Product --</option>');
-                    table.draw();
-                }
+
+
+                $('#UpdateProductModal').modal('show');
             });
+
+            $('#updateProductForm').on('submit', function(e) {
+                e.preventDefault();
+
+                var actionUrl = $(this).attr(
+                    'action'); // BEST OPTION IF THERE IS ACTION CRUD IN THE FUTURE. USUALLY USED FOR POST
+                var formdata = $(this).serialize();
+
+                $.ajax({
+                    url: actionUrl,
+                    method: 'POST',
+                    data: formdata,
+                    success: function(response) {
+                        $('#UpdateProductModal').modal('hide');
+                        table.ajax.reload(null,
+                            false); // Reload the DataTable without resetting the pagination
+                        alert('Product updated successfully!');
+                    },
+                    error: function(xhr) {
+                        alert('Something went wrong!');
+                    }
+                });
+            });
+        });
+
+        // 2. Handle Category Change
+        $(document).on('change', '#category_ID', function() {
+            var categoryId = $(this).val();
+            var productSelect = $('#product_ID');
+
+            productSelect.empty().append('<option value="">-- Loading Products... --</option>');
+
+            if (categoryId) {
+                $.ajax({
+                    // Ensure this route exists in web.php
+                    url: "/admin/get-products-by-category/" + categoryId, // USED FOR GET METHOD
+                    type: 'GET',
+                    dataType: 'json',
+
+                    success: function(data) {
+                        console.log("Products loaded:", data); // Debugging line
+                        productSelect.empty().append(
+                            '<option value="">-- Select Product --</option>');
+                        $.each(data, function(key, value) {
+                            // CHECK: If your DB uses 'product_id' lowercase, change this!
+                            productSelect.append('<option value="' + value
+                                .product_ID + '">' + value.product_name +
+                                '</option>');
+                        });
+                        table.draw(); // Refresh the background table
+                    },
+                    error: function(xhr) {
+                        // This will print the actual PHP error in your F12 Console
+                        console.error("The Server says: " + xhr.responseText);
+                        productSelect.empty().append(
+                            '<option value="">Error loading products</option>');
+                    }
+                });
+            } else {
+                productSelect.empty().append('<option value="">-- Select Product --</option>');
+                table.draw();
+            }
         });
     </script>
 
@@ -368,9 +467,32 @@
             background-color: #ffdada;
             color: #a41919;
             border: 1px solid #ff1515;
-            padding: 5px 12px;
+            padding: 3px 10px;
             border-radius: 55px;
         }
+
+        /* .fileImport {
+                                                                                                                                                                                                                                                                                                                                                                            margin-top: 10px;
+                                                                                                                                                                                                                                                                                                                                                                            display: flex;
+                                                                                                                                                                                                                                                                                                                                                                            flex-direction: column;
+                                                                                                                                                                                                                                                                                                                                                                            align-items: flex-end;
+                                                                                                                                                                                                                                                                                                                                                                        } */
+
+        /* input[type="file"]::file-selector-button {
+                                                                                                                                                                                                                                                                                                                                                                                background-color: #4CAF50;
+                                                                                                                                                                                                                                                                                                                                                                                color: white;
+                                                                                                                                                                                                                                                                                                                                                                                border-radius: 20px;
+                                                                                                                                                                                                                                                                                                                                                                                border: none;
+                                                                                                                                                                                                                                                                                                                                                                                padding: 10px 20px;
+                                                                                                                                                                                                                                                                                                                                                                                box-shadow: #1e293b;
+                                                                                                                                                                                                                                                                                                                                                                                cursor: pointer;
+                                                                                                                                                                                                                                                                                                                                                                                transition: background-color 0.3s ease;
+
+                                                                                                                                                                                                                                                                                                                                                                            }
+
+                                                                                                                                                                                                                                                                                                                                                                            input[type="file"]::file-selector-button:hover {
+                                                                                                                                                                                                                                                                                                                                                                                background-color: #45a049;
+                                                                                                                                                                                                                                                                                                                                                                            } */
     </style>
 
 @endsection

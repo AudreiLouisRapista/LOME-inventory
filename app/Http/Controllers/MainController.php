@@ -1,18 +1,18 @@
 <?php
-
 namespace App\Http\Controllers;
-
+use Exception;
+use DateTime;
+use App\Models\ActivityLog;
+use App\Imports\POSsaleImport;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB; // For direct database queries
 use Illuminate\Validation\Rule;
-use App\Models\ActivityLog;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Session; // For session usage
-use Exception;
-use DateTime;
 use Illuminate\Support\Facades\File;
 class MainController extends Controller
 {
@@ -860,42 +860,98 @@ public function print_teacher_load($id, $year)
         // VIEW INVENTORY
 
 public function view_inventory(Request $request) {
+        if ($request->ajax()) {
+            $data = DB::table('inventory')
+                ->join('products', 'inventory.product_ID', '=', 'products.product_ID')
+                ->join('category', 'products.category_ID', '=', 'category.category_ID')
+                // ->leftJoin('status', 'inventory.status_ID', '=', 'status.status_id') 
+                ->select([
+                    'inventory.inventory_ID',
+                    'products.product_name as product_name', 
+                    'category.category_name as name',
+                    'products.product_price',
+                    'products.product_cost',
+                    'inventory.invt_quantity',
+                    'inventory.invt_remainingStock',
+                    'inventory.invt_totalSold',
+                    'inventory.status_ID',
+                    'inventory.product_ID',
+                    'inventory.category_ID'
+                ]);
+
+            return DataTables::of($data)
+                ->addColumn('action', function($row){
+                    return '<button class="btn btn-sm btn-outline-success edit-btn" 
+                            data-id="'.$row->inventory_ID.'" 
+                            data-product-id="'.$row->product_ID.'"
+                            data-product-name="'.$row->product_name.'"
+                            data-category="'.$row->name.'"
+                            data-category-ID="'.$row->category_ID.'"
+                            data-cost="'.$row->product_cost.'"
+                            data-price="'.$row->product_price.'"
+                            data-quantity="'.$row->invt_quantity.'"
+                            data-remainingstock="'.$row->invt_remainingStock. '">
+                            <i class="bi bi-pen"></i></button>';
+                })
+                ->rawColumns(['action'])
+                ->make(true);
+        }
+            
+        
+
+        $categories = DB::table('category')->orderBy('category_name', 'ASC')->get();     
+        $totalProducts = DB::table('inventory')->count();  
+        $totalQuantity = DB::table('inventory')->sum('invt_quantity');  
+        $instockProducts = DB::table('inventory')->where('status_ID', 1)->count();
+        $lowStockProducts = DB::table('inventory')->where('status_ID', 2)->count();
+        $outOfStock = DB::table('inventory')->where('status_ID', 3)->count();    
+
+        return view('inventory', compact('categories', 'totalProducts', 'instockProducts', 'lowStockProducts', 'outOfStock', 'totalQuantity'));
+}
   
- if ($request->ajax()) {
-        $data = DB::table('inventory')
-            ->join('products', 'inventory.product_ID', '=', 'products.product_ID')
-            ->join('category', 'products.category_ID', '=', 'category.category_ID')
-            ->join('product_status', 'inventory.status_ID', '=', 'product_status.status_ID')
-            ->select([
-                'inventory.*', 
-                'products.product_name', 
-                'category.category_name as name',
-                'product_status.status_title'
-            ]);
-             return DataTables::of($data)
-            ->addColumn('action', function($row){
-                // We write the HTML for the button here
-                return '<button class="btn btn-sm btn-outline-success edit-btn" 
-                        data-id="'.$row->product_ID.'" 
-                        data-name="'.$row->product_name.'" 
-                        data-category="'.$row->name.'">
-                        <i class="bi bi-pen"></i></button>';
-            })
-            ->rawColumns(['action']) // Tells Yajra to render HTML, not just text
-            ->make(true);
+    
+public function update_inventory(Request $request) {
+
+$quantity = $request->quantity;
+if($quantity < 5){
+    $status_ID = ($quantity == 0) ? 3 : 2; //
+}
+
+    DB::table('inventory')
+        ->where('inventory_ID', $request->inventory_ID)
+        ->update([
+            'inventory_ID' => $request->inventory_ID,
+            'product_ID' => $request->product_ID,
+            'category_ID' => $request->category_ID,
+            'invt_quantity' => $request->quantity,
+            'status_ID' => $status_ID ?? 1, // Default to In Stock if not low or out of stock
+            'invt_remainingStock' => $request->remainingstock,
+            
+
+      
+        ]);
+        $this->logActivity(
+    'updated',
+    'Updated inventory ID ' . $request->inventory_ID . ' to ' . $request->product_name
+ );
+   return response()->json(['success' => 'Product updated successfully.']);
+
+}
+
+  
+
+public function import_pos_sales(Request $request) 
+{
+    $request->validate([
+        'inventory_file' => 'required|mimes:xlsx,xls,csv'
+    ]);
+
+    try {
+        Excel::import(new POSsaleImport, $request->file('inventory_file'));
+        return back()->with('success', 'Inventory updated successfully!');
+    } catch (\Exception $e) {
+        return back()->with('error', 'Import failed: ' . $e->getMessage());
     }
-  
-     $categories = DB::table('category')->orderBy('category_name', 'ASC')->get();   
-     $totalProducts = DB::table('inventory')->count();   
-     $instockProducts = DB::table('inventory')->where('status_ID', 1)->count(); // In Stock
-     $lowStockProducts = DB::table('inventory')->where('status_ID', 2)->count(); // Low Stock
-     $outOfStock = DB::table('inventory')->where('status_ID', 3)->count(); // Out of Stock   
-
-
-    return view('inventory', compact( 'categories', 'totalProducts', 'lowStockProducts', 'outOfStock', 'instockProducts' ));
-
-
-
 }
 
 public function getProductsByCategory($id) {
