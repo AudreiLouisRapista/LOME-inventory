@@ -33,7 +33,7 @@
 <script src="{{ asset('plugins/datatables-buttons/js/buttons.html5.min.js') }}"></script>
 <script src="{{ asset('plugins/datatables-buttons/js/buttons.print.min.js') }}"></script>
 <script src="{{ asset('plugins/datatables-buttons/js/buttons.colVis.min.js') }}"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ asset('dist/js/adminlte.min.js') }}"></script>
 
 <script>

@@ -19,13 +19,13 @@
                             <h5 class="card-title fs-4 fw-bold m-0">Product List</h5>
 
 
-                            <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                                data-bs-target="#addTeacherModal"
-                                style="float: right; border-radius: 20px; background-color: #4CAF50; border: none; padding: 10px 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
-                                Register Product
+                            <button type="button" class="btn-product" data-bs-toggle="modal"
+                                data-bs-target="#addProductModal">
+                                <i class="bi bi-plus-lg"></i>
+                                Add Item
                             </button>
 
-                            <div class="modal fade" id="addTeacherModal" tabindex="-1"
+                            <div class="modal fade" id="addProductModal" tabindex="-1"
                                 aria-labelledby="addTeacherModalLabel" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered modal-lg">
                                     <div class="modal-content border-0 shadow-lg"
@@ -138,7 +138,8 @@
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody style="text-align: center;">
+                                <tbody style="font-family: 'Inter', sans-serif; text-align: center;">
+
 
                                 </tbody>
                             </table>
@@ -276,6 +277,29 @@
             text-align: center;
             padding: 20px;
             padding: 0.6rem 0.75rem;
+        }
+
+        .btn-product {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 10px 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(76, 175, 80, 0.2);
+            white-space: nowrap;
+            float: right;
+        }
+
+        .btn-product:hover {
+            background-color: #3d8b40;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 12px rgba(76, 175, 80, 0.3);
+            color: white;
         }
     </style>
 

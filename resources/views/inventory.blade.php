@@ -13,21 +13,17 @@
 
 @section('content')
     <div class="row mb-4 g-3" style="font-family: 'Inter', sans-serif;">
-        <div class="col-lg-3 col-6">
-            <div class="dash-stat-card"
-                style="background: white; padding: 20px; border-radius: 20px; border: 1px solid #f0f0f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); height: 155px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="col-lg-3 col-md-4 col-6 col-5-custom">
+            <div class="dash-stat-card">
                 <div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: #64748b; font-size: 14px; font-weight: 500;">Total Products</span>
-
-                    </div>
+                    <span style="color: #64748b; font-size: 14px; font-weight: 500;">Total Products</span>
                 </div>
                 <div>
                     <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                        <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #1e293b;">{{ $totalProducts }}</h3>
+                        <h3 style="font-size: 28px; font-weight: 700; margin: 0; color: #1e293b;">{{ $totalProducts }}</h3>
                         <div
-                            style="background: #f0fdf4; color: #16a34a; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-                            ↗ 0.53%
+                            style="background: #f0fdf4; color: #16a34a; padding: 4px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
+                            ↗ 0.5%
                         </div>
                     </div>
                     <small style="color: #94a3b8; font-size: 11px;">From last week</small>
@@ -35,21 +31,17 @@
             </div>
         </div>
 
-        <div class="col-lg-3 col-6">
-            <div class="dash-stat-card"
-                style="background: white; padding: 20px; border-radius: 20px; border: 1px solid #f0f0f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); height: 155px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="col-lg-3 col-md-4 col-6 col-5-custom">
+            <div class="dash-stat-card">
                 <div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: #64748b; font-size: 14px; font-weight: 500;">Available Stock</span>
-
-                    </div>
+                    <span style="color: #64748b; font-size: 14px; font-weight: 500;">Available Stock</span>
                 </div>
                 <div>
                     <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                        <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #1e293b;">{{ $totalQuantity }}</h3>
+                        <h3 style="font-size: 28px; font-weight: 700; margin: 0; color: #1e293b;">{{ $totalQuantity }}</h3>
                         <div
-                            style="background: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-                            ↘ 1.24%
+                            style="background: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
+                            ↘ 1.2%
                         </div>
                     </div>
                     <small style="color: #94a3b8; font-size: 11px;">From last week</small>
@@ -57,22 +49,18 @@
             </div>
         </div>
 
-        <div class="col-lg-3 col-6">
-            <div class="dash-stat-card"
-                style="background: white; padding: 20px; border-radius: 20px; border: 1px solid #f0f0f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); height: 155px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="col-lg-3 col-md-4 col-6 col-5-custom">
+            <div class="dash-stat-card">
                 <div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: #64748b; font-size: 14px; font-weight: 500;">Low Stock</span>
-
-                    </div>
+                    <span style="color: #64748b; font-size: 14px; font-weight: 500;">Low Stock</span>
                 </div>
                 <div>
                     <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                        <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #1e293b;">{{ $lowStockProducts }}
+                        <h3 style="font-size: 28px; font-weight: 700; margin: 0; color: #1e293b;">{{ $lowStockProducts }}
                         </h3>
                         <div
-                            style="background: #f0fdf4; color: #16a34a; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-                            ↗ 1.52%
+                            style="background: #f0fdf4; color: #16a34a; padding: 4px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
+                            ↗ 1.5%
                         </div>
                     </div>
                     <small style="color: #94a3b8; font-size: 11px;">From last week</small>
@@ -80,21 +68,35 @@
             </div>
         </div>
 
-        <div class="col-lg-3 col-6">
-            <div class="dash-stat-card"
-                style="background: white; padding: 20px; border-radius: 20px; border: 1px solid #f0f0f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); height: 155px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="col-lg-3 col-md-4 col-6 col-5-custom">
+            <div class="dash-stat-card">
                 <div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: #64748b; font-size: 14px; font-weight: 500;">Out of Stock</span>
-
-                    </div>
+                    <span style="color: #64748b; font-size: 14px; font-weight: 500;">Out of Stock</span>
                 </div>
                 <div>
                     <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                        <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #1e293b;">{{ $outOfStock }}</h3>
+                        <h3 style="font-size: 28px; font-weight: 700; margin: 0; color: #1e293b;">{{ $outOfStock }}</h3>
                         <div
-                            style="background: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-                            ↘ 1.55%
+                            style="background: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
+                            ↘ 1.5%
+                        </div>
+                    </div>
+                    <small style="color: #94a3b8; font-size: 11px;">From last week</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-4 col-6 col-5-custom">
+            <div class="dash-stat-card">
+                <div>
+                    <span style="color: #64748b; font-size: 14px; font-weight: 500;">Total Sold</span>
+                </div>
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                        <h3 style="font-size: 28px; font-weight: 700; margin: 0; color: #1e293b;">{{ $totalSold }}</h3>
+                        <div
+                            style="background: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
+                            ↘ 1.5%
                         </div>
                     </div>
                     <small style="color: #94a3b8; font-size: 11px;">From last week</small>
@@ -109,76 +111,123 @@
             <div class="row">
                 <div class="col-12">
                     <div class="card" style=" display: block; background:#fff; padding:20px">
-                        <div class="card-header" style="background:#fff;">
+                        <div class="d-flex justify-content-between align-items-center bg-white p-3 rounded shadow-sm mb-4">
                             <h5 class="card-title fs-4 fw-bold m-0">Inventory List</h5>
                             <!-- Button trigger modal -->
 
 
-                            <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                                data-bs-target="#exampleModal"
-                                style="float: right; border-radius: 20px; background-color: #4CAF50; border: none; padding: 10px 20px; font-size: 16px; cursor: pointer; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); transition: background-color 0.3s ease;">
-                                Inventory
+
+
+
+                            <div class="import-container">
+                                <form action="{{ route('import_pos_sales') }}" method="POST" enctype="multipart/form-data"
+                                    class="m-0">
+                                    @csrf
+                                    <div class="input-group pos-input-group" style="max-width: 330px;">
+                                        <span class="input-group-text bg-light border-0 px-3">
+                                            <i class="bi bi-receipt text-success"></i>
+                                        </span>
+                                        <input type="file" name="inventory_file" class="form-control border-0 bg-light"
+                                            id="inputGroupFile04" required>
+                                        <button class="btn btn-success px-4" type="submit">
+                                            <i class="bi bi-cloud-arrow-up-fill me-1"></i> POS SALE
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                            <button type="button" class="btn-inventory" data-bs-toggle="modal"
+                                data-bs-target="#exampleModal">
+                                <i class="bi bi-plus-lg"></i>
+                                Add Item
                             </button>
-                            <form action="{{ route('import_pos_sales') }}" method="POST" enctype="multipart/form-data"
-                                class="d-flex align-items-right" style="float: right; margin-right: 10px;">
-                                @csrf
-                                <input type="file" name="inventory_file" class="form-control me-2" required>
-                                <button type="submit" class="btn btn-success">
-                                    <i class="bi bi-file-earmark-excel"></i> Import
-                                </button>
-                            </form>
                             <!-- Modal -->
                             <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="addScheduleModalLabel"
                                 aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered modal-lg">
-                                    <div class="modal-content" style="border-radius: 20px;">
-                                        <div class="modal-header bg-primary">
-                                            <h5 class="modal-title" id="exampleModal">Add Inventory</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    <div class="modal-content border-0"
+                                        style="border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+
+                                        <div class="modal-header bg-dark text-white py-3">
+                                            <h5 class="modal-title fw-bold" id="addTeacherModalLabel">
+                                                <i class="fas fa-box-open me-2"></i> Register New Product
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                                                 aria-label="Close"></button>
                                         </div>
-                                        <div class="modal-body">
+
+
+                                        <div class="modal-body px-4 pb-4">
                                             @include('layout.partials.alerts')
 
                                             <form method="POST" action="{{ route('save_inventory') }}"
                                                 enctype="multipart/form-data">
                                                 @csrf
 
-                                                <h4 class="mb-4 text-center">Inventory Information</h4>
+                                                <div class="mb-4">
+                                                    <label class="text-uppercase text-muted fw-bold mb-3"
+                                                        style="font-size: 11px; letter-spacing: 1px;">Basic
+                                                        Information</label>
+                                                    <hr class="mt-0 mb-4" style="opacity: 0.1;">
 
-                                                <div class="form-group">
-                                                    <label>Category</label>
-                                                    <select id="category_ID" name="category_ID" class="form-control"
-                                                        required>
-                                                        <option value="">-- Select Category --</option>
-                                                        @foreach ($categories as $cat)
-                                                            <option value="{{ $cat->category_ID }}">
-                                                                {{ $cat->category_name }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
+                                                    <div class="row g-3">
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-semibold"
+                                                                style="color: #475569;">Category</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text bg-light border-end-0"
+                                                                    style="border-radius: 10px 0 0 10px;">
+                                                                    <i class="bi bi-tag text-muted"></i>
+                                                                </span>
+                                                                <select id="category_ID" name="category_ID"
+                                                                    class="form-select bg-light border-start-0"
+                                                                    style="border-radius: 0 10px 10px 0; height: 45px;"
+                                                                    required>
+                                                                    <option value="">Select Category</option>
+                                                                    @foreach ($categories as $cat)
+                                                                        <option value="{{ $cat->category_ID }}">
+                                                                            {{ $cat->category_name }}</option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-semibold"
+                                                                style="color: #475569;">Product Name</label>
+                                                            <input type="text" id="product_ID" name="product_ID"
+                                                                class="form-control bg-light"
+                                                                style="border-radius: 10px; height: 45px;" required>
+
+                                                            </input>
+                                                        </div>
+                                                    </div>
                                                 </div>
 
-                                                <div class="form-group">
-                                                    <label for="product_ID">Product</label>
-                                                    <select id="product_ID" name="product_ID" class="form-control" required>
-                                                        <option value="">-- Select Product --</option>
-                                                    </select>
+                                                <div class="mb-4">
+                                                    <label class="text-uppercase text-muted fw-bold mb-3"
+                                                        style="font-size: 11px; letter-spacing: 1px;">Stock
+                                                        Management</label>
+                                                    <hr class="mt-0 mb-4" style="opacity: 0.1;">
+
+                                                    <div class="row g-3">
+                                                        <div class="col-12">
+                                                            <label class="form-label fw-semibold"
+                                                                style="color: #475569;">Stock Quantity / Unit
+                                                                Amount</label>
+                                                            <input type="number" name="quantity"
+                                                                class="form-control bg-light" placeholder="0"
+                                                                style="border-radius: 10px; height: 45px;"
+                                                                value="{{ old('quantity') }}" required>
+                                                        </div>
+                                                    </div>
                                                 </div>
 
-
-
-
-                                                <div class="form-group">
-                                                    <label>Quantity</label>
-                                                    <input type="number" name="quantity" class="form-control"
-                                                        value="{{ old('quantity') }}" required>
-                                                </div>
-
-
-
-                                                <div class="text-center mt-4">
-                                                    <button type="submit" class="btn btn-primary w-100">Register</button>
+                                                <div class="d-flex justify-content-end gap-2 mt-5">
+                                                    <button type="button" class="btn btn-light px-4 fw-semibold"
+                                                        data-bs-dismiss="modal"
+                                                        style="border-radius: 10px; color: #64748b;">Cancel</button>
+                                                    <button type="submit" class="btn btn-primary px-5 fw-semibold"
+                                                        style="border-radius: 10px; background: #007bff; border: none;">Save
+                                                        Product</button>
                                                 </div>
                                             </form>
                                         </div>
@@ -189,7 +238,7 @@
 
 
                         <!-- /.card-header -->
-                        <div class="card-body" style="text-align: center;">
+                        <div class="table-container">
                             <table id="example2" class="table table-bordered table-hover" style="width:100%">
                                 <thead>
                                     <tr>
@@ -207,7 +256,7 @@
                                         <!-- <th>ACtion</th> -->
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody style="font-family: 'Inter', sans-serif; text-align: center;">
 
                                 </tbody>
                             </table>
@@ -222,7 +271,8 @@
                                         <h5 class="modal-title">Update Product</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
-                                    <form id="updateProductForm" action="{{ route('update_inventory') }}" method="POST">
+                                    <form id="updateProductForm" action="{{ route('update_inventory') }}"
+                                        method="POST">
                                         @csrf
                                         <div class="modal-body">
                                             <input type="hidden" name="inventory_ID" id="edit_id">
@@ -266,7 +316,31 @@
                         </div>
                         <!-- /.card-body -->
                     </div>
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-0 shadow-sm mb-4" style="border-radius: 15px;">
+                                <div
+                                    class="card-header bg-white border-0 pt-3 d-flex justify-content-between align-items-center">
+                                    <h5 class="fw-bold mb-0">Product Performance</h5>
 
+                                    <select id="chartCategoryFilter" class="form-select form-select-sm w-auto">
+                                        <option value="all">All Categories</option>
+                                        @foreach ($categories as $cat)
+                                            <option value="{{ $cat->category_ID }}"
+                                                {{ isset($selectedCategory) && $selectedCategory == $cat->category_ID ? 'selected' : '' }}>
+                                                {{ $cat->category_name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="card-body">
+                                    <div style="height: 300px;">
+                                        <canvas id="inventoryStatusChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <!-- /.col -->
                 </div>
                 <!-- /.row -->
@@ -348,8 +422,8 @@
                         searchable: false
                     },
                 ],
-                // "dom": '<"d-flex align-items-end justify-content-between mb-4"Bf>rtip',
-                // "buttons": ["excel", "pdf", "print"]
+                "dom": '<"d-flex align-items-end justify-content-between mb-4"Bf>rtip',
+                "buttons": ["excel", "pdf", "print"]
 
 
             });
@@ -436,63 +510,239 @@
                 table.draw();
             }
         });
+
+        // This prevents double-clicking and shows the user something is happening
+        $('form').on('submit', function() {
+            $(this).find('button').prop('disabled', true).html(
+                '<span class="spinner-border spinner-border-sm"></span> Importing...');
+        });
+
+
+
+
+        var inventoryChart; // Global variable
+
+        $(document).ready(function() {
+            // 1. Initialize DataTable
+            var table = $('#inventoryTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: "{{ route('view_inventory') }}",
+                    data: function(d) {
+                        d.category_id = $('#chartCategoryFilter').val(); // Sync table with filter
+                    }
+                },
+
+            });
+
+            // 2. Initialize Chart (Empty at start)
+            var ctx = document.getElementById('inventoryStatusChart').getContext('2d');
+            inventoryChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // 3. The "Refresh" function
+            function refreshChartOnly() {
+                $.ajax({
+                    url: "{{ route('view_inventory') }}",
+                    data: {
+                        get_chart: true,
+                        category_id: $('#chartCategoryFilter').val()
+                    },
+                    success: function(data) {
+                        inventoryChart.data.labels = data.map(item => item.name);
+                        inventoryChart.data.datasets = [{
+                                label: 'Sold',
+                                data: data.map(item => item.sold),
+                                backgroundColor: '#f87171'
+                            },
+                            {
+                                label: 'Remaining',
+                                data: data.map(item => item.remaining),
+                                backgroundColor: '#4CAF50'
+                            }
+                        ];
+                        inventoryChart.update(); // This is like table.draw() but for Chart.js
+                    }
+                });
+            }
+
+            // 4. Trigger both when filter changes
+            $('#chartCategoryFilter').on('change', function() {
+                table.draw(); // Refresh Table
+                refreshChartOnly(); // Refresh Chart
+            });
+
+            // Initial load
+            refreshChartOnly();
+        });
     </script>
 
     <style>
-        .custom-badge {
-            padding: 5px 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            border-radius: 5px;
+        .dataTables_filter input {
+            width: 250px !important;
+            height: 38px !important;
+            border: 1.5px solid #e2e8f0 !important;
+            border-radius: 12px !important;
+            /* Modern rounded look */
+            background-color: #f8fafc !important;
+            padding-left: 35px !important;
+            /* Space for an icon */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' class='bi bi-search' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: 12px center;
+            transition: all 0.2s ease;
+        }
+
+        .dataTables_filter input:focus {
+            border-color: #3b82f6 !important;
+            background-color: #ffffff !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+            outline: none;
+        }
+
+        .status-in-stock,
+        .status-low-stock,
+        .status-out-of-stock {
+            display: inline-block;
+            white-space: nowrap;
+            min-width: 100px;
+            text-align: center;
+            padding: 5px 10px;
+            font-weight: 500;
+            border-radius: 50px;
+
         }
 
         .status-in-stock {
             background-color: #a5ffb6;
             color: #234e52;
             border: 1px solid #02c702;
-            padding: 5px 12px;
             border-radius: 55px;
+            font-size: 0.9rem;
+
         }
 
         .status-low-stock {
             background-color: #ffedca;
             color: #a14022;
             border: 1px solid #ffbc3f;
-            padding: 5px 12px;
             border-radius: 55px;
+            font-size: 0.9rem;
         }
 
         .status-out-of-stock {
             background-color: #ffdada;
             color: #a41919;
             border: 1px solid #ff1515;
-            padding: 3px 10px;
             border-radius: 55px;
+            font-size: 0.9rem;
         }
 
-        /* .fileImport {
-                                                                                                                                                                                                                                                                                                                                                                            margin-top: 10px;
-                                                                                                                                                                                                                                                                                                                                                                            display: flex;
-                                                                                                                                                                                                                                                                                                                                                                            flex-direction: column;
-                                                                                                                                                                                                                                                                                                                                                                            align-items: flex-end;
-                                                                                                                                                                                                                                                                                                                                                                        } */
+        /* Add this to your <style> */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            /* Enables horizontal scroll */
+            -webkit-overflow-scrolling: touch;
+            /* Smooth scrolling on iOS */
+            margin-bottom: 1rem;
+        }
 
-        /* input[type="file"]::file-selector-button {
-                                                                                                                                                                                                                                                                                                                                                                                background-color: #4CAF50;
-                                                                                                                                                                                                                                                                                                                                                                                color: white;
-                                                                                                                                                                                                                                                                                                                                                                                border-radius: 20px;
-                                                                                                                                                                                                                                                                                                                                                                                border: none;
-                                                                                                                                                                                                                                                                                                                                                                                padding: 10px 20px;
-                                                                                                                                                                                                                                                                                                                                                                                box-shadow: #1e293b;
-                                                                                                                                                                                                                                                                                                                                                                                cursor: pointer;
-                                                                                                                                                                                                                                                                                                                                                                                transition: background-color 0.3s ease;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+            /* Forces the table to maintain width so it scrolls instead of squishing */
+        }
 
-                                                                                                                                                                                                                                                                                                                                                                            }
+        td {
+            align-items: center;
+        }
 
-                                                                                                                                                                                                                                                                                                                                                                            input[type="file"]::file-selector-button:hover {
-                                                                                                                                                                                                                                                                                                                                                                                background-color: #45a049;
-                                                                                                                                                                                                                                                                                                                                                                            } */
+        /* Custom Styling to hide the default text but keep functionality */
+        .custom-file-upload {
+            position: relative;
+            display: center;
+            width: 100%;
+        }
+
+        /* Professional Import Styling */
+        .import-wrapper {
+            flex-grow: 1;
+            max-width: 500px;
+        }
+
+        .pos-input-group {
+            border-radius: 50px !important;
+            border: 1px solid #e0e0e0;
+            background: #fdfdfd;
+            overflow: hidden;
+
+        }
+
+        .pos-input-group input[type=file]::file-selector-button {
+            display: none;
+            /* Hides annoying browser button */
+        }
+
+        /* Inventory Button Styling */
+        .btn-inventory {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 10px 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(76, 175, 80, 0.2);
+            white-space: nowrap;
+        }
+
+        .btn-inventory:hover {
+            background-color: #3d8b40;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 12px rgba(76, 175, 80, 0.3);
+            color: white;
+        }
+
+        /* Custom 5-column grid for the summary cards */
+        @media (min-width: 992px) {
+            .col-5-custom {
+                flex: 0 0 auto;
+                width: 20%;
+                /* 100% divided by 5 cards */
+            }
+        }
+
+        .dash-stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid #f0f0f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            height: 155px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s ease;
+        }
+
+        .dash-stat-card:hover {
+            transform: translateY(-5px);
+        }
     </style>
 
 @endsection

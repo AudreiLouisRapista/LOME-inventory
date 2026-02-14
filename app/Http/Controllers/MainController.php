@@ -860,53 +860,97 @@ public function print_teacher_load($id, $year)
         // VIEW INVENTORY
 
 public function view_inventory(Request $request) {
-        if ($request->ajax()) {
-            $data = DB::table('inventory')
-                ->join('products', 'inventory.product_ID', '=', 'products.product_ID')
-                ->join('category', 'products.category_ID', '=', 'category.category_ID')
-                // ->leftJoin('status', 'inventory.status_ID', '=', 'status.status_id') 
-                ->select([
-                    'inventory.inventory_ID',
-                    'products.product_name as product_name', 
-                    'category.category_name as name',
-                    'products.product_price',
-                    'products.product_cost',
-                    'inventory.invt_quantity',
-                    'inventory.invt_remainingStock',
-                    'inventory.invt_totalSold',
-                    'inventory.status_ID',
-                    'inventory.product_ID',
-                    'inventory.category_ID'
-                ]);
+    // 1. Handle DataTable AJAX (Refresh only the table)
+    if ($request->ajax() && !$request->has('get_chart')) {
+        $data = DB::table('inventory')
+            ->join('products', 'inventory.product_ID', '=', 'products.product_ID')
+            ->join('category', 'products.category_ID', '=', 'category.category_ID')
+            ->select([
+                'inventory.inventory_ID',
+                'products.product_name as product_name', 
+                'category.category_name as name',
+                'products.product_price',
+                'products.product_cost',
+                'inventory.invt_quantity',
+                'inventory.invt_remainingStock',
+                'inventory.invt_totalSold',
+                'inventory.status_ID',
+                'inventory.product_ID',
+                'inventory.category_ID'
+            ]);
 
-            return DataTables::of($data)
-                ->addColumn('action', function($row){
-                    return '<button class="btn btn-sm btn-outline-success edit-btn" 
-                            data-id="'.$row->inventory_ID.'" 
-                            data-product-id="'.$row->product_ID.'"
-                            data-product-name="'.$row->product_name.'"
-                            data-category="'.$row->name.'"
-                            data-category-ID="'.$row->category_ID.'"
-                            data-cost="'.$row->product_cost.'"
-                            data-price="'.$row->product_price.'"
-                            data-quantity="'.$row->invt_quantity.'"
-                            data-remainingstock="'.$row->invt_remainingStock. '">
-                            <i class="bi bi-pen"></i></button>';
-                })
-                ->rawColumns(['action'])
-                ->make(true);
+        // Filter the table if a category is selected in the dropdown
+        if ($request->has('category_id') && $request->category_id != 'all') {
+            $data->where('products.category_ID', $request->category_id);
         }
-            
-        
 
-        $categories = DB::table('category')->orderBy('category_name', 'ASC')->get();     
-        $totalProducts = DB::table('inventory')->count();  
-        $totalQuantity = DB::table('inventory')->sum('invt_quantity');  
-        $instockProducts = DB::table('inventory')->where('status_ID', 1)->count();
-        $lowStockProducts = DB::table('inventory')->where('status_ID', 2)->count();
-        $outOfStock = DB::table('inventory')->where('status_ID', 3)->count();    
+        return DataTables::of($data)
+            ->addColumn('action', function($row){
+                return '<button class="btn btn-sm btn-outline-success edit-btn" 
+                        data-id="'.$row->inventory_ID.'" 
+                        data-product-id="'.$row->product_ID.'"
+                        data-product-name="'.$row->product_name.'"
+                        data-category="'.$row->name.'"
+                        data-category-ID="'.$row->category_ID.'"
+                        data-cost="'.$row->product_cost.'"
+                        data-price="'.$row->product_price.'"
+                        data-quantity="'.$row->invt_quantity.'"
+                        data-remainingstock="'.$row->invt_remainingStock. '">
+                        <i class="bi bi-pen"></i></button>';
+            })
+            ->rawColumns(['action'])
+            ->make(true);
+    }
 
-        return view('inventory', compact('categories', 'totalProducts', 'instockProducts', 'lowStockProducts', 'outOfStock', 'totalQuantity'));
+    // 2. Handle Chart AJAX ONLY (Refresh only the chart)
+    if ($request->ajax() && $request->has('get_chart')) {
+        $query = DB::table('inventory')
+            ->join('products', 'inventory.product_ID', '=', 'products.product_ID')
+            ->select('products.product_name as name', 'inventory.invt_totalSold as sold', 'inventory.invt_remainingStock as remaining')
+            ->where('inventory.invt_totalSold', '>', 0);
+
+        if ($request->category_id && $request->category_id != 'all') {
+            $query->where('products.category_ID', $request->category_id);
+        }
+
+        return response()->json($query->orderBy('sold', 'desc')->limit(12)->get());
+    }
+
+    // 3. NORMAL PAGE LOAD (Initial data)
+    $categories = DB::table('category')->orderBy('category_name', 'ASC')->get(); 
+    $selectedCategory = $request->query('category_id', 'all');
+
+    // Build the initial Chart Data
+    $chartQuery = DB::table('inventory')
+        ->join('products', 'inventory.product_ID', '=', 'products.product_ID')
+        ->select('products.product_name as name', 'inventory.invt_totalSold as sold', 'inventory.invt_remainingStock as remaining')
+        ->where('inventory.invt_totalSold', '>', 0);
+
+    if ($selectedCategory != 'all') {
+        $chartQuery->where('products.category_ID', $selectedCategory);
+    }
+
+    $chartData = $chartQuery->orderBy('sold', 'desc')->limit(12)->get();
+
+    // Summary Stats for Cards
+    $totalProducts = DB::table('inventory')->count();  
+    $totalQuantity = DB::table('inventory')->sum('invt_quantity');  
+    $totalSold = DB::table('inventory')->sum('invt_totalSold');
+    $instockProducts = DB::table('inventory')->where('status_ID', 1)->count();
+    $lowStockProducts = DB::table('inventory')->where('status_ID', 2)->count();
+    $outOfStock = DB::table('inventory')->where('status_ID', 3)->count();    
+
+    return view('inventory', compact(
+        'categories', 
+        'totalProducts', 
+        'instockProducts', 
+        'lowStockProducts', 
+        'outOfStock', 
+        'totalQuantity', 
+        'chartData', 
+        'selectedCategory',
+        'totalSold'
+    ));
 }
   
     
@@ -963,8 +1007,7 @@ public function getProductsByCategory($id) {
         return response()->json($products);
 }
 
-
-
+ 
 
 
 

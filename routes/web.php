@@ -69,6 +69,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     Route::post('/import-pos-sales', [MainController::class, 'import_pos_sales'])->name('import_pos_sales');
 
    Route::get('/get-products-by-category/{id}', [MainController::class, 'getProductsByCategory'])->name('get-products-by-category');
+ 
 
    // Add {id} to the URL
     Route::post('/admin-profile/{id}', [MainController::class, 'adminProfile'])->name('adminProfile');
