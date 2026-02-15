@@ -103,12 +103,6 @@
                                                 </div>
 
 
-                                                <div class="stockQuantity">
-                                                    <label class="form-label fw-semibold">Stock Quantity / Unit
-                                                        Amount</label>
-                                                    <input type="number" name="product_unit_amount" class="form-control "
-                                                        placeholder="0" value="{{ old('product_unit_amount') }}" required>
-                                                </div>
 
 
                                                 <div class="d-flex justify-content-end gap-2 mt-4">
@@ -126,8 +120,7 @@
                         </div>
 
                         <div class="card-body">
-                            <table id="example2" class="table table-bordered table-hover display block"
-                                style="width:100%">
+                            <table id="example2" class="table table-bordered table-hover display block" style="width:100%">
                                 <thead style="text-align: center;">
                                     <tr>
                                         <th>Product ID</th>

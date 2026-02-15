@@ -40,8 +40,15 @@
         font-size: 14px;
         font-weight: 600;
         text-decoration: none;
-        box-shadow: 0 4px 12px rgba(255, 142, 151, 0.3);
+        /* box-shadow: 0 4px 12px rgba(255, 142, 151, 0.3); */
         transition: 0.3s ease;
+    }
+
+    .logout-btn-styled:hover {
+        background: #ff4757;
+        color: #fff !important;
+        border-color: #ff4757;
+        box-shadow: 0 6px 16px rgba(255, 142, 151, 0.5);
     }
 
     /* --- Collapsed State Fixes --- */

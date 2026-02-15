@@ -15,16 +15,16 @@
     </script>
 @endif
 
-@if (session('error'))
+@if (session('duplicate'))
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             Swal.fire({
                 icon: "warning",
-                title: "OPPPSSSS!",
-                text: "{{ session('error') }}",
+                title: "Opsss!",
+                text: "{{ session('duplicate') }}",
                 confirmButtonColor: "#4e73df",
-                // timer: 5000,
-                // timerProgressBar: true
+                timer: 5000,
+                timerProgressBar: true
             });
         });
     </script>

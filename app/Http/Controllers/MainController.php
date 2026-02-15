@@ -555,7 +555,7 @@ public function view_products(Request $request) {
 
 public function save_product(Request $request)
 {
-//   dd($request->all(), $request->file());
+ //   dd($request->all(), $request->file());
     // 1. Capture Input Data
     $product_name = $request->input('product_name');
     $category = $request->input('category_ID');
@@ -571,7 +571,7 @@ public function save_product(Request $request)
     // 2. Check if Product already exists
     $check_exist = DB::table('products')->where('product_name', $product_name)->exists();
     if ($check_exist) {
-        return redirect()->back()->with('errorMessage', 'Product already exists');
+        return back()->with('duplicate', 'Product already exists.');
     }
 
   
@@ -626,34 +626,45 @@ public function save_inventory(Request $request){
 
     $product_ID = $request->product_ID; 
     $category_ID = $request->category_ID;
-    $quantity = $request->quantity;
+    $quantity = $request->invt_quantity;
+   
   
 
     // Step 2: HIGHEST PRIORITY - Check for an EXACT duplicate schedule (Same time, section, day)
     $duplicate = DB::table('inventory')
         ->where('category_ID', $category_ID)
-          ->where('product_ID', $product_ID)
-        ->where('quantity', $quantity)
+        ->where('product_ID', $product_ID)
+        ->where('invt_quantity', $quantity)
         ->exists();
     if ($duplicate) {
         // NEED EDIT THE NAME 
-        return back()->with('error', 'Conflict! Product with the same category and quantity already exists.');
+        return back()->with('error', 'Conflict! Product with the same category already exists.');
     }
 
-    // 3. Insert the Schedule
-    DB::table('inventory')->insert([
-        'product_ID'    => $product_ID,
-        'category_ID'    => $category_ID,
-        'status_ID'      => 1, // Assuming new inventory is always "In Stock"
-        'quantity'      => $quantity,
-       
-    ]);
-
-    if($quantity < 5){
-        DB::table('inventory')
-        ->where('product_ID', $product_ID)
-        ->update(['status_ID' => $quantity == 0 ? 3 : 2]); // Set to Out of Stock if quantity is 0, otherwise Low Stock
+    $status_ID = 1; // Assuming new inventory is always "In Stock"
+    if($quantity <= 5){
+        $status_ID = 2; // "Low Stock"
+    } elseif($quantity == 0){
+        $status_ID = 3; // "Out of Stock"
+    } elseif($quantity > 5){
+        $status_ID = 1; // "In Stock"
     }
+
+
+    
+    DB::table('inventory')
+        ->updateOrInsert(
+            [
+                'product_ID' => $product_ID,
+                'category_ID' => $category_ID
+            ],
+            [ 
+                'status_ID'      => $status_ID,
+                'invt_remainingStock'  => $quantity,
+        ]);
+  
+
+  
 
   
     $products = DB::table('products')->where('product_ID', $product_ID)->first();
@@ -664,7 +675,7 @@ public function save_inventory(Request $request){
         'added',
         'Added inventory for product ID ' . $product_ID . ', category name ' . $categories->category_name
     );
-$totalProducts = DB::table('inventory')->count();
+  
     session()->flash('save', 'Inventory saved successfully!');
     return redirect()->back();
 }
@@ -878,12 +889,6 @@ public function view_inventory(Request $request) {
                 'inventory.product_ID',
                 'inventory.category_ID'
             ]);
-
-        // Filter the table if a category is selected in the dropdown
-        if ($request->has('category_id') && $request->category_id != 'all') {
-            $data->where('products.category_ID', $request->category_id);
-        }
-
         return DataTables::of($data)
             ->addColumn('action', function($row){
                 return '<button class="btn btn-sm btn-outline-success edit-btn" 
@@ -902,14 +907,14 @@ public function view_inventory(Request $request) {
             ->make(true);
     }
 
-    // 2. Handle Chart AJAX ONLY (Refresh only the chart)
+    // Handle Chart AJAX ONLY (Refresh only the chart)
     if ($request->ajax() && $request->has('get_chart')) {
         $query = DB::table('inventory')
             ->join('products', 'inventory.product_ID', '=', 'products.product_ID')
             ->select('products.product_name as name', 'inventory.invt_totalSold as sold', 'inventory.invt_remainingStock as remaining')
             ->where('inventory.invt_totalSold', '>', 0);
 
-        if ($request->category_id && $request->category_id != 'all') {
+        if ($request->category_id != 'all') {
             $query->where('products.category_ID', $request->category_id);
         }
 
@@ -920,17 +925,7 @@ public function view_inventory(Request $request) {
     $categories = DB::table('category')->orderBy('category_name', 'ASC')->get(); 
     $selectedCategory = $request->query('category_id', 'all');
 
-    // Build the initial Chart Data
-    $chartQuery = DB::table('inventory')
-        ->join('products', 'inventory.product_ID', '=', 'products.product_ID')
-        ->select('products.product_name as name', 'inventory.invt_totalSold as sold', 'inventory.invt_remainingStock as remaining')
-        ->where('inventory.invt_totalSold', '>', 0);
-
-    if ($selectedCategory != 'all') {
-        $chartQuery->where('products.category_ID', $selectedCategory);
-    }
-
-    $chartData = $chartQuery->orderBy('sold', 'desc')->limit(12)->get();
+ 
 
     // Summary Stats for Cards
     $totalProducts = DB::table('inventory')->count();  
@@ -947,7 +942,7 @@ public function view_inventory(Request $request) {
         'lowStockProducts', 
         'outOfStock', 
         'totalQuantity', 
-        'chartData', 
+        // 'chartData', 
         'selectedCategory',
         'totalSold'
     ));
@@ -956,10 +951,10 @@ public function view_inventory(Request $request) {
     
 public function update_inventory(Request $request) {
 
-$quantity = $request->quantity;
-if($quantity < 5){
-    $status_ID = ($quantity == 0) ? 3 : 2; //
-}
+    $quantity = $request->quantity;
+    if($quantity < 5){
+        $status_ID = ($quantity == 0) ? 3 : 2; //
+    }
 
     DB::table('inventory')
         ->where('inventory_ID', $request->inventory_ID)
@@ -1001,8 +996,18 @@ public function import_pos_sales(Request $request)
 public function getProductsByCategory($id) {
 
         $products = DB::table('products')
-            ->where('category_ID', $id)
-            ->get(['product_ID', 'product_name']);
+        ->leftJoin('inventory', 'products.product_ID', '=', 'inventory.product_ID')
+            ->where('products.category_ID', $id)
+            ->select([
+                'products.product_ID', 
+                'products.product_name', 
+                'products.product_price',
+                'products.product_cost',
+                DB::raw('IFNULL(inventory.invt_quantity, 0) as current_stock'),
+            ])
+            
+            ->get();
+
             
         return response()->json($products);
 }

@@ -129,7 +129,7 @@
                                         </span>
                                         <input type="file" name="inventory_file" class="form-control border-0 bg-light"
                                             id="inputGroupFile04" required>
-                                        <button class="btn btn-success px-4" type="submit">
+                                        <button class="btn btn-success px-4" id="importBtn" type="submit">
                                             <i class="bi bi-cloud-arrow-up-fill me-1"></i> POS SALE
                                         </button>
                                     </div>
@@ -138,7 +138,7 @@
                             <button type="button" class="btn-inventory" data-bs-toggle="modal"
                                 data-bs-target="#exampleModal">
                                 <i class="bi bi-plus-lg"></i>
-                                Add Item
+                                Update Inventory
                             </button>
                             <!-- Modal -->
                             <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="addScheduleModalLabel"
@@ -149,7 +149,7 @@
 
                                         <div class="modal-header bg-dark text-white py-3">
                                             <h5 class="modal-title fw-bold" id="addTeacherModalLabel">
-                                                <i class="fas fa-box-open me-2"></i> Register New Product
+                                                <i class="fas fa-box-open me-2"></i> Inventory
                                             </h5>
                                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                                                 aria-label="Close"></button>
@@ -192,12 +192,20 @@
                                                         </div>
                                                         <div class="col-md-6">
                                                             <label class="form-label fw-semibold"
-                                                                style="color: #475569;">Product Name</label>
-                                                            <input type="text" id="product_ID" name="product_ID"
-                                                                class="form-control bg-light"
-                                                                style="border-radius: 10px; height: 45px;" required>
+                                                                style="color: #475569;">Product</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text bg-light border-end-0"
+                                                                    style="border-radius: 10px 0 0 10px;">
+                                                                    <i class="bi bi-tag text-muted"></i>
+                                                                </span>
+                                                                <select id="product_ID" name="product_ID"
+                                                                    class="form-select bg-light border-start-0"
+                                                                    style="border-radius: 0 10px 10px 0; height: 45px;"
+                                                                    required>
+                                                                    <option value="">Select Product</option>
 
-                                                            </input>
+                                                                </select>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -209,16 +217,37 @@
                                                     <hr class="mt-0 mb-4" style="opacity: 0.1;">
 
                                                     <div class="row g-3">
-                                                        <div class="col-12">
+
+                                                        <div class="col-md-4">
+                                                            <label class="form-label fw-semibold">Cost Price</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text">$</span>
+                                                                <input id="product_cost" type="number"
+                                                                    name="product_cost" class="form-control"
+                                                                    step="0.01" placeholder="0.00" value=""
+                                                                    required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label class="form-label fw-semibold">Selling Price</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text">$</span>
+                                                                <input id="product_price" type="number"
+                                                                    name="product_price" class="form-control"
+                                                                    step="0.01" placeholder="0.00" value=""
+                                                                    required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
                                                             <label class="form-label fw-semibold"
-                                                                style="color: #475569;">Stock Quantity / Unit
-                                                                Amount</label>
-                                                            <input type="number" name="quantity"
-                                                                class="form-control bg-light" placeholder="0"
-                                                                style="border-radius: 10px; height: 45px;"
-                                                                value="{{ old('quantity') }}" required>
+                                                                style="color: #475569;">Quantity</label>
+                                                            <input id="product_quantity" type="number"
+                                                                name="product_quantity" class="form-control bg-light"
+                                                                placeholder="0" style="border-radius: 10px; height: 45px;"
+                                                                value="" required>
                                                         </div>
                                                     </div>
+
                                                 </div>
 
                                                 <div class="d-flex justify-content-end gap-2 mt-5">
@@ -253,6 +282,7 @@
                                         <th>Status</th>
                                         <th>Action</th>
 
+
                                         <!-- <th>ACtion</th> -->
                                     </tr>
                                 </thead>
@@ -271,8 +301,7 @@
                                         <h5 class="modal-title">Update Product</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
-                                    <form id="updateProductForm" action="{{ route('update_inventory') }}"
-                                        method="POST">
+                                    <form id="updateProductForm" action="{{ route('update_inventory') }}" method="POST">
                                         @csrf
                                         <div class="modal-body">
                                             <input type="hidden" name="inventory_ID" id="edit_id">
@@ -321,7 +350,7 @@
                             <div class="card border-0 shadow-sm mb-4" style="border-radius: 15px;">
                                 <div
                                     class="card-header bg-white border-0 pt-3 d-flex justify-content-between align-items-center">
-                                    <h5 class="fw-bold mb-0">Product Performance</h5>
+                                    <h5 class="fw-bold mb-0 text-black">Product Performance</h5>
 
                                     <select id="chartCategoryFilter" class="form-select form-select-sm w-auto">
                                         <option value="all">All Categories</option>
@@ -472,48 +501,69 @@
             });
         });
 
-        // 2. Handle Category Change
-        $(document).on('change', '#category_ID', function() {
-            var categoryId = $(this).val();
-            var productSelect = $('#product_ID');
+        $(document).ready(function() {
+            $(document).on('change', '#category_ID', function() {
+                var categoryId = $(this).val();
+                var productSelect = $('#product_ID');
 
-            productSelect.empty().append('<option value="">-- Loading Products... --</option>');
+                console.log("Category changed to: " + categoryId); // DEBUG 1
 
-            if (categoryId) {
-                $.ajax({
-                    // Ensure this route exists in web.php
-                    url: "/admin/get-products-by-category/" + categoryId, // USED FOR GET METHOD
-                    type: 'GET',
-                    dataType: 'json',
+                // Clear everything first
+                productSelect.empty().append('<option value="">-- Loading Products... --</option>');
+                $('#product_cost, #product_price, #product_quantity').val('');
 
-                    success: function(data) {
-                        console.log("Products loaded:", data); // Debugging line
-                        productSelect.empty().append(
-                            '<option value="">-- Select Product --</option>');
-                        $.each(data, function(key, value) {
-                            // CHECK: If your DB uses 'product_id' lowercase, change this!
-                            productSelect.append('<option value="' + value
-                                .product_ID + '">' + value.product_name +
-                                '</option>');
-                        });
-                        table.draw(); // Refresh the background table
-                    },
-                    error: function(xhr) {
-                        // This will print the actual PHP error in your F12 Console
-                        console.error("The Server says: " + xhr.responseText);
-                        productSelect.empty().append(
-                            '<option value="">Error loading products</option>');
-                    }
-                });
-            } else {
-                productSelect.empty().append('<option value="">-- Select Product --</option>');
-                table.draw();
-            }
+                if (categoryId) {
+                    $.ajax({
+                        url: "/admin/get-products-by-category/" + categoryId,
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function(data) {
+                            console.log("Server returned data:", data); // DEBUG 2
+
+                            productSelect.empty().append(
+                                '<option value=""> Select Product-</option>');
+
+                            if (data.length === 0) {
+                                productSelect.append(
+                                    '<option value="">No products found</option>');
+                                return;
+                            }
+
+                            $.each(data, function(key, value) {
+                                productSelect.append('<option value="' + value
+                                    .product_ID + '" ' +
+                                    'data-cost="' + value.product_cost + '" ' +
+                                    'data-price="' + value.product_price + '" ' +
+                                    'data-qty="' + value.current_stock + '">' +
+                                    value.product_name +
+                                    '</option>');
+                            });
+                        },
+                        error: function(xhr) {
+                            console.error("AJAX Error: ", xhr.status, xhr
+                                .responseText); // DEBUG 3
+                            productSelect.empty().append(
+                                '<option value="">Error loading</option>');
+                        }
+                    });
+                } else {
+                    productSelect.empty().append('<option value="">-- Select Product --</option>');
+                }
+            });
+
+            // This handles the second step: clicking the product
+            $(document).on('change', '#product_ID', function() {
+                var selected = $(this).find('option:selected');
+                console.log("Product selected. Data values:", selected.data()); // DEBUG 4
+
+                $('#product_cost').val(selected.data('cost'));
+                $('#product_price').val(selected.data('price'));
+                $('#product_quantity').val(selected.data('qty'));
+            });
         });
-
         // This prevents double-clicking and shows the user something is happening
         $('form').on('submit', function() {
-            $(this).find('button').prop('disabled', true).html(
+            $(this).find('#importBtn').prop('disabled', true).html(
                 '<span class="spinner-border spinner-border-sm"></span> Importing...');
         });
 

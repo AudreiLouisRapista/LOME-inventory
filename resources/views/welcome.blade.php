@@ -14,298 +14,218 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <style>
-        /* --- General Reset & Fonts --- */
+        /* Importing Poppins for that clean, professional look */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap');
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            /* The font in the image looks like a clean sans-serif */
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'Poppins', sans-serif;
         }
 
-        /* --- Full Page Background --- */
+        /* --- Animated Gradient Background --- */
+
         body {
+
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-color: #000000;
-
-            /* The main teal background color */
+            background: linear-gradient(-45deg, #000000, #1a1a1a, #4e0606, #000000);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
             padding: 20px;
         }
 
-        /* --- Main Container (The rounded rectangle) --- */
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+
+        }
+
+        /* --- Responsive Container --- */
         .login-container {
             width: 100%;
-            max-width: 900px;
-            /* Adjust max-width as needed */
-            min-height: 550px;
-            background-color: #FFFFFF;
-            border-radius: 20px;
-            /* Rounded corners for the whole card */
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.63);
+            max-width: 1000px;
+            min-height: 600px;
+            background-color: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             display: flex;
+            flex-direction: row;
+            /* Desktop default */
             overflow: hidden;
-            /* Crucial for clipping the left image/background */
         }
 
-        /* --- Left Panel (Image/Content Area) --- */
+        /* --- Left Panel (Branding) --- */
         .left-panel {
-            flex: 1;
-            /* Adjust the width of the image section */
-            max-width: 50%;
+            flex: 1.2;
+            background: linear-gradient(135deg, #8b0000 0%, #4a0000 100%);
             position: relative;
-            background:
-                linear-gradient(135deg, #ff0000f4, #8b0404);
-            color for the left side */ padding: 0;
-            /* Remove padding from your original design */
-        }
-
-
-        .left-panel h1 {
-            position: relative;
-            /* z-index: 2; */
-            /* padding: 20px; */
-            color: white;
-            font-size: 80px;
-            font-weight: 900;
-            text-align: left;
-            margin-top: 150px;
-            letter-spacing: 0.1em;
-            top: 25px;
-            left: 88px;
-            font-family: 'Times New Roman', Times, serif;
-        }
-
-        .left-panel-content .sub-text {
-            /* position: relative; */
-            /* z-index: 2; */
-            /* padding: 5px; */
-            color: white;
-            font-size: 30px;
-            text-align: left;
-            position: absolute;
-            font-weight: 650;
-            left: 40px;
-            right: 40px;
-            top: 270px;
-            font-family: 'Times New Roman', Times, serif;
-            text-align: center;
-        }
-
-        .left-panel-content .footer-text {
-            /* position: relative; */
-            /* z-index: 2; */
-            /* padding: 5px; */
-            color: white;
-            font-size: 12px;
-            text-align: left;
-            position: absolute;
-            font-weight: 400;
-            left: 40px;
-            right: 40px;
-            top: 312px;
-            letter-spacing: 0.2em;
-            font-family: Arial, Helvetica, sans-serif;
-            text-align: center;
-        }
-
-        /* --- Right Panel (Login Form Area) --- */
-        .right-panel {
-            flex: 1;
-            /* Adjust the width of the form section */
-            max-width: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            position: relative;
             padding: 40px;
+            color: #ffffff;
         }
 
+        .left-panel-content {
+            text-align: center;
+            z-index: 2;
+        }
 
+        .left-panel h1 {
+            font-size: clamp(5px, 8vw, 90px);
+            /* Fluid typography */
+            font-weight: 800;
+            line-height: 0.9;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            margin-bottom: 10px;
+            font-family: serif;
+        }
 
+        .title-text {
+            font-size: clamp(12px, 2vw, 16px);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        /* --- Right Panel (Form) --- */
+        .right-panel {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 40px;
+        }
 
         .login-form-content {
             width: 100%;
-            max-width: 350px;
-            z-index: 2;
-            /* Ensure content is above the pseudo-element curve */
+            max-width: 320px;
         }
 
-        /* --- Text and Headers --- */
         .login-form-content h2 {
             font-size: 28px;
-            font-weight: 600;
-            margin-bottom: 5px;
-            text-align: center;
+            color: #1a1a1a;
+            margin-bottom: 8px;
         }
 
-        .login-form-content .sub-text {
-            color: #6c757d;
+        .sub-text {
+            color: #71717a;
             font-size: 14px;
             margin-bottom: 30px;
-            text-align: center;
         }
 
-        /* --- Form Inputs (The rounded, icon-prefixed fields) --- */
+        /* Better Icon Integration */
         .input-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .input-group-text {
+            position: absolute;
+            left: 15px;
+            background: transparent;
+            border: none;
+            z-index: 10;
+            color: #a1a1aa;
         }
 
         .form-control {
-            /* Make inputs very rounded */
-            border-radius: 50px;
-            padding: 12px 20px 12px 50px;
-            /* Adjust left padding for icon */
-            border: 1px solid #e0e0e0;
-            box-shadow: none !important;
-            /* Remove Bootstrap's default focus ring */
-        }
-
-        /* Style for the icons inside the input fields */
-        .input-group-text {
-            border-top-left-radius: 50px;
-            border-bottom-left-radius: 50px;
-            padding-left: 20px;
-            background-color: transparent;
-            border: none;
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            z-index: 5;
-            color: #495057;
-        }
-
-        /* --- Forgot Password Link --- */
-        .forgot-password {
-            text-align: right;
-            margin-bottom: 25px;
+            width: 100%;
+            padding: 14px 15px 14px 45px !important;
+            /* Forces space for the icon */
+            border-radius: 12px !important;
+            border: 1.5px solid #e4e4e7;
             font-size: 14px;
+            transition: all 0.3s ease;
+            background-color: #fcfcfc;
         }
 
-        .forgot-password a {
-            color: #1b00a4;
-            /* Match the primary teal color */
-            text-decoration: none;
-            font-weight: 500;
+        .form-control:focus {
+            border-color: #8b0000 !important;
+            background-color: #ffffff;
+            box-shadow: 0 0 0 4px rgba(139, 0, 0, 0.1) !important;
         }
 
-        /* --- Login Button --- */
+        /* Fix for the footer text */
+        .login-form-content p:last-child {
+            font-size: 12px;
+            color: #a1a1aa;
+            letter-spacing: 0.5px;
+        }
+
         .login-btn {
             width: 100%;
-            padding: 12px;
-            /* Teal to Cyan gradient from the image */
+            padding: 14px;
+            background: #000000;
+            /* Darker button for aesthetic contrast */
             color: white;
             border: none;
-            border-radius: 50px;
-            /* Very rounded button */
-            font-size: 16px;
+            border-radius: 12px;
             font-weight: 600;
             cursor: pointer;
-            background: linear-gradient(135deg, #f90505f4, #aa0b13);
-            transition: background 0.3s;
+            transition: 0.3s;
+            margin-top: 10px;
         }
 
         .login-btn:hover {
-            background: linear-gradient(135deg, #c10707f4, #d63232ef);
+            background: #8b0000;
+            transform: translateY(-2px);
         }
 
+        /* --- RESPONSIVENESS --- */
 
-        /* --- Media Queries for Mobile Responsiveness --- */
+        /* Tablet (768px to 1024px) */
+        @media (max-width: 1024px) {
+            .login-container {
+                max-width: 800px;
+                min-height: 500px;
+            }
+        }
+
+        /* Mobile (Everything below 768px) */
         @media (max-width: 768px) {
             body {
                 padding: 0;
-                /* Remove padding for a flush mobile look */
-                align-items: flex-start;
-                /* Start from the top on mobile */
-                background-color: #fff;
-                /* Match the card background */
             }
 
             .login-container {
                 flex-direction: column;
-                /* Stack vertically */
-                min-height: 100vh;
                 border-radius: 0;
-                /* Full screen width on mobile */
-                box-shadow: none;
+                min-height: 100vh;
             }
 
-            /* --- Top Section with Background --- */
             .left-panel {
-                max-width: 100%;
-                min-height: 250px;
-                /* Reduced height for header */
-                flex: none;
+                flex: 0.4;
+                /* Takes up less space on mobile */
+                padding: 60px 20px;
             }
 
-            .left-panel-content {
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                border-radius: 0 0 40px 40px;
-                /* Rounded bottom corners */
+            .right-panel {
+                flex: 0.6;
+                padding: 40px 20px;
+                align-items: flex-start;
+                /* Better thumb-reach */
             }
 
             .left-panel h1 {
-                position: absolute;
-                width: 100%;
-                left: 0;
-                top: 60%;
-                /* Center the text vertically */
-                text-align: center;
-                margin: 0;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                font-size: 32px;
-                left: 0;
-                /* Reset previous desktop left value */
-            }
-
-
-            /* --- Form Section --- */
-            .right-panel {
-                max-width: 100%;
-                padding: 40px 25px;
-                flex: 1;
-                background: #fff;
-            }
-
-            .right-panel::before {
-                display: none;
-                /* Hide the desktop curve */
-            }
-
-            .login-form-content {
-                max-width: 100%;
-            }
-
-            .login-form-content h2 {
-                font-size: 32px;
-                /* Large "Welcome" */
-                margin-bottom: 8px;
-            }
-
-            /* --- UI Elements --- */
-            .form-control {
-                background-color: #f8f9fa;
-                /* Slightly gray input background */
-                border: 1px solid #eee;
-                height: 55px;
-                /* Taller inputs for easier tapping */
-            }
-
-            .login-btn {
-                height: 55px;
-                font-size: 18px;
-                margin-top: 10px;
-            }
-
-            /* Hide subtext from the left panel content on mobile if it blocks the title */
-            .left-panel-content .sub-text {
-                display: none;
+                font-size: 50px;
             }
         }
     </style>
@@ -315,10 +235,11 @@
     <div class="login-container">
         <div class="left-panel">
             <div class="left-panel-content">
-                {{-- <i class="bi bi-cart3"></i> --}}
+
                 <h1>LOME</h1>
-                <p class="sub-text">Shop Mart</p>
-                <p class="footer-text">D'GLOMIE MARKETING CORPORATION</p>
+                <p class="title-text">Inventory Management System</p>
+                <p class="sub-text">Efficiently manage your inventory with ease and precision.</p>
+
             </div>
         </div>
 
