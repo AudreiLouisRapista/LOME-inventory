@@ -305,6 +305,15 @@
                     </a>
                 </li>
 
+                {{-- POS history --}}
+                <li class="nav-item">
+                    <a href="{{ route('purchases.index') }}"
+                        class="nav-link {{ Route::is('purchases.index') ? 'active' : '' }}"
+                        style="display:flex; align-items:center; gap:10px; color:{{ Route::is('purchases.index') ? '#fff' : '#333' }}; background:{{ Route::is('purchases.index') ? '#ff5757' : 'transparent' }};">
+                        <i class="bi bi-clock-history"></i> Supplier Payment
+                    </a>
+                </li>
+
             </ul>
         </nav>
     </div>

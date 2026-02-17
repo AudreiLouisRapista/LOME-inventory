@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MainController;
+use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\StudentController;
 
 
@@ -90,3 +91,17 @@ Route::group(['prefix' => 'Worker', 'middleware' => ['role:worker']], function (
     // Example of a new route for managing tasks/orders
     // Route::get('/tasks', [MainController::class, 'WorkerTasks'])->name('worker.tasks');
 }); 
+
+
+Route::prefix('purchases')->group(function () {
+
+    Route::get('/', [PurchaseController::class, 'index'])
+        ->name('purchases.index');
+
+    Route::get('/create', [PurchaseController::class, 'create'])
+        ->name('purchases.create');
+
+    Route::post('/store', [PurchaseController::class, 'store'])
+        ->name('purchases.store');
+
+});
