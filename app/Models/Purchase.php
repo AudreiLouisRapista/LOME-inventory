@@ -19,8 +19,19 @@ class Purchase extends Model
         'gross_amount',
         'vat_amount',
         'net_amount',
+        'total_paid',
         'status'
     ];
+
+    protected $casts = [
+        'gross_amount' => 'decimal:2',
+        'vat_amount' => 'decimal:2',
+        'net_amount' => 'decimal:2',
+        'total_paid' => 'decimal:2',  // Add this
+        'invoice_date' => 'date',
+        'due_date' => 'date'
+    ];
+
 
     /**
      * Purchase belongs to Supplier

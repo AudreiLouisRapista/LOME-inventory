@@ -187,7 +187,7 @@
         transition: all 0.3s ease;
     }
 </style>
-
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <aside id="mainSidebar" class="main-sidebar sidebar-light-primary elevation-4">
 
     <div class="sidebar-brand d-flex align-items-center justify-content-center py-3">

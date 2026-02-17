@@ -10,56 +10,18 @@ class Supplier extends Model
 {
     use HasFactory;
 
-    protected $primaryKey = 'purchase_id';
+    protected $primaryKey = 'supplier_id'; // your actual PK
+    public $incrementing = true;           // if PK is auto-increment
+    protected $keyType = 'int';
 
     protected $fillable = [
-        'supplier_id',
-        'invoice_number',
-        'invoice_date',
-        'due_date',
-        'gross_amount',
-        'vat_amount',
-        'net_amount',
-        'status'
+        'supplier_name',
+        'address',
+        'contact_no'
     ];
-
-    /**
-     * Purchase belongs to Supplier
-     */
-    public function supplier()
+    public function purchases()
     {
-        return $this->belongsTo(Supplier::class, 'supplier_id', 'supplier_id');
-    }
-    /**
-     * Purchase has many items
-     */
-    public function items()
-    {
-        return $this->hasMany(PurchaseItem::class, 'purchase_id');
-    }
-
-    /**
-     * Purchase has many payments
-     */
-    public function payments()
-    {
-        return $this->hasMany(Payment::class, 'purchase_id');
-    }
-
-    /**
-     * Helper: total paid
-     */
-    public function totalPaid()
-    {
-        return $this->payments()->sum('amount_paid');
-    }
-
-    /**
-     * Helper: remaining balance
-     */
-    public function remainingBalance()
-    {
-        return $this->net_amount - $this->totalPaid();
+        return $this->hasMany(Purchase::class, 'supplier_id');
     }
 
 

@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MainController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\StudentController;
 
@@ -101,7 +102,10 @@ Route::prefix('purchases')->group(function () {
     Route::get('/create', [PurchaseController::class, 'create'])
         ->name('purchases.create');
 
-    Route::post('/store', [PurchaseController::class, 'store'])
+    Route::post('/', [PurchaseController::class, 'store'])
         ->name('purchases.store');
-
+        
+   
 });
+
+Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');

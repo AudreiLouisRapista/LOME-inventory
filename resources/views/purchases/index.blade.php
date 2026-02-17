@@ -467,10 +467,10 @@
                 <label for="filterStatus">Status</label>
                 <select id="filterStatus">
                     <option value="">All Status</option>
-                    <option value="UNPAID">Unpaid</option>
-                    <option value="PARTIAL">Partial</option>
-                    <option value="PAID">Paid</option>
-                    <option value="OVERDUE">Overdue</option>
+                    <option value="unpaid">Unpaid</option>
+                    <option value="partial">Partial</option>
+                    <option value="paid">Paid</option>
+                    <option value="overdue">Overdue</option>
                 </select>
             </div>
             <div class="filter-group">
@@ -520,36 +520,54 @@
                 <form id="addInvoiceForm">
                     <div class="form-group">
                         <label for="invoiceNumber" class="required">Invoice Number</label>
-                        <input type="text" id="invoiceNumber" placeholder="e.g., 10700003440" required>
+                        <input type="text" id="invoiceNumber" name="invoice_number" placeholder="e.g., 10700003440" required>
                     </div>
 
                     <div class="form-group">
                         <label for="supplier" class="required">Supplier</label>
-                        <input type="text" id="supplier" list="supplierList" placeholder="Select or add new supplier" required>
+                        <input 
+                            type="text" 
+                            id="supplier" 
+                            name="supplier_name" 
+                            list="supplierList" 
+                            placeholder="Select supplier" 
+                            autocomplete="off"
+                            required>
+                        <input type="hidden" id="supplierId" name="supplier_id">
                         <datalist id="supplierList">
-                            <!-- Will be populated dynamically -->
+                            @foreach($suppliers as $supplier)
+                                <option 
+                                    value="{{ $supplier->supplier_name }}" 
+                                    data-id="{{ $supplier->supplier_id }}">
+                                </option>
+                            @endforeach
                         </datalist>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label for="invoiceDate" class="required">Invoice Date</label>
-                            <input type="date" id="invoiceDate" required>
+                            <input type="date" id="invoiceDate" name="invoice_date" required>
                         </div>
                         <div class="form-group">
                             <label for="dueDate" class="required">Due Date</label>
-                            <input type="date" id="dueDate" required>
+                            <input type="date" id="dueDate" name="due_date" required>
                         </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="grossAmount" class="required">Gross Amount</label>
+                        <input type="number" id="grossAmount" name="gross_amount" step="0.01" min="0.01" placeholder="0.00" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="vatAmount" class="required">VAT Amount</label>
+                        <input type="number" id="vatAmount" name="vat_amount" step="0.01" min="0" placeholder="0.00" required>
                     </div>
 
                     <div class="form-group">
                         <label for="netAmount" class="required">Net Amount</label>
-                        <input type="number" id="netAmount" step="0.01" min="0.01" placeholder="0.00" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="description">Description</label>
-                        <textarea id="description" placeholder="Additional details about this invoice..."></textarea>
+                        <input type="number" id="netAmount" name="net_amount" step="0.01" min="0.01" placeholder="0.00" required readonly>
                     </div>
                 </form>
             </div>
@@ -625,10 +643,10 @@
                         <label for="referenceNumber">Reference Number</label>
                         <input type="text" id="referenceNumber" placeholder="e.g., Check #, Transaction ID">
                     </div>
-                    <div class="form-group">
+                    {{-- <div class="form-group">
                         <label for="paymentNotes">Notes</label>
                         <textarea id="paymentNotes" placeholder="Additional notes about this payment..."></textarea>
-                    </div>
+                    </div> --}}
                 </form>
             </div>
             <div class="modal-footer">
@@ -1085,42 +1103,41 @@
         }
     </script> --}}
     <script>
-let invoices = @json($purchases);
-let currentInvoiceId = null;
-let nextInvoiceId = invoices.length + 1;
+        let invoices = @json($purchases);
+        let currentInvoiceId = null;
+        let nextInvoiceId = invoices.length + 1;
 
-document.addEventListener('DOMContentLoaded', function () {
-    populateSupplierFilter();
-    populateSupplierDatalist();
-    renderInvoices();
-    setupEventListeners();
-    setDefaultDate();
-});
+        document.addEventListener('DOMContentLoaded', function () {
+            populateSupplierFilter();
+            renderInvoices();
+            setupEventListeners();
+            setDefaultDate();
+        });
 
-// -----------------------------
-// Utility Functions
-// -----------------------------
+        // -----------------------------
+        // Utility Functions
+        // -----------------------------
 
-function calculateRemainingBalance(invoice) {
-    return parseFloat(invoice.netAmount) - parseFloat(invoice.totalPaid);
-}
+        function calculateRemainingBalance(invoice) {
+            return parseFloat(invoice.netAmount) - parseFloat(invoice.totalPaid);
+        }
 
-function formatCurrency(amount) {
-    return new Intl.NumberFormat('en-PH', {
-        style: 'currency',
-        currency: 'PHP'
-    }).format(amount);
-}
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-PH', {
+                style: 'currency',
+                currency: 'PHP'
+            }).format(amount);
+        }
 
-function formatDate(dateString) {
-    return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-    });
-}
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
 
-// -----------------------------
+        // -----------------------------
 // Render Invoices
 // -----------------------------
 function renderInvoices() {
@@ -1149,9 +1166,9 @@ function renderInvoices() {
             <td><span class="status-badge status-${invoice.status.toLowerCase()}">${invoice.status}</span></td>
             <td>
                 ${
-                    invoice.status !== 'PAID'
-                    ? `<button class="btn btn-primary" data-id="${invoice.id}">Record Payment</button>`
-                    : `<span style="color:green">✓ Completed</span>`
+                    remaining <= 0 || invoice.status.toUpperCase() === 'PAID'
+                    ? `<span style="color:green">✓ Completed</span>`
+                    : `<button class="btn btn-primary" data-id="${invoice.id}">Record Payment</button>`
                 }
             </td>
         `;
@@ -1165,217 +1182,399 @@ function renderInvoices() {
     });
 }
 
-// -----------------------------
-// Filter Functions
-// -----------------------------
-function getFilteredInvoices() {
-    const supplier = document.getElementById('filterSupplier').value;
-    const status = document.getElementById('filterStatus').value;
-    const dateFrom = document.getElementById('filterDateFrom').value;
-    const dateTo = document.getElementById('filterDateTo').value;
+        // -----------------------------
+        // Filter Functions
+        // -----------------------------
+        function getFilteredInvoices() {
+            const supplier = document.getElementById('filterSupplier').value;
+            const status = document.getElementById('filterStatus').value;
+            const dateFrom = document.getElementById('filterDateFrom').value;
+            const dateTo = document.getElementById('filterDateTo').value;
 
-    return invoices.filter(inv => {
-        if (supplier && inv.supplier !== supplier) return false;
-        if (status && inv.status !== status) return false;
-        if (dateFrom && inv.invoiceDate < dateFrom) return false;
-        if (dateTo && inv.invoiceDate > dateTo) return false;
-        return true;
-    });
-}
-
-function populateSupplierFilter() {
-    const suppliers = [...new Set(invoices.map(i => i.supplier))].sort();
-    const select = document.getElementById('filterSupplier');
-    select.innerHTML = '<option value="">All Suppliers</option>';
-    suppliers.forEach(s => {
-        const option = document.createElement('option');
-        option.value = s;
-        option.textContent = s;
-        select.appendChild(option);
-    });
-}
-
-function populateSupplierDatalist() {
-    const suppliers = [...new Set(invoices.map(i => i.supplier))].sort();
-    const datalist = document.getElementById('supplierList');
-    datalist.innerHTML = '';
-    suppliers.forEach(s => {
-        const option = document.createElement('option');
-        option.value = s;
-        datalist.appendChild(option);
-    });
-}
-
-// -----------------------------
-// Add Invoice Modal
-// -----------------------------
-function openAddInvoiceModal() {
-    const modal = document.getElementById('addInvoiceModal');
-    modal.classList.add('show');
-    modal.style.display = 'block';
-    document.body.style.overflow = 'hidden';
-
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('invoiceDate').value = today;
-
-    const due = new Date();
-    due.setDate(due.getDate() + 30);
-    document.getElementById('dueDate').value = due.toISOString().split('T')[0];
-}
-
-function closeAddInvoiceModal() {
-    const modal = document.getElementById('addInvoiceModal');
-    modal.classList.remove('show');
-    modal.style.display = 'none';
-    document.body.style.overflow = 'auto';
-    document.getElementById('addInvoiceForm').reset();
-}
-
-function saveNewInvoice() {
-    const form = document.getElementById('addInvoiceForm');
-    if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-    }
-
-    const invoiceNumber = document.getElementById('invoiceNumber').value.trim();
-    if (invoices.some(inv => inv.invoiceNumber === invoiceNumber)) {
-        alert('⚠️ Invoice number already exists!');
-        return;
-    }
-
-    const newInvoice = {
-        id: nextInvoiceId++,
-        invoiceNumber: invoiceNumber,
-        supplier: document.getElementById('supplier').value.trim(),
-        invoiceDate: document.getElementById('invoiceDate').value,
-        dueDate: document.getElementById('dueDate').value,
-        netAmount: parseFloat(document.getElementById('netAmount').value),
-        totalPaid: 0,
-        status: 'UNPAID'
-    };
-
-    invoices.push(newInvoice);
-    populateSupplierFilter();
-    populateSupplierDatalist();
-    renderInvoices();
-    closeAddInvoiceModal();
-
-    alert(`✓ Invoice ${newInvoice.invoiceNumber} added successfully!`);
-}
-
-// -----------------------------
-// Payment Modal
-// -----------------------------
-function openPaymentModal(id) {
-    currentInvoiceId = id;
-    const invoice = invoices.find(i => i.id === id);
-    if (!invoice) return;
-
-    const remaining = calculateRemainingBalance(invoice);
-
-    document.getElementById('modalInvoiceNumber').textContent = invoice.invoiceNumber;
-    document.getElementById('modalSupplier').textContent = invoice.supplier;
-    document.getElementById('modalInvoiceDate').textContent = formatDate(invoice.invoiceDate);
-    document.getElementById('modalDueDate').textContent = formatDate(invoice.dueDate);
-    document.getElementById('modalNetAmount').textContent = formatCurrency(invoice.netAmount);
-    document.getElementById('modalTotalPaid').textContent = formatCurrency(invoice.totalPaid);
-    document.getElementById('modalRemainingBalance').textContent = formatCurrency(remaining);
-
-    document.getElementById('amountPaid').max = remaining;
-    document.getElementById('paymentModal').classList.add('show');
-}
-
-function closePaymentModal() {
-    document.getElementById('paymentModal').classList.remove('show');
-    document.getElementById('paymentForm').reset();
-    document.getElementById('amountError').style.display = 'none';
-    currentInvoiceId = null;
-    setDefaultDate();
-}
-
-function validatePaymentAmount() {
-    const invoice = invoices.find(i => i.id === currentInvoiceId);
-    if (!invoice) return false;
-
-    const remaining = calculateRemainingBalance(invoice);
-    const amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
-    const error = document.getElementById('amountError');
-
-    if (amountPaid > remaining) {
-        error.style.display = 'block';
-        return false;
-    }
-    error.style.display = 'none';
-    return true;
-}
-
-function savePayment() {
-    if (!validatePaymentAmount()) return;
-
-    const invoice = invoices.find(i => i.id === currentInvoiceId);
-    const amountPaid = parseFloat(document.getElementById('amountPaid').value);
-
-    invoice.totalPaid += amountPaid;
-
-    const remaining = calculateRemainingBalance(invoice);
-    const today = new Date().toISOString().split('T')[0];
-
-    if (remaining <= 0) invoice.status = 'PAID';
-    else if (remaining < invoice.netAmount) invoice.status = 'PARTIAL';
-    else if (invoice.dueDate < today) invoice.status = 'OVERDUE';
-    else invoice.status = 'UNPAID';
-
-    closePaymentModal();
-    renderInvoices();
-}
-
-// -----------------------------
-// Default Date
-// -----------------------------
-function setDefaultDate() {
-    const today = new Date().toISOString().split('T')[0];
-    const paymentDateInput = document.getElementById('paymentDate');
-    if (paymentDateInput) paymentDateInput.value = today;
-}
-
-// -----------------------------
-// Event Listeners
-// -----------------------------
-function setupEventListeners() {
-    // Add Invoice modal
-    document.getElementById('addInvoiceBtn').addEventListener('click', openAddInvoiceModal);
-    document.getElementById('closeAddInvoice').addEventListener('click', closeAddInvoiceModal);
-    document.getElementById('cancelAddInvoice').addEventListener('click', closeAddInvoiceModal);
-    document.getElementById('saveNewInvoice').addEventListener('click', saveNewInvoice);
-
-    // Payment modal
-    document.getElementById('savePaymentBtn').addEventListener('click', savePayment);
-    document.getElementById('cancelPayment').addEventListener('click', closePaymentModal);
-    document.getElementById('closePayment').addEventListener('click', closePaymentModal);
-    document.getElementById('amountPaid').addEventListener('input', validatePaymentAmount);
-
-    // Filters
-    document.getElementById('filterSupplier').addEventListener('change', renderInvoices);
-    document.getElementById('filterStatus').addEventListener('change', renderInvoices);
-    document.getElementById('filterDateFrom').addEventListener('change', renderInvoices);
-    document.getElementById('filterDateTo').addEventListener('change', renderInvoices);
-
-    // Close modals on outside click
-    window.addEventListener('click', function(event) {
-        if (event.target === document.getElementById('addInvoiceModal')) closeAddInvoiceModal();
-        if (event.target === document.getElementById('paymentModal')) closePaymentModal();
-    });
-
-    // Escape key
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-            closeAddInvoiceModal();
-            closePaymentModal();
+            return invoices.filter(inv => {
+                if (supplier && inv.supplier !== supplier) return false;
+                if (status && inv.status !== status) return false;
+                if (dateFrom && inv.invoiceDate < dateFrom) return false;
+                if (dateTo && inv.invoiceDate > dateTo) return false;
+                return true;
+            });
         }
-    });
-}
-</script>
+
+        function populateSupplierFilter() {
+            const suppliers = [...new Set(invoices.map(i => i.supplier))].sort();
+            const select = document.getElementById('filterSupplier');
+            select.innerHTML = '<option value="">All Suppliers</option>';
+            suppliers.forEach(s => {
+                const option = document.createElement('option');
+                option.value = s;
+                option.textContent = s;
+                select.appendChild(option);
+            });
+        }
+
+        // -----------------------------
+        // Add Invoice Modal
+        // -----------------------------
+        // -----------------------------
+        // Add Invoice Modal
+        // -----------------------------
+        function openAddInvoiceModal() {
+            const modal = document.getElementById('addInvoiceModal');
+            modal.classList.add('show');
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('invoiceDate').value = today;
+
+            const due = new Date();
+            due.setDate(due.getDate() + 30);
+            document.getElementById('dueDate').value = due.toISOString().split('T')[0];
+        }
+
+        function closeAddInvoiceModal() {
+            const modal = document.getElementById('addInvoiceModal');
+            modal.classList.remove('show');
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            document.getElementById('addInvoiceForm').reset();
+        }
+
+        // -----------------------------
+        // Add Invoice Modal
+        // -----------------------------
+        function openAddInvoiceModal() {
+            const modal = document.getElementById('addInvoiceModal');
+            modal.classList.add('show');
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('invoiceDate').value = today;
+
+            const due = new Date();
+            due.setDate(due.getDate() + 30);
+            document.getElementById('dueDate').value = due.toISOString().split('T')[0];
+        }
+
+        function closeAddInvoiceModal() {
+            const modal = document.getElementById('addInvoiceModal');
+            modal.classList.remove('show');
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            document.getElementById('addInvoiceForm').reset();
+            document.getElementById('supplierId').value = ''; // Clear hidden field
+        }
+
+        // Auto-calculate net amount and handle supplier selection
+        document.addEventListener('DOMContentLoaded', function() {
+            const grossAmountInput = document.getElementById('grossAmount');
+            const vatAmountInput = document.getElementById('vatAmount');
+            const netAmountInput = document.getElementById('netAmount');
+
+            function calculateNetAmount() {
+                const gross = parseFloat(grossAmountInput.value) || 0;
+                const vat = parseFloat(vatAmountInput.value) || 0;
+                netAmountInput.value = (gross + vat).toFixed(2);
+            }
+
+            if (grossAmountInput && vatAmountInput) {
+                grossAmountInput.addEventListener('input', calculateNetAmount);
+                vatAmountInput.addEventListener('input', calculateNetAmount);
+            }
+
+            // Handle supplier selection from datalist
+            const supplierInput = document.getElementById('supplier');
+            const supplierIdInput = document.getElementById('supplierId');
+            
+            if (supplierInput && supplierIdInput) {
+                supplierInput.addEventListener('input', function() {
+                    const supplierName = this.value.trim();
+                    const options = document.querySelectorAll('#supplierList option');
+                    let foundId = null;
+                    
+                    options.forEach(option => {
+                        if (option.value === supplierName) {
+                            foundId = option.dataset.id;
+                        }
+                    });
+                    
+                    // Update hidden field with supplier_id
+                    supplierIdInput.value = foundId || '';
+                });
+
+                // Also handle on blur to ensure selection
+                supplierInput.addEventListener('blur', function() {
+                    const supplierName = this.value.trim();
+                    const options = document.querySelectorAll('#supplierList option');
+                    let found = false;
+                    
+                    options.forEach(option => {
+                        if (option.value === supplierName) {
+                            found = true;
+                            supplierIdInput.value = option.dataset.id;
+                        }
+                    });
+                    
+                    if (!found) {
+                        supplierIdInput.value = '';
+                    }
+                });
+            }
+        });
+
+        function saveNewInvoice() {
+            const form = document.getElementById('addInvoiceForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const supplierId = document.getElementById('supplierId').value;
+
+            if (!supplierId) {
+                alert('⚠️ Please select a valid supplier from the list!');
+                return;
+            }
+
+            // Prepare form data
+            const formData = {
+                invoice_number: document.getElementById('invoiceNumber').value.trim(),
+                supplier_id: parseInt(supplierId),
+                invoice_date: document.getElementById('invoiceDate').value,
+                due_date: document.getElementById('dueDate').value,
+                gross_amount: parseFloat(document.getElementById('grossAmount').value),
+                vat_amount: parseFloat(document.getElementById('vatAmount').value),
+                net_amount: parseFloat(document.getElementById('netAmount').value)
+            };
+
+            console.log('Sending data:', formData); // Debug log
+
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            // Send AJAX request
+            fetch('/purchases', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => Promise.reject(err));
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    closeAddInvoiceModal();
+                    
+                    // Reload the page or update the table dynamically
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                
+                if (error.errors) {
+                    // Display validation errors
+                    let errorMessage = 'Validation errors:\n';
+                    for (let field in error.errors) {
+                        errorMessage += `${field}: ${error.errors[field].join(', ')}\n`;
+                    }
+                    alert(errorMessage);
+                } else {
+                    alert('⚠️ An error occurred while saving the invoice. Please try again.');
+                }
+            });
+        }
+
+        // Event listeners
+        document.getElementById('closeAddInvoice')?.addEventListener('click', closeAddInvoiceModal);
+        document.getElementById('cancelAddInvoice')?.addEventListener('click', closeAddInvoiceModal);
+        document.getElementById('saveNewInvoice')?.addEventListener('click', saveNewInvoice);
+
+        // -----------------------------
+        // Payment Modal
+        // -----------------------------
+        function openPaymentModal(id) {
+            currentInvoiceId = id;
+            const invoice = invoices.find(i => i.id === id);
+            if (!invoice) return;
+
+            const remaining = calculateRemainingBalance(invoice);
+
+            document.getElementById('modalInvoiceNumber').textContent = invoice.invoiceNumber;
+            document.getElementById('modalSupplier').textContent = invoice.supplier;
+            document.getElementById('modalInvoiceDate').textContent = formatDate(invoice.invoiceDate);
+            document.getElementById('modalDueDate').textContent = formatDate(invoice.dueDate);
+            document.getElementById('modalNetAmount').textContent = formatCurrency(invoice.netAmount);
+            document.getElementById('modalTotalPaid').textContent = formatCurrency(invoice.totalPaid);
+            document.getElementById('modalRemainingBalance').textContent = formatCurrency(remaining);
+
+            document.getElementById('amountPaid').max = remaining;
+            document.getElementById('paymentModal').classList.add('show');
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.remove('show');
+            document.getElementById('paymentForm').reset();
+            document.getElementById('amountError').style.display = 'none';
+            currentInvoiceId = null;
+            setDefaultDate();
+        }
+
+        function validatePaymentAmount() {
+            const invoice = invoices.find(i => i.id === currentInvoiceId);
+            if (!invoice) return false;
+
+            const remaining = calculateRemainingBalance(invoice);
+            const amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
+            const error = document.getElementById('amountError');
+
+            if (amountPaid > remaining) {
+                error.style.display = 'block';
+                return false;
+            }
+            error.style.display = 'none';
+            return true;
+        }
+
+        function savePayment() {
+            const form = document.getElementById('paymentForm');
+            
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            if (!validatePaymentAmount()) {
+                return;
+            }
+
+            const invoice = invoices.find(i => i.id === currentInvoiceId);
+            const amountPaid = parseFloat(document.getElementById('amountPaid').value);
+
+            // Prepare payment data
+            const paymentData = {
+                purchase_id: invoice.id,
+                payment_date: document.getElementById('paymentDate').value,
+                amount_paid: amountPaid,
+                payment_method: document.getElementById('paymentMethod').value,
+                reference_number: document.getElementById('referenceNumber').value || null,
+                // notes: document.getElementById('paymentNotes').value || null
+            };
+
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            // Disable save button to prevent double submission
+            const saveBtn = document.getElementById('savePaymentBtn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+
+            // Send AJAX request
+            fetch('/payments', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(paymentData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => Promise.reject(err));
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert(`✓ ${data.message}\n\nAmount: ${formatCurrency(amountPaid)}\nNew Status: ${data.data.purchase.status}`);
+                    
+                    // Update the invoice in the local array
+                    const invoiceIndex = invoices.findIndex(i => i.id === currentInvoiceId);
+                    if (invoiceIndex !== -1) {
+                        invoices[invoiceIndex].totalPaid = data.data.purchase.totalPaid;
+                        invoices[invoiceIndex].status = data.data.purchase.status;
+                    }
+                    
+                    closePaymentModal();
+                    renderInvoices();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                
+                if (error.errors) {
+                    let errorMessage = 'Validation errors:\n';
+                    for (let field in error.errors) {
+                        errorMessage += `${field}: ${error.errors[field].join(', ')}\n`;
+                    }
+                    alert(errorMessage);
+                } else {
+                    alert(error.message || '⚠️ An error occurred while recording the payment. Please try again.');
+                }
+            })
+            .finally(() => {
+                // Re-enable save button
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Payment';
+            });
+        }
+
+        // -----------------------------
+        // Default Date
+        // -----------------------------
+        function setDefaultDate() {
+            const today = new Date().toISOString().split('T')[0];
+            const paymentDateInput = document.getElementById('paymentDate');
+            if (paymentDateInput) paymentDateInput.value = today;
+        }
+
+        // -----------------------------
+        // Event Listeners
+        // -----------------------------
+        function setupEventListeners() {
+            // Add Invoice modal
+            document.getElementById('addInvoiceBtn').addEventListener('click', openAddInvoiceModal);
+            document.getElementById('closeAddInvoice').addEventListener('click', closeAddInvoiceModal);
+            document.getElementById('cancelAddInvoice').addEventListener('click', closeAddInvoiceModal);
+            document.getElementById('saveNewInvoice').addEventListener('click', saveNewInvoice);
+
+            // Payment modal
+            document.getElementById('savePaymentBtn').addEventListener('click', savePayment);
+            document.getElementById('cancelPayment').addEventListener('click', closePaymentModal);
+            document.getElementById('closePayment').addEventListener('click', closePaymentModal);
+            document.getElementById('amountPaid').addEventListener('input', validatePaymentAmount);
+
+            // Filters
+            document.getElementById('filterSupplier').addEventListener('change', renderInvoices);
+            document.getElementById('filterStatus').addEventListener('change', renderInvoices);
+            document.getElementById('filterDateFrom').addEventListener('change', renderInvoices);
+            document.getElementById('filterDateTo').addEventListener('change', renderInvoices);
+
+            // Close modals on outside click
+            window.addEventListener('click', function(event) {
+                if (event.target === document.getElementById('addInvoiceModal')) closeAddInvoiceModal();
+                if (event.target === document.getElementById('paymentModal')) closePaymentModal();
+            });
+
+            // Escape key
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    closeAddInvoiceModal();
+                    closePaymentModal();
+                }
+            });
+        }
+    </script>
 
 
 @endsection
