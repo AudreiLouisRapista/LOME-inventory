@@ -562,8 +562,6 @@ public function save_product(Request $request)
     $product_expired = $request->input('product_exp');
     $product_price = $request->input('product_price');
     $product_cost = $request->input('product_cost');
-    $product_unit_amount = $request->input('product_unit_amount');
-    $units = $request->input('unit_ID');
     
 
      
@@ -582,8 +580,7 @@ public function save_product(Request $request)
         'product_exp'     => $product_expired,
         'product_price'   => $product_price,
         'product_cost'    => $product_cost,
-        'product_unit_amount' => $product_unit_amount,
-        'unit_ID' => $units,
+       
        
     ]);
 
@@ -623,10 +620,10 @@ public function update_product(Request $request) {
 
 
 public function save_inventory(Request $request){
-
+    $inventory_ID = $request->inventory_ID;
     $product_ID = $request->product_ID; 
     $category_ID = $request->category_ID;
-    $quantity = $request->invt_quantity;
+    $quantity = $request->product_quantity;
    
   
 
@@ -638,7 +635,7 @@ public function save_inventory(Request $request){
         ->exists();
     if ($duplicate) {
         // NEED EDIT THE NAME 
-        return back()->with('error', 'Conflict! Product with the same category already exists.');
+        return back()->with('error', 'Product with the same category already exists.');
     }
 
     $status_ID = 1; // Assuming new inventory is always "In Stock"
@@ -651,18 +648,13 @@ public function save_inventory(Request $request){
     }
 
 
-    
     DB::table('inventory')
-        ->updateOrInsert(
-            [
-                'product_ID' => $product_ID,
-                'category_ID' => $category_ID
-            ],
-            [ 
-                'status_ID'      => $status_ID,
-                'invt_remainingStock'  => $quantity,
-        ]);
-  
+    ->insert([
+        'product_ID' => $product_ID,
+        'category_ID' => $category_ID,
+        'invt_quantity' => $quantity,
+        'status_ID' => $status_ID
+    ]);
 
   
 

@@ -138,7 +138,7 @@
                             <button type="button" class="btn-inventory" data-bs-toggle="modal"
                                 data-bs-target="#exampleModal">
                                 <i class="bi bi-plus-lg"></i>
-                                Update Inventory
+                                New Product
                             </button>
                             <!-- Modal -->
                             <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="addScheduleModalLabel"
@@ -168,7 +168,7 @@
                                                         style="font-size: 11px; letter-spacing: 1px;">Basic
                                                         Information</label>
                                                     <hr class="mt-0 mb-4" style="opacity: 0.1;">
-
+                                                    <input type="hidden" name="inventory_ID" id="edit_id">
                                                     <div class="row g-3">
                                                         <div class="col-md-6">
                                                             <label class="form-label fw-semibold"
@@ -467,7 +467,7 @@
                 var rStock = $(this).data('remainingstock');
 
                 $('#edit_id').val(id);
-                $('#edit_product_name').val(prodID);
+                $('#edit_product_name').val(prodName);
                 $('#edit_category').val(catID);
                 $('#edit_quantity').val(qnty);
                 $('#edit_remainingstock').val(rStock);
