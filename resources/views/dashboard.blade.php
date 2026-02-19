@@ -65,8 +65,8 @@
         }
 
         /* =========================================================
-                                                                                                                                                                                                                                                                                                                                                                                                                             DARK MODE OVERRIDES (Only triggers when .dark-mode is active)
-                                                                                                                                                                                                                                                                                                                                                                                                                             ========================================================= */
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                 DARK MODE OVERRIDES (Only triggers when .dark-mode is active)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ========================================================= */
 
         .dark-mode .dash-header-section {
             background-color: #121212 !important;
@@ -139,10 +139,19 @@
                     </div>
                     <div>
                         <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                            <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #1e293b;">4,892</h3>
+                            <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #1e293b;">
+                                {{ number_format($totalProducts) }}</h3>
+                            {{-- Accurate Percentage Design --}}
+                            @php
+                                $isPositive = $quantityPercent >= 0;
+                                $bgColor = $isPositive ? '#f0fdf4' : '#fef2f2';
+                                $textColor = $isPositive ? '#16a34a' : '#dc2626';
+                                $icon = $isPositive ? '↗' : '↘';
+                            @endphp
                             <div
-                                style="background: #f0fdf4; color: #16a34a; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-                                ↗ 0.53%
+                                style="background: {{ $bgColor }}; color: {{ $textColor }}; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                                {{ $icon }}
+                                {{ $quantityPercent }} %
                             </div>
                         </div>
                         <small style="color: #94a3b8; font-size: 11px;">From last week</small>
@@ -161,7 +170,8 @@
                     </div>
                     <div>
                         <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                            <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #1e293b;">2,137</h3>
+                            <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #1e293b;">
+                                {{ number_format($totalQuantity) }}</h3>
                             <div
                                 style="background: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
                                 ↘ 1.24%
@@ -183,7 +193,8 @@
                     </div>
                     <div>
                         <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                            <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #1e293b;">1,952</h3>
+                            <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #1e293b;">
+                                {{ number_format($lowStockProducts) }}</h3>
                             <div
                                 style="background: #f0fdf4; color: #16a34a; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
                                 ↗ 1.52%
@@ -205,7 +216,8 @@
                     </div>
                     <div>
                         <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                            <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #1e293b;">803</h3>
+                            <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #1e293b;">
+                                {{ number_format($outOfStock) }}</h3>
                             <div
                                 style="background: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
                                 ↘ 1.55%

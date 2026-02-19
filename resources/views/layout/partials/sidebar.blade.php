@@ -51,9 +51,58 @@
         box-shadow: 0 6px 16px rgba(255, 142, 151, 0.5);
     }
 
+    .user-panel {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+        padding-left: 15px !important;
+        transition: all 0.3s ease;
+    }
+
+    /* The Role Text (e.g., Alexander Pierce style) */
+    .user-role-link {
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        color: #2c3e50 !important;
+        text-decoration: none !important;
+        white-space: nowrap;
+        transition: color 0.2s;
+    }
+
+    .user-role-link:hover {
+        color: #ff5757 !important;
+        /* Matches your theme red */
+    }
+
+
+
+
+    /* Sidebar Active State Shadow */
+    .nav-sidebar .nav-link.active {
+        box-shadow: 0 4px 10px rgba(255, 87, 87, 0.3);
+    }
+
+
+
+
+
     /* --- Collapsed State Fixes --- */
     .sidebar-collapse .logout-text {
         display: none !important;
+    }
+
+    .sidebar-collapse .user-panel .info,
+    .sidebar-collapse .user-panel .small {
+        display: none !important;
+    }
+
+    .sidebar-collapse .user-panel {
+        justify-content: center !important;
+        padding-left: 0 !important;
+    }
+
+    /* Logic for sidebar hover while collapsed */
+    .sidebar-collapse .main-sidebar:hover .user-panel .info {
+        display: block !important;
+        margin-left: 10px;
     }
 
     .sidebar-collapse .logout-btn-styled {
@@ -136,13 +185,13 @@
         /* Keep padding for spacing */
     }
 
+
+
     /* Reduce the sidebar shadow */
     .main-sidebar.sidebar-light-primary.elevation-4 {
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
         /* Smaller, subtler shadow */
     }
-
-    /* Change sidebar background to a gradient similar to the active color (#6366F1) */
 
 
     /* Ensure the sidebar inner elements blend with the gradient */
@@ -153,20 +202,15 @@
 
 
 
-    h5 {
-        text-align: center;
-        margin-bottom: 50px;
+    .user-name {
+
+        margin-top: 10%;
         transition: opacity 0.3s, visibility 0.3s;
-        color: #fff;
+        color: #000000;
         /* Suggested: White text for role on gradient background */
     }
 
-    /* .sidebar-collapse h5 {
-        opacity: 0;
-        visibility: hidden;
-        margin-bottom: 50px;
 
-    } */
 
 
     /* On hover over the entire sidebar, show the role (h5) */
@@ -190,14 +234,18 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <aside id="mainSidebar" class="main-sidebar sidebar-light-primary elevation-4">
 
-    <div class="sidebar-brand d-flex align-items-center justify-content-center py-3">
-        <img class="rounded-circle shadow-sm" src="{{ asset('dist/img/LOME_LOGO.png') }}" alt="LOME logo" height="60"
-            width="60" style="object-fit:cover;">
+    <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center">
+        <div class="image">
+            <img src="{{ asset('dist/img/lome-shoMartLogo.jpg') }}" class="logo" alt="User Image"
+                style="width: 45px; height: 45px; object-fit: cover; ">
+        </div>
+        <div class="info ms-3">
+            <span class="d-block text-muted small fw-bold text-uppercase"
+                style="letter-spacing: 1px; font-size: 10px;">Access Level</span>
+            <a href="#" class="d-block user-role-link">{{ session('user_role') }}</a>
+        </div>
     </div>
-    <h5>
-        {{ session('user_role') }}
 
-    </h5>
 
     <div class="sidebar">
         <nav class="mt-2">
@@ -240,77 +288,74 @@
 
 
 
-                {{-- Delivery --}}
-                <li class="nav-item">
-                    <a href="{{ route('view_section') }}"
-                        class="nav-link {{ Route::is('view_section') ? 'active' : '' }}"
-                        style="display:flex; align-items:center; gap:10px; color:{{ Route::is('view_section') ? '#fff' : '#333' }}; background:{{ Route::is('view_section') ? '#ff5757' : 'transparent' }};">
-                        <i class="bi bi-truck"></i> Supply
-                    </a>
-                </li>
-
                 @php
-                    // Check if any sub-item is active
-                    $teacher_parent_active = Route::is('view_section') || Route::is('view_section');
+                    // 1. Check if any sub-item is active
+                    $report_active = Route::is('product_report') || Route::is('inventory_report');
 
-                    // Consistent colors matching your other items
-                    $primary_indigo = '#ff5757';
+                    // Consistent colors
+                    $primary_red = '#ff5757'; // Your $primary_indigo variable actually held a red hex
                     $text_dark = '#333';
                     $text_white = '#fff';
                 @endphp
 
                 <li class="nav-item">
                     {{-- Parent Link --}}
-                    <a href="#teachersCollapse" data-bs-toggle="collapse" role="button"
-                        class="nav-link {{ $teacher_parent_active ? 'active' : '' }}"
-                        style="display:flex; align-items:center; gap:10px; 
-               color:{{ $teacher_parent_active ? $text_white : $text_dark }}; 
-               background:{{ $teacher_parent_active ? $primary_indigo : 'transparent' }}; 
-               border-radius: 4px; transition: all 0.3s ease;">
+                    <a href="#reportsCollapse" data-bs-toggle="collapse" role="button"
+                        aria-expanded="{{ $report_active ? 'true' : 'false' }}" aria-controls="reportsCollapse"
+                        class="nav-link {{ $report_active ? 'active' : '' }}"
+                        style="display:flex; align-items:center; gap:10px; padding: 10px;
+              color:{{ $report_active ? $text_white : $text_dark }}; 
+              background:{{ $report_active ? $primary_red : 'transparent' }}; 
+              border-radius: 4px; transition: all 0.3s ease; text-decoration: none;">
+
                         <i class="bi bi-clipboard-data"></i>
-                        <span>Reports</span>
-                        <i class="fas fa-caret-down ms-auto"></i>
+                        <span style="flex-grow: 1;">Reports</span>
+                        <i class="fas fa-caret-down transition-icon {{ $report_active ? 'rotate-icon' : '' }}"></i>
                     </a>
 
                     {{-- Dropdown Content --}}
-                    <div id="teachersCollapse" class="collapse {{ $teacher_parent_active ? 'show' : '' }}"
-                        style="margin-left: 10px; border-left: 2px solid {{ $primary_indigo }}50; margin-top: 5px;">
+                    <div id="reportsCollapse" class="collapse {{ $report_active ? 'show' : '' }}"
+                        style="margin-left: 10px; border-left: 2px solid {{ $primary_red }}50; margin-top: 5px;">
+
                         <ul class="nav flex-column" style="gap: 5px; padding-left: 10px;">
                             <li class="nav-item">
-                                <a href="{{ route('view_section') }}" class="nav-link"
-                                    style="display:block; padding:8px 10px; font-size: 0.9rem; border-radius:4px;
-                    color:{{ Route::is('view_section') ? $text_white : $text_dark }}; 
-                    background:{{ Route::is('view_section') ? $primary_indigo : 'transparent' }};">
+                                {{-- Fixed the Route::is check here to match your 'view_section' route --}}
+                                <a href="{{ route('inventory_report') }}" class="nav-link"
+                                    style="display:block; padding:8px 10px; font-size: 0.9rem; border-radius:4px; text-decoration: none;
+                          color:{{ Route::is('inventory_report') ? $text_white : $text_dark }}; 
+                          background:{{ Route::is('inventory_report') ? $primary_red : 'transparent' }};">
                                     Inventory Report
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="{{ route('view_section') }}" class="nav-link"
-                                    style="display:block; padding:8px 10px; font-size: 0.9rem; border-radius:4px;
-                    color:{{ Route::is('teacher_load_route_name') ? $text_white : $text_dark }}; 
-                    background:{{ Route::is('teacher_load_route_name') ? $primary_indigo : 'transparent' }};">
+                                <a href="{{ route('product_report') }}" class="nav-link"
+                                    style="display:block; padding:8px 10px; font-size: 0.9rem; border-radius:4px; text-decoration: none;
+                          color:{{ Route::is('product_report') ? $text_white : $text_dark }}; 
+                          background:{{ Route::is('product_report') ? $primary_red : 'transparent' }};">
                                     Product Report
                                 </a>
                             </li>
+
                         </ul>
                     </div>
                 </li>
 
+
                 {{-- POS history --}}
                 <li class="nav-item">
-                    <a href="{{ route('pos-history') }}"
-                        class="nav-link {{ Route::is('pos-history') ? 'active' : '' }}"
-                        style="display:flex; align-items:center; gap:10px; color:{{ Route::is('pos-history') ? '#fff' : '#333' }}; background:{{ Route::is('pos-history') ? '#ff5757' : 'transparent' }};">
+                    <a href="{{ route('pos_history') }}"
+                        class="nav-link {{ Route::is('pos_history') ? 'active' : '' }}"
+                        style="display:flex; align-items:center; gap:10px; color:{{ Route::is('pos_history') ? '#fff' : '#333' }}; background:{{ Route::is('pos_history') ? '#ff5757' : 'transparent' }};">
                         <i class="bi bi-clock-history"></i> POS History
                     </a>
                 </li>
 
-                {{-- POS history --}}
+
                 <li class="nav-item">
                     <a href="{{ route('purchases.index') }}"
                         class="nav-link {{ Route::is('purchases.index') ? 'active' : '' }}"
                         style="display:flex; align-items:center; gap:10px; color:{{ Route::is('purchases.index') ? '#fff' : '#333' }}; background:{{ Route::is('purchases.index') ? '#ff5757' : 'transparent' }};">
-                        <i class="bi bi-clock-history"></i> Supplier Payment
+                        <i class="bi bi-bank"></i></i> Supplier Payment
                     </a>
                 </li>
 

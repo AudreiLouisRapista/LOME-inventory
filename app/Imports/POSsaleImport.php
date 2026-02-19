@@ -35,7 +35,7 @@ class POSsaleImport implements ToCollection
 
             if ($inventory) {
                 $newTotalSold = $inventory->invt_totalSold + $qtySoldNow;
-                $newRemaining = $inventory->invt_quantity - $newTotalSold;
+                $newRemaining = $inventory->invt_StartingQuantity - $newTotalSold;
                  if($newRemaining < 0) $newRemaining = 0; 
 
                 // Status logic

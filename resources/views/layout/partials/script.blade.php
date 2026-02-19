@@ -41,6 +41,7 @@
         $("#example1").DataTable({
             "responsive": true,
             "lengthChange": false,
+            'searching': false,
             "autoWidth": false,
 
             "buttons": ["excel", "pdf", "print", ]

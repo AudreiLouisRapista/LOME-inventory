@@ -1,7 +1,7 @@
 @extends('themes.main')
 
 {{-- 1. DEFINE PAGE TITLE --}}
-@section('title', 'User Profile')
+@section('title', 'Inventory Management')
 
 {{-- 2. DEFINE CONTENT HEADER (Breadcrumbs) --}}
 @section('content_header')
@@ -20,7 +20,8 @@
                 </div>
                 <div>
                     <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                        <h3 style="font-size: 28px; font-weight: 700; margin: 0; color: #1e293b;">{{ $totalProducts }}</h3>
+                        <h3 style="font-size: 28px; font-weight: 700; margin: 0; color: #1e293b;">
+                            {{ number_format($totalProducts) }}</h3>
                         <div
                             style="background: #f0fdf4; color: #16a34a; padding: 4px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
                             ↗ 0.5%
@@ -38,7 +39,8 @@
                 </div>
                 <div>
                     <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                        <h3 style="font-size: 28px; font-weight: 700; margin: 0; color: #1e293b;">{{ $totalQuantity }}</h3>
+                        <h3 style="font-size: 28px; font-weight: 700; margin: 0; color: #1e293b;">
+                            {{ number_format($totalQuantity) }}</h3>
                         <div
                             style="background: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
                             ↘ 1.2%
@@ -56,7 +58,8 @@
                 </div>
                 <div>
                     <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                        <h3 style="font-size: 28px; font-weight: 700; margin: 0; color: #1e293b;">{{ $lowStockProducts }}
+                        <h3 style="font-size: 28px; font-weight: 700; margin: 0; color: #1e293b;">
+                            {{ number_format($lowStockProducts) }}
                         </h3>
                         <div
                             style="background: #f0fdf4; color: #16a34a; padding: 4px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
@@ -75,7 +78,8 @@
                 </div>
                 <div>
                     <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                        <h3 style="font-size: 28px; font-weight: 700; margin: 0; color: #1e293b;">{{ $outOfStock }}</h3>
+                        <h3 style="font-size: 28px; font-weight: 700; margin: 0; color: #1e293b;">
+                            {{ number_format($outOfStock) }}</h3>
                         <div
                             style="background: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
                             ↘ 1.5%
@@ -93,7 +97,8 @@
                 </div>
                 <div>
                     <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                        <h3 style="font-size: 28px; font-weight: 700; margin: 0; color: #1e293b;">{{ $totalSold }}</h3>
+                        <h3 style="font-size: 28px; font-weight: 700; margin: 0; color: #1e293b;">
+                            {{ number_format($totalSold) }}</h3>
                         <div
                             style="background: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
                             ↘ 1.5%
@@ -241,10 +246,11 @@
                                                         <div class="col-md-4">
                                                             <label class="form-label fw-semibold"
                                                                 style="color: #475569;">Quantity</label>
-                                                            <input id="product_quantity" type="number"
-                                                                name="product_quantity" class="form-control bg-light"
-                                                                placeholder="0" style="border-radius: 10px; height: 45px;"
-                                                                value="" required>
+                                                            <input id="product_StartingQuantity" type="number"
+                                                                name="product_StartingQuantity"
+                                                                class="form-control bg-light" placeholder="0"
+                                                                style="border-radius: 10px; height: 45px;" value=""
+                                                                required>
                                                         </div>
                                                     </div>
 
@@ -267,7 +273,32 @@
 
 
                         <!-- /.card-header -->
-                        <div class="table-container">
+                        <div class="table-container" style="overflow-x: auto; padding: 0 10px;">
+                            <div class="row mb-3 mt-3 justify-content-end">
+                                <div class="col-md-3">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white shadow-sm"><i
+                                                class="bi bi-filter-right"></i></span>
+                                        <select id="tableCategoryFilter" class="form-select shadow-sm">
+                                            <option value="all"> - Choose Category - </option>
+                                            @foreach ($categories as $cat)
+                                                <option value="{{ $cat->category_ID }}">
+                                                    {{ strtoupper($cat->category_name) }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white shadow-sm"><i
+                                                class="bi bi-filter-left"></i></span>
+                                        <select id="tableProductFilter" class="form-select shadow-sm">
+                                            <option value="all"> - Choose Product - </option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
                             <table id="example2" class="table table-bordered table-hover" style="width:100%">
                                 <thead>
                                     <tr>
@@ -276,7 +307,8 @@
                                         <th>Product Category</th>
                                         <th>Cost</th>
                                         <th>Price</th>
-                                        <th>Quantity</th>
+                                        <th>Starting Quantity</th>
+                                        <th>New Quantity</th>
                                         <th>Total Sold</th>
                                         <th>Remaining Stock</th>
                                         <th>Status</th>
@@ -301,14 +333,19 @@
                                         <h5 class="modal-title">Update Product</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
-                                    <form id="updateProductForm" action="{{ route('update_inventory') }}" method="POST">
+                                    <form id="updateProductForm" action="{{ route('update_inventory') }}"
+                                        method="POST">
                                         @csrf
                                         <div class="modal-body">
-                                            <input type="hidden" name="inventory_ID" id="edit_id">
+
+
+                                            <input type="hidden" name="inventory_ID" id="edit_inventory_ID">
+                                            <input type="hidden" name="product_ID" id="edit_product_ID">
+
                                             <div class="mb-3">
                                                 <label class="form-label">Product Name</label>
-                                                <input type="text" id="edit_product_name" name="product_ID"
-                                                    class="form-control" required>
+                                                <input type="text" id="edit_product_name" name="product_name"
+                                                    class="form-control" readonly>
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label">Category</label>
@@ -325,14 +362,14 @@
                                                 </select>
                                             </div>
                                             <div class="mb-3">
-                                                <label class="form-label">Quantity</label>
-                                                <input type="number" id="edit_quantity" name="quantity"
+                                                <label class="form-label">New Quantity</label>
+                                                <input type="number" id="edit_NewQuantity" name="update_NewQuantity"
                                                     class="form-control" required>
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label">Remaining Stock</label>
-                                                <input type="number" id="edit_remainingstock" name="remainingstock"
-                                                    class="form-control">
+                                                <input type="number" id="edit_remainingstock"
+                                                    name="update_remainingstock" class="form-control" readonly>
                                             </div>
 
                                         </div>
@@ -384,15 +421,25 @@
 
     <script>
         $(document).ready(function() {
+            // ==========================================
+            // 1. DATATABLE INITIALIZATION (Inventory Table)
+            // ==========================================
             var table = $('#example2').DataTable({
-                destroy: true, // use this to reinitialize the table if it already exists. use ths if you are using AJAX to load data and want to refresh the table with new data
-                processing: true, // This shows a loading indicator while the data is being fetched, enhancing user experience.
-                serverSide: true, // This enables the fast loading for 4k rows. instead of loading all data at once, it loads only the data needed for the current page.
+                destroy: true,
+                processing: true,
+                serverSide: true,
+                searching: false,
+                lengthChange: false,
+                ajax: {
+                    url: "{{ route('view_inventory') }}",
+                    data: function(d) {
+                        d.category_id_table = $('#tableCategoryFilter').val();
+                        d.product_id_table = $('#tableProductFilter').val();
+                    }
+                },
                 language: {
                     processing: '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Processing...</span></div>'
                 },
-                ajax: "{{ route('view_inventory') }}", // Ensure this matches your route name
-
                 columns: [{
                         data: 'inventory_ID',
                         name: 'inventory.inventory_ID'
@@ -413,10 +460,13 @@
                         data: 'product_price',
                         name: 'products.product_price'
                     },
-
                     {
-                        data: 'invt_quantity',
-                        name: 'inventory.invt_quantity'
+                        data: 'invt_StartingQuantity',
+                        name: 'inventory.invt_StartingQuantity'
+                    },
+                    {
+                        data: 'invt_NewQuantity',
+                        name: 'inventory.invt_NewQuantity'
                     },
                     {
                         data: 'invt_totalSold',
@@ -426,169 +476,30 @@
                         data: 'invt_remainingStock',
                         name: 'inventory.invt_remainingStock'
                     },
-
                     {
                         data: 'status_ID',
                         name: 'inventory.status_ID',
-                        render: function(data, type, row) {
-                            if (data == 1) {
-                                return '<span class="status-in-stock">In Stock</span>';
-                            } else if (data == 2) {
-                                return '<span class="status-low-stock">Low Stock</span>';
-                            } else if (data == 3) {
+                        render: function(data) {
+                            if (data == 1) return '<span class="status-in-stock">In Stock</span>';
+                            if (data == 2) return '<span class="status-low-stock">Low Stock</span>';
+                            if (data == 3)
                                 return '<span class="status-out-of-stock">Out of Stock</span>';
-                            } else {
-                                return '<span class="custom-badge" style="background-color: #e0e0e0; color: #333;">Unknown</span>';
-                            }
+                            return '<span class="badge bg-secondary">Unknown</span>';
                         }
                     },
-
-
                     {
                         data: 'action',
                         name: 'action',
                         orderable: false,
                         searchable: false
-                    },
+                    }
                 ],
-                "dom": '<"d-flex align-items-end justify-content-between mb-4"Bf>rtip',
-                "buttons": ["excel", "pdf", "print"]
-
-
             });
-
-            $('#example2 tbody').on('click', '.edit-btn', function() {
-
-                var id = $(this).data('id');
-                var prodID = $(this).data('product-id');
-                var prodName = $(this).data('product-name');
-                var catID = $(this).data('category-id');
-                var qnty = $(this).data('quantity');
-                var rStock = $(this).data('remainingstock');
-
-                $('#edit_id').val(id);
-                $('#edit_product_name').val(prodName);
-                $('#edit_category').val(catID);
-                $('#edit_quantity').val(qnty);
-                $('#edit_remainingstock').val(rStock);
-
-
-
-                $('#UpdateProductModal').modal('show');
-            });
-
-            $('#updateProductForm').on('submit', function(e) {
-                e.preventDefault();
-
-                var actionUrl = $(this).attr(
-                    'action'); // BEST OPTION IF THERE IS ACTION CRUD IN THE FUTURE. USUALLY USED FOR POST
-                var formdata = $(this).serialize();
-
-                $.ajax({
-                    url: actionUrl,
-                    method: 'POST',
-                    data: formdata,
-                    success: function(response) {
-                        $('#UpdateProductModal').modal('hide');
-                        table.ajax.reload(null,
-                            false); // Reload the DataTable without resetting the pagination
-                        alert('Product updated successfully!');
-                    },
-                    error: function(xhr) {
-                        alert('Something went wrong!');
-                    }
-                });
-            });
-        });
-
-        $(document).ready(function() {
-            $(document).on('change', '#category_ID', function() {
-                var categoryId = $(this).val();
-                var productSelect = $('#product_ID');
-
-                console.log("Category changed to: " + categoryId); // DEBUG 1
-
-                // Clear everything first
-                productSelect.empty().append('<option value="">-- Loading Products... --</option>');
-                $('#product_cost, #product_price, #product_quantity').val('');
-
-                if (categoryId) {
-                    $.ajax({
-                        url: "/admin/get-products-by-category/" + categoryId,
-                        type: 'GET',
-                        dataType: 'json',
-                        success: function(data) {
-                            console.log("Server returned data:", data); // DEBUG 2
-
-                            productSelect.empty().append(
-                                '<option value=""> Select Product-</option>');
-
-                            if (data.length === 0) {
-                                productSelect.append(
-                                    '<option value="">No products found</option>');
-                                return;
-                            }
-
-                            $.each(data, function(key, value) {
-                                productSelect.append('<option value="' + value
-                                    .product_ID + '" ' +
-                                    'data-cost="' + value.product_cost + '" ' +
-                                    'data-price="' + value.product_price + '" ' +
-                                    'data-qty="' + value.current_stock + '">' +
-                                    value.product_name +
-                                    '</option>');
-                            });
-                        },
-                        error: function(xhr) {
-                            console.error("AJAX Error: ", xhr.status, xhr
-                                .responseText); // DEBUG 3
-                            productSelect.empty().append(
-                                '<option value="">Error loading</option>');
-                        }
-                    });
-                } else {
-                    productSelect.empty().append('<option value="">-- Select Product --</option>');
-                }
-            });
-
-            // This handles the second step: clicking the product
-            $(document).on('change', '#product_ID', function() {
-                var selected = $(this).find('option:selected');
-                console.log("Product selected. Data values:", selected.data()); // DEBUG 4
-
-                $('#product_cost').val(selected.data('cost'));
-                $('#product_price').val(selected.data('price'));
-                $('#product_quantity').val(selected.data('qty'));
-            });
-        });
-        // This prevents double-clicking and shows the user something is happening
-        $('form').on('submit', function() {
-            $(this).find('#importBtn').prop('disabled', true).html(
-                '<span class="spinner-border spinner-border-sm"></span> Importing...');
-        });
-
-
-
-
-        var inventoryChart; // Global variable
-
-        $(document).ready(function() {
-            // 1. Initialize DataTable
-            var table = $('#inventoryTable').DataTable({
-                processing: true,
-                serverSide: true,
-                ajax: {
-                    url: "{{ route('view_inventory') }}",
-                    data: function(d) {
-                        d.category_id = $('#chartCategoryFilter').val(); // Sync table with filter
-                    }
-                },
-
-            });
-
-            // 2. Initialize Chart (Empty at start)
+            // ==========================================
+            // 2. CHART.JS LOGIC
+            // ==========================================
             var ctx = document.getElementById('inventoryStatusChart').getContext('2d');
-            inventoryChart = new Chart(ctx, {
+            var inventoryChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: [],
@@ -600,7 +511,6 @@
                 }
             });
 
-            // 3. The "Refresh" function
             function refreshChartOnly() {
                 $.ajax({
                     url: "{{ route('view_inventory') }}",
@@ -621,45 +531,141 @@
                                 backgroundColor: '#4CAF50'
                             }
                         ];
-                        inventoryChart.update(); // This is like table.draw() but for Chart.js
+                        inventoryChart.update();
                     }
                 });
             }
 
-            // 4. Trigger both when filter changes
+            // Trigger Table & Chart refresh when Filter changes
             $('#chartCategoryFilter').on('change', function() {
-                table.draw(); // Refresh Table
-                refreshChartOnly(); // Refresh Chart
+                table.draw();
+                refreshChartOnly();
             });
 
-            // Initial load
-            refreshChartOnly();
+            $('#tableCategoryFilter').on('change', function() {
+                table.draw();
+            });
+
+            // ==========================================
+            // 3. EDIT MODAL LOGIC (Inventory Update)
+            // ==========================================
+            $('#example2 tbody').on('click', '.edit-btn', function() {
+                // jQuery camelCase conversion for data-attributes
+                var id = $(this).attr('data-inventory-id');
+                var prodID = $(this).attr('data-product-id');
+                var prodName = $(this).attr('data-product-name');
+                var catID = $(this).attr('data-category-ID');
+                var qnty = $(this).attr('data-update_NewQuantity');
+                var rStock = $(this).attr('data-update_remainingstock');
+
+                $('#edit_inventory_ID').val(id);
+                $('#edit_product_ID').val(prodID);
+
+                $('#edit_product_name').val(prodName);
+                $('#edit_category').val(catID);
+                $('#edit_NewQuantity').val(qnty);
+                $('#edit_remainingstock').val(rStock);
+
+                $('#UpdateProductModal').modal('show');
+            });
+
+            $('#updateProductForm').on('submit', function(e) {
+                e.preventDefault();
+                var actionUrl = $(this).attr('action');
+                var formdata = $(this).serialize();
+
+                $.ajax({
+                    url: actionUrl,
+                    method: 'POST',
+                    data: formdata,
+                    success: function(response) {
+                        $('#UpdateProductModal').modal('hide');
+                        table.ajax.reload(null, false);
+                        refreshChartOnly();
+                        alert('Inventory updated successfully!');
+                    },
+                    error: function() {
+                        alert('Something went wrong with the update!');
+                    }
+                });
+            });
+
+            // ==========================================
+            // 4. SAVE NEW PRODUCT LOGIC (Dropdown mapping)
+            // ==========================================
+            $(document).on('change', '#category_ID, #tableCategoryFilter', function() {
+                var categoryId = $(this).val();
+                var productSelect = ($(this).attr('id') === 'tableCategoryFilter') ? $(
+                    '#tableProductFilter') : $('#product_ID');
+
+                productSelect.empty().append('<option value="">-- Loading Products... --</option>');
+                $('#product_cost, #product_price, #product_StartingQuantity').val('');
+
+                if ($(this).attr('id') === 'category_ID') {
+                    $('#product_cost, #product_price, #product_StartingQuantity').val('');
+                }
+
+                if (categoryId && categoryId !== 'all') {
+                    $.ajax({
+                        url: "/admin/get-products-by-category/" + categoryId,
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function(data) {
+                            // Determine the default text based on which dropdown it is
+                            var defaultText = ($(this).attr('id') === 'tableCategoryFilter') ?
+                                ' - All Products - ' : '--Select Product--';
+                            var defaultValue = ($(this).attr('id') === 'tableCategoryFilter') ?
+                                'all' : '';
+
+                            productSelect.empty().append('<option value="' + defaultValue +
+                                '">' + defaultText + '</option>');
+
+                            if (data.length === 0) {
+                                productSelect.append(
+                                    '<option value="">No products found</option>');
+                                return;
+                            }
+
+                            $.each(data, function(key, value) {
+                                productSelect.append('<option value="' + value
+                                    .product_ID + '" ' +
+                                    'data-cost="' + value.product_cost + '" ' +
+                                    'data-price="' + value.product_price + '" ' +
+                                    'data-qty="' + (value.current_stock || 0) +
+                                    '">' +
+                                    value.product_name + '</option>');
+                            });
+                        }.bind(this) // Bind 'this' so we can check the ID inside success
+                    });
+                } else {
+                    productSelect.empty().append('<option value="all"> - All Products - </option>');
+                }
+            });
+
+            $(document).on('change', '#product_ID, #tableProductFilter', function() {
+                var selected = $(this).find('option:selected');
+                $('#product_cost').val(selected.data('cost'));
+                $('#product_price').val(selected.data('price'));
+                $('#product_StartingQuantity').val(selected.data('qty'));
+
+                if ($(this).attr('id') === 'tableProductFilter') {
+                    table.draw();
+                }
+            });
+
+            // ==========================================
+            // 5. MISC (Import Button & Initial Load)
+            // ==========================================
+            $('form').on('submit', function() {
+                $(this).find('#importBtn').prop('disabled', true).html(
+                    '<span class="spinner-border spinner-border-sm"></span> Importing...');
+            });
+
+            refreshChartOnly(); // Load chart data on page open
         });
     </script>
 
     <style>
-        .dataTables_filter input {
-            width: 250px !important;
-            height: 38px !important;
-            border: 1.5px solid #e2e8f0 !important;
-            border-radius: 12px !important;
-            /* Modern rounded look */
-            background-color: #f8fafc !important;
-            padding-left: 35px !important;
-            /* Space for an icon */
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' class='bi bi-search' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: 12px center;
-            transition: all 0.2s ease;
-        }
-
-        .dataTables_filter input:focus {
-            border-color: #3b82f6 !important;
-            background-color: #ffffff !important;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-            outline: none;
-        }
-
         .status-in-stock,
         .status-low-stock,
         .status-out-of-stock {

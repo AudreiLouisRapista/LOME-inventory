@@ -38,11 +38,6 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     // Place all admin routes here
     Route::get('/dashboard', [MainController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/admin_profile', [MainController::class, 'admin_profile'])->name('admin_profile');
-    Route::get('/schedule', [MainController::class, 'schedule'])->name('schedule');
-    Route::get('/section_loadView', [MainController::class, 'section_loadView'])->name('section_loadView');
-    Route::get('/print_teacher_load/{id}/{year}', [MainController::class, 'print_teacher_load'])->name('teacher.print_pdf');
-    Route::get('/section_loads', [MainController::class, 'section_loads'])->name('section_loads');
-    Route::get('/faculty_list', [MainController::class, 'faculty_list'])->name('faculty_list');
     Route::get('/activity-log', [MainController::class, 'activityLogPage']);
     Route::get('/subject', [MainController::class, 'subject'])->name('subject');
     Route::get('/view_section', [MainController::class, 'view_section'])->name('view_section');
@@ -51,8 +46,9 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     Route::get('/teachers', [MainController::class, 'teachers'])->name('teachers');
     Route::get('/view_products', [MainController::class, 'view_products'])->name('view_products');
     Route::get('/view_inventory', [MainController::class, 'view_inventory'])->name('view_inventory');
-    Route::get('/pos-history', [MainController::class, 'pos_history'])->name('pos-history');
-    Route::get('/view_grade2', [MainController::class, 'view_grade2'])->name('view_grade2');
+    Route::get('/pos_history', [MainController::class, 'pos_history'])->name('pos_history');
+    Route::get('/product_report', [MainController::class, 'product_report'])->name('product_report');
+    Route::get('/inventory_report', [MainController::class, 'inventory_report'])->name('inventory_report');
     Route::get('/teacher_status', [MainController::class, 'teacher_status'])->name('teacher_status');
     Route::get('/updateTeacherStatus', [MainController::class, 'updateTeacherStatus'])->name('updateTeacherStatus');
     Route::post('/save_product', [MainController::class, 'save_product'])->name('save_product');
