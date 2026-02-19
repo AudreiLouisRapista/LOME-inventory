@@ -1507,6 +1507,7 @@ function renderInvoices() {
                     
                     closePaymentModal();
                     renderInvoices();
+                    window.location.reload();
                 }
             })
             .catch(error => {
@@ -1578,3 +1579,4 @@ function renderInvoices() {
 
 
 @endsection
+
