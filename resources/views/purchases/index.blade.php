@@ -525,23 +525,14 @@
 
                     <div class="form-group">
                         <label for="supplier" class="required">Supplier</label>
-                        <input 
-                            type="text" 
-                            id="supplier" 
-                            name="supplier_name" 
-                            list="supplierList" 
-                            placeholder="Select supplier" 
-                            autocomplete="off"
-                            required>
-                        <input type="hidden" id="supplierId" name="supplier_id">
-                        <datalist id="supplierList">
+                        <select id="supplier" name="supplier_id" required>
+                            <option value="" disabled selected>Select Supplier</option>
                             @foreach($suppliers as $supplier)
-                                <option 
-                                    value="{{ $supplier->supplier_name }}" 
-                                    data-id="{{ $supplier->supplier_id }}">
+                                <option value="{{ $supplier->supplier_id }}">
+                                    {{ $supplier->supplier_name }}
                                 </option>
                             @endforeach
-                        </datalist>
+                        </select>
                     </div>
 
                     <div class="form-row">
