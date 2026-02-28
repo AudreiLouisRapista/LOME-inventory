@@ -116,14 +116,9 @@
             <div class="row">
                 <div class="col-12">
                     <div class="card" style=" display: block; background:#fff; padding:20px">
-                        <div class="d-flex justify-content-between align-items-center bg-white p-3 rounded shadow-sm mb-4">
+                        <div class="d-flex justify-content-between align-items-center bg-white p-3  rounded shadow-sm mb-4">
                             <h5 class="card-title fs-4 fw-bold m-0">Inventory List</h5>
                             <!-- Button trigger modal -->
-
-
-
-
-
                             <div class="import-container">
                                 <form action="{{ route('import_pos_sales') }}" method="POST" enctype="multipart/form-data"
                                     class="m-0">
@@ -132,7 +127,7 @@
                                         <span class="input-group-text bg-light border-0 px-3">
                                             <i class="bi bi-receipt text-success"></i>
                                         </span>
-                                        <input type="file" name="inventory_file" class="form-control border-0 bg-light"
+                                        <input type="file" name="pos_import" class="form-control border-0 bg-light"
                                             id="inputGroupFile04" required>
                                         <button class="btn btn-success px-4" id="importBtn" type="submit">
                                             <i class="bi bi-cloud-arrow-up-fill me-1"></i> POS SALE
@@ -140,14 +135,24 @@
                                     </div>
                                 </form>
                             </div>
-                            <button type="button" class="btn-inventory" data-bs-toggle="modal"
-                                data-bs-target="#exampleModal">
-                                <i class="bi bi-plus-lg"></i>
-                                New Product
-                            </button>
+
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn-inventory" data-bs-toggle="modal"
+                                    data-bs-target="#newProductModal">
+                                    <i class="bi bi-plus-lg"></i>
+                                    New Product
+                                </button>
+
+                                <button type="button" class="btn-inventory" data-bs-toggle="modal"
+                                    data-bs-target="#addInventoryModal">
+                                    <i class="bi bi-plus-lg"></i>
+                                    Add Inventory
+                                </button>
+                            </div>
+
                             <!-- Modal -->
-                            <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="addScheduleModalLabel"
-                                aria-hidden="true">
+                            <div class="modal fade" id="newProductModal" tabindex="-1"
+                                aria-labelledby="addScheduleModalLabel" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered modal-lg">
                                     <div class="modal-content border-0"
                                         style="border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
@@ -269,33 +274,169 @@
                                     </div>
                                 </div>
                             </div>
+
+
+                            <div class="modal fade" id="addInventoryModal" tabindex="-1"
+                                aria-labelledby="addScheduleModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered modal-lg">
+                                    <div class="modal-content border-0"
+                                        style="border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+
+                                        <div class="modal-header bg-dark text-white py-3">
+                                            <h5 class="modal-title fw-bold" id="addTeacherModalLabel">
+                                                <i class="fas fa-box-open me-2"></i> Inventory
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white"
+                                                data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+
+
+                                        <div class="modal-body px-4 pb-4">
+                                            @include('layout.partials.alerts')
+
+                                            <form method="POST" action="{{ route('save_inventory') }}"
+                                                enctype="multipart/form-data">
+                                                @csrf
+
+                                                <div class="mb-4">
+                                                    <label class="text-uppercase text-muted fw-bold mb-3"
+                                                        style="font-size: 11px; letter-spacing: 1px;">Basic
+                                                        Information</label>
+                                                    <hr class="mt-0 mb-4" style="opacity: 0.1;">
+                                                    <input type="hidden" name="inventory_ID" id="edit_id">
+                                                    <div class="row g-3">
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-semibold"
+                                                                style="color: #475569;">Category</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text bg-light border-end-0"
+                                                                    style="border-radius: 10px 0 0 10px;">
+                                                                    <i class="bi bi-tag text-muted"></i>
+                                                                </span>
+                                                                <select id="category_ID" name="category_ID"
+                                                                    class="form-select bg-light border-start-0"
+                                                                    style="border-radius: 0 10px 10px 0; height: 45px;"
+                                                                    required>
+                                                                    <option value="">Select Category</option>
+                                                                    @foreach ($categories as $cat)
+                                                                        <option value="{{ $cat->category_ID }}">
+                                                                            {{ $cat->category_name }}</option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-semibold"
+                                                                style="color: #475569;">Product</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text bg-light border-end-0"
+                                                                    style="border-radius: 10px 0 0 10px;">
+                                                                    <i class="bi bi-tag text-muted"></i>
+                                                                </span>
+                                                                <select id="product_ID" name="product_ID"
+                                                                    class="form-select bg-light border-start-0"
+                                                                    style="border-radius: 0 10px 10px 0; height: 45px;"
+                                                                    required>
+                                                                    <option value="">Select Product</option>
+
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="mb-4">
+                                                    <label class="text-uppercase text-muted fw-bold mb-3"
+                                                        style="font-size: 11px; letter-spacing: 1px;">Stock
+                                                        Management</label>
+                                                    <hr class="mt-0 mb-4" style="opacity: 0.1;">
+
+                                                    <div class="row g-3">
+
+                                                        <div class="col-md-4">
+                                                            <label class="form-label fw-semibold">Cost Price</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text">$</span>
+                                                                <input id="product_cost" type="number"
+                                                                    name="product_cost" class="form-control"
+                                                                    step="0.01" placeholder="0.00" value=""
+                                                                    required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label class="form-label fw-semibold">Selling Price</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text">$</span>
+                                                                <input id="product_price" type="number"
+                                                                    name="product_price" class="form-control"
+                                                                    step="0.01" placeholder="0.00" value=""
+                                                                    required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label class="form-label fw-semibold"
+                                                                style="color: #475569;">Quantity</label>
+                                                            <input id="product_StartingQuantity" type="number"
+                                                                name="product_StartingQuantity"
+                                                                class="form-control bg-light" placeholder="0"
+                                                                style="border-radius: 10px; height: 45px;" value=""
+                                                                required>
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+
+                                                <div class="d-flex justify-content-end gap-2 mt-5">
+                                                    <button type="button" class="btn btn-light px-4 fw-semibold"
+                                                        data-bs-dismiss="modal"
+                                                        style="border-radius: 10px; color: #64748b;">Cancel</button>
+                                                    <button type="submit" class="btn btn-primary px-5 fw-semibold"
+                                                        style="border-radius: 10px; background: #007bff; border: none;">Save
+                                                        Product</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
 
                         <!-- /.card-header -->
                         <div class="table-container" style="overflow-x: auto; padding: 0 10px;">
-                            <div class="row mb-3 mt-3 justify-content-end">
-                                <div class="col-md-3">
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-white shadow-sm"><i
-                                                class="bi bi-filter-right"></i></span>
-                                        <select id="tableCategoryFilter" class="form-select shadow-sm">
-                                            <option value="all"> - Choose Category - </option>
-                                            @foreach ($categories as $cat)
-                                                <option value="{{ $cat->category_ID }}">
-                                                    {{ strtoupper($cat->category_name) }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+                            <div class="row mb-3 mt-3 align-items-center justify-content-between">
+                                <div class="col-auto">
+                                    <button type="button" id="btn-close-period" class="btn btn-danger btn-sm">
+                                        <i class="bi bi-calendar-check-fill"></i> Close Month Period
+                                    </button>
                                 </div>
 
-                                <div class="col-md-3">
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-white shadow-sm"><i
-                                                class="bi bi-filter-left"></i></span>
-                                        <select id="tableProductFilter" class="form-select shadow-sm">
-                                            <option value="all"> - Choose Product - </option>
-                                        </select>
+                                <div class="col-md-7 d-flex justify-content-end gap-2">
+                                    <div class="col-md-5">
+                                        <div class="input-group shadow-sm">
+                                            <span class="input-group-text bg-white">
+                                                <i class="bi bi-filter-right"></i>
+                                            </span>
+                                            <select id="tableCategoryFilter" class="form-select">
+                                                <option value="all"> - Choose Category - </option>
+                                                @foreach ($categories as $cat)
+                                                    <option value="{{ $cat->category_ID }}">
+                                                        {{ strtoupper($cat->category_name) }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-5">
+                                        <div class="input-group shadow-sm">
+                                            <span class="input-group-text bg-white">
+                                                <i class="bi bi-filter-left"></i>
+                                            </span>
+                                            <select id="tableProductFilter" class="form-select">
+                                                <option value="all"> - Choose Product - </option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -422,7 +563,7 @@
     <script>
         $(document).ready(function() {
             // ==========================================
-            // 1. DATATABLE INITIALIZATION (Inventory Table)
+            // 1. DATATABLE INITIALIZATION
             // ==========================================
             var table = $('#example2').DataTable({
                 destroy: true,
@@ -495,6 +636,7 @@
                     }
                 ],
             });
+
             // ==========================================
             // 2. CHART.JS LOGIC
             // ==========================================
@@ -536,48 +678,32 @@
                 });
             }
 
-            // Trigger Table & Chart refresh when Filter changes
-            $('#chartCategoryFilter').on('change', function() {
-                table.draw();
-                refreshChartOnly();
-            });
-
+            // Trigger Table & Chart refresh
+            $('#chartCategoryFilter').on('change', refreshChartOnly);
             $('#tableCategoryFilter').on('change', function() {
                 table.draw();
             });
 
             // ==========================================
-            // 3. EDIT MODAL LOGIC (Inventory Update)
+            // 3. EDIT MODAL LOGIC
             // ==========================================
             $('#example2 tbody').on('click', '.edit-btn', function() {
-                // jQuery camelCase conversion for data-attributes
-                var id = $(this).attr('data-inventory-id');
-                var prodID = $(this).attr('data-product-id');
-                var prodName = $(this).attr('data-product-name');
-                var catID = $(this).attr('data-category-ID');
-                var qnty = $(this).attr('data-update_NewQuantity');
-                var rStock = $(this).attr('data-update_remainingstock');
-
-                $('#edit_inventory_ID').val(id);
-                $('#edit_product_ID').val(prodID);
-
-                $('#edit_product_name').val(prodName);
-                $('#edit_category').val(catID);
-                $('#edit_NewQuantity').val(qnty);
-                $('#edit_remainingstock').val(rStock);
-
+                var el = $(this);
+                $('#edit_inventory_ID').val(el.attr('data-inventory-id'));
+                $('#edit_product_ID').val(el.attr('data-product-id'));
+                $('#edit_product_name').val(el.attr('data-product-name'));
+                $('#edit_category').val(el.attr('data-category-ID'));
+                $('#edit_NewQuantity').val(el.attr('data-update_NewQuantity'));
+                $('#edit_remainingstock').val(el.attr('data-update_remainingstock'));
                 $('#UpdateProductModal').modal('show');
             });
 
             $('#updateProductForm').on('submit', function(e) {
                 e.preventDefault();
-                var actionUrl = $(this).attr('action');
-                var formdata = $(this).serialize();
-
                 $.ajax({
-                    url: actionUrl,
+                    url: $(this).attr('action'),
                     method: 'POST',
-                    data: formdata,
+                    data: $(this).serialize(),
                     success: function(response) {
                         $('#UpdateProductModal').modal('hide');
                         table.ajax.reload(null, false);
@@ -585,57 +711,39 @@
                         alert('Inventory updated successfully!');
                     },
                     error: function() {
-                        alert('Something went wrong with the update!');
+                        alert('Update failed!');
                     }
                 });
             });
 
             // ==========================================
-            // 4. SAVE NEW PRODUCT LOGIC (Dropdown mapping)
+            // 4. DYNAMIC DROPDOWNS (Filtered Products)
             // ==========================================
             $(document).on('change', '#category_ID, #tableCategoryFilter', function() {
                 var categoryId = $(this).val();
-                var productSelect = ($(this).attr('id') === 'tableCategoryFilter') ? $(
-                    '#tableProductFilter') : $('#product_ID');
+                var isFilter = ($(this).attr('id') === 'tableCategoryFilter');
+                var productSelect = isFilter ? $('#tableProductFilter') : $('#product_ID');
 
-                productSelect.empty().append('<option value="">-- Loading Products... --</option>');
-                $('#product_cost, #product_price, #product_StartingQuantity').val('');
-
-                if ($(this).attr('id') === 'category_ID') {
-                    $('#product_cost, #product_price, #product_StartingQuantity').val('');
-                }
+                productSelect.empty().append('<option value="">Loading...</option>');
 
                 if (categoryId && categoryId !== 'all') {
                     $.ajax({
                         url: "/admin/get-products-by-category/" + categoryId,
                         type: 'GET',
-                        dataType: 'json',
                         success: function(data) {
-                            // Determine the default text based on which dropdown it is
-                            var defaultText = ($(this).attr('id') === 'tableCategoryFilter') ?
-                                ' - All Products - ' : '--Select Product--';
-                            var defaultValue = ($(this).attr('id') === 'tableCategoryFilter') ?
-                                'all' : '';
+                            var defaultText = isFilter ? ' - All Products - ' :
+                                '--Select Product--';
+                            var defaultValue = isFilter ? 'all' : '';
 
                             productSelect.empty().append('<option value="' + defaultValue +
                                 '">' + defaultText + '</option>');
 
-                            if (data.length === 0) {
-                                productSelect.append(
-                                    '<option value="">No products found</option>');
-                                return;
-                            }
-
                             $.each(data, function(key, value) {
-                                productSelect.append('<option value="' + value
-                                    .product_ID + '" ' +
-                                    'data-cost="' + value.product_cost + '" ' +
-                                    'data-price="' + value.product_price + '" ' +
-                                    'data-qty="' + (value.current_stock || 0) +
-                                    '">' +
-                                    value.product_name + '</option>');
+                                productSelect.append(
+                                    `<option value="${value.product_ID}" data-cost="${value.product_cost}" data-price="${value.product_price}" data-qty="${value.current_stock || 0}">${value.product_name}</option>`
+                                );
                             });
-                        }.bind(this) // Bind 'this' so we can check the ID inside success
+                        }
                     });
                 } else {
                     productSelect.empty().append('<option value="all"> - All Products - </option>');
@@ -644,28 +752,119 @@
 
             $(document).on('change', '#product_ID, #tableProductFilter', function() {
                 var selected = $(this).find('option:selected');
-                $('#product_cost').val(selected.data('cost'));
-                $('#product_price').val(selected.data('price'));
-                $('#product_StartingQuantity').val(selected.data('qty'));
-
-                if ($(this).attr('id') === 'tableProductFilter') {
+                if ($(this).attr('id') === 'product_ID') {
+                    $('#product_cost').val(selected.data('cost'));
+                    $('#product_price').val(selected.data('price'));
+                    $('#product_StartingQuantity').val(selected.data('qty'));
+                } else {
                     table.draw();
                 }
             });
 
+
             // ==========================================
-            // 5. MISC (Import Button & Initial Load)
+            // 6. POS SALE IMPORT (AJAX File Upload)
             // ==========================================
-            $('form').on('submit', function() {
-                $(this).find('#importBtn').prop('disabled', true).html(
-                    '<span class="spinner-border spinner-border-sm"></span> Importing...');
+            $(document).on('submit', '.import-container form', function(e) {
+                e.preventDefault(); // Prevent page refresh
+
+                var formData = new FormData(this); // Required to send the physical file
+                var btn = $('#importBtn');
+
+                $.ajax({
+                    url: $(this).attr('action'),
+                    method: 'POST',
+                    data: formData,
+                    processData: false, // Tell jQuery not to process data as string
+                    contentType: false, // Tell jQuery not to set contentType
+                    beforeSend: function() {
+                        btn.prop('disabled', true).html(
+                            '<span class="spinner-border spinner-border-sm"></span> Processing...'
+                        );
+                    },
+                    success: function(response) {
+                        // 1. Success Notification
+                        alert(response.success || 'Import successful!');
+
+                        // 2. Clear the file input
+                        $('.import-container form')[0].reset();
+
+                        // 3. REFRESH LIVE DATA
+                        table.ajax.reload(null, false); // Refresh DataTable
+                        refreshChartOnly(); // Refresh Chart.js
+                    },
+                    error: function(xhr) {
+                        // Display the specific error from your Controller (e.g., duplicate hash)
+                        var msg = xhr.responseJSON ? xhr.responseJSON.error : 'Import failed';
+                        alert('Error: ' + msg);
+                    },
+                    complete: function() {
+                        // Reset button state
+                        btn.prop('disabled', false).html(
+                            '<i class="bi bi-cloud-arrow-up-fill me-1"></i> POS SALE'
+                        );
+                    }
+                });
             });
 
-            refreshChartOnly(); // Load chart data on page open
+            // ==========================================
+            // 5. MONTHLY ROLLOVER (Security Logic)
+            // ==========================================
+            $(document).on('click', '#btn-close-period', function(e) {
+                e.preventDefault();
+                if (confirm(
+                        "Are you sure? This will lock current remaining stock as the 'Starting Quantity' for the new month."
+                    )) {
+                    if (prompt("Type 'CLOSE' to confirm:") === 'CLOSE') {
+                        $.ajax({
+                            url: "{{ route('inventory_rollover') }}",
+                            type: "POST",
+                            data: {
+                                _token: "{{ csrf_token() }}"
+                            },
+                            beforeSend: function() {
+                                $('#btn-close-month').prop('disabled', true).html(
+                                    '<span class="spinner-border spinner-border-sm"></span> Processing...'
+                                );
+                            },
+                            success: function(response) {
+                                alert(response.success);
+                                location.reload();
+                            },
+                            error: function(xhr) {
+                                alert("Error: " + (xhr.responseJSON.error || "System error"));
+                                $('#btn-close-month').prop('disabled', false).html(
+                                    '<i class="bi bi-calendar-check-fill"></i> Close Month & Reset'
+                                );
+                            }
+                        });
+                    }
+                }
+            });
+
+            refreshChartOnly(); // Initial load
         });
     </script>
 
     <style>
+        .btn-close-period {
+            border-radius: 50px;
+            padding: 5px 15px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-close-period:hover {
+            background-color: #c82333;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 12px rgba(200, 35, 51, 0.3);
+        }
+
+
+
+
+
         .status-in-stock,
         .status-low-stock,
         .status-out-of-stock {

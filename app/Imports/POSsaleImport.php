@@ -7,50 +7,59 @@ use Illuminate\Support\Facades\DB;
 
 class POSsaleImport implements ToCollection
 {
-    public function collection(Collection $rows)
+    // 1. You must declare this variable so the class can use it
+    protected $importLogID;
+
+    // 2. You must have this "constructor" to catch the ID sent from the Controller
+    public function __construct($importLogID)
+    {
+        $this->importLogID = $importLogID;
+    }
+
+   public function collection(Collection $rows)
 {
     foreach ($rows as $index => $row) 
     {
-        // Skip headers (Rows 0-37 in your file)
-        if ($index < 34 || empty(trim($row[0]))) continue;
-        
-        // Stop if we reach the end of the report
-        if (str_contains($row[0], '---')) break;
+        // Skip exactly 34 rows (0 to 33) to start at Row 35
+        if ($index < 34) continue;
 
-        // 1. CLEAN THE NAME
-      
+        // Stop if the row is empty or we reach the summary
+        if (empty($row[0]) || str_contains($row[0], '---')) break;
+
+        // Clean names: remove * and `
         $excelName = trim(str_replace(['*', '`'], '', $row[0]));
-        $qtySoldNow = (int)$row[4];
+        
+        // Clean numbers: remove commas so (int)"1,000" doesn't become 1
+        $qtySoldNow = (int)str_replace(',', '', $row[4] ?? 0); 
+        $salesValue = (float)str_replace(',', '', $row[5] ?? 0);
 
-        // 2. FIND BY NAME TO GET THE ID
+        // Use a looser match for product names
         $product = DB::table('products')
             ->where('product_name', 'LIKE', '%' . $excelName . '%')
             ->first();
 
         if ($product) {
-            $pID = $product->product_ID; // This is your "Same ID" link
+            DB::table('POSImportData')->insert([
+                'import_logs_ID' => $this->importLogID, 
+                'product_ID'     => $product->product_ID,
+                'QuantitySold'   => $qtySoldNow,
+                'TotalSales'     => $salesValue
+            ]);
 
-            // 3. TARGET THE INVENTORY TABLE USING THE ID
-            $inventory = DB::table('inventory')->where('product_ID', $pID)->first();
-
+            // Update Inventory logic
+            $inventory = DB::table('inventory')->where('product_ID', $product->product_ID)->first();
             if ($inventory) {
                 $newTotalSold = $inventory->invt_totalSold + $qtySoldNow;
-                $newRemaining = $inventory->invt_StartingQuantity - $newTotalSold;
-                 if($newRemaining < 0) $newRemaining = 0; 
+                $newRemaining = max(0, ($inventory->invt_StartingQuantity + $inventory->invt_NewQuantity) - $newTotalSold);
 
-                // Status logic
-                $newStatus = ($newRemaining <= 0) ? 3 : (($newRemaining <= 5) ? 2 : 1);
-
-                // 4. UPDATE
-                DB::table('inventory')
-                    ->where('product_ID', $pID)
-                    ->update([
-                        'invt_totalSold'      => $newTotalSold,
-                        'invt_remainingStock' => $newRemaining,
-                        'status_ID'           => $newStatus
-                    ]);
+                DB::table('inventory')->where('product_ID', $product->product_ID)->update([
+                    'invt_totalSold'      => $newTotalSold,
+                    'invt_remainingStock' => $newRemaining,
+                    'status_ID'           => ($newRemaining <= 0) ? 3 : (($newRemaining <= 5) ? 2 : 1)
+                ]);
             }
         }
     }
 }
 }
+?>

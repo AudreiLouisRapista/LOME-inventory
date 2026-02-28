@@ -8,6 +8,7 @@ use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\StudentController;
 
 
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -49,8 +50,10 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     Route::get('/pos_history', [MainController::class, 'pos_history'])->name('pos_history');
     Route::get('/product_report', [MainController::class, 'product_report'])->name('product_report');
     Route::get('/inventory_report', [MainController::class, 'inventory_report'])->name('inventory_report');
-    Route::get('/teacher_status', [MainController::class, 'teacher_status'])->name('teacher_status');
+    Route::get('/download-import/{id}', [MainController::class, 'download_import'])->name('download_import');
     Route::get('/updateTeacherStatus', [MainController::class, 'updateTeacherStatus'])->name('updateTeacherStatus');
+    
+
     Route::post('/save_product', [MainController::class, 'save_product'])->name('save_product');
     Route::get('/admin/add-product', [MainController::class, 'show_add_product_form'])->name('product.create');
     Route::post('/save_inventory', [MainController::class, 'save_inventory'])->name('save_inventory');
@@ -65,15 +68,14 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     Route::post('/update_section', [MainController::class, 'update_section'])->name('update_section');
     Route::post('/delete-schedule', [MainController::class, 'delete_schedule'])->name('delete_schedule');
     Route::post('/import-pos-sales', [MainController::class, 'import_pos_sales'])->name('import_pos_sales');
+    Route::post('/inventory/rollover', [MainController::class, 'inventory_rollover'])->name('inventory_rollover');
+
 
    Route::get('/get-products-by-category/{id}', [MainController::class, 'getProductsByCategory'])->name('get-products-by-category');
  
 
    // Add {id} to the URL
     Route::post('/admin-profile/{id}', [MainController::class, 'adminProfile'])->name('adminProfile');
-
-    Route::post('/update_teacher/{teachers_id}', [MainController::class, 'update_teacher'])->name('update_teacher');
-    Route::post('/system/set-schoolyear', [MainController::class, 'set_system_schoolyear'])->name('system.setSchoolYear');
 });
 
 // Worker Specific Routes

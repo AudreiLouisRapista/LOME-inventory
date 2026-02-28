@@ -7,6 +7,7 @@ use App\Imports\POSsaleImport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB; // For direct database queries
@@ -14,6 +15,8 @@ use Illuminate\Validation\Rule;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Session; // For session usage
 use Illuminate\Support\Facades\File;
+
+
 class MainController extends Controller
 {
     /**
@@ -185,21 +188,46 @@ private function logActivity($action, $description)
 
 
 
+public function pos_history() 
+{
+    // 1. Fetch logs and count how many records are in POSImportData for each log
+    // We join with 'users' to get the actual name of the Admin
+    $logs = DB::table('import_logs')
+        ->leftJoin('users', 'import_logs.UploadedBy', '=', 'users.urs_id')
+        ->select(
+            'import_logs.*', 
+            'users.name', // Assuming your column name is urs_username
+            DB::raw('(SELECT COUNT(*) FROM POSImportData WHERE POSImportData.import_logs_ID = import_logs.Import_logs_ID) as row_count')
+        )
+        ->orderBy('import_logs.Uploaded_At', 'desc')
+        ->paginate(10); // Matches your pagination design in the Blade
 
-public function pos_history() {
-    // $pos_sales = DB::table('pos_sales')
-    //     ->join('products', 'pos_sales.product_ID', '=', 'products.product_ID')
-    //     ->join('category', 'products.category_ID', '=', 'category.category_ID')
-    //     ->select(
-    //         'pos_sales.*',
-    //         'products.product_name',
-    //         'category.category_name'
-    //     )
-    //     ->orderBy('pos_sales.sale_date', 'desc')
-    //     ->get();
+    // 2. Calculate Stats for the top cards
+    $totalImports = DB::table('import_logs')->count();
+    $successImports = DB::table('import_logs')->where('Status', 'Success')->count();
 
-    return view('pos_history');
+    return view('pos_history', compact('logs', 'totalImports', 'successImports'));
 }
+
+    public function import_history() {
+        $logs = DB::table('import_logs')
+            ->orderBy('Uploaded_At', 'desc')
+            ->get();
+        return view('pos_history', compact('logs'));
+    }
+
+    // Locate the file in storage and initiate a download for the Admin
+    public function download_import($id) {
+    // Note: Ensure the column name matches your Navicat (Import_logs_ID vs posImport_ID)
+    $log = DB::table('import_logs')->where('Import_logs_ID', $id)->first();
+
+    if ($log && Storage::disk('public')->exists($log->FilePath)) {
+        return Storage::disk('public')->download($log->FilePath, $log->FileName);
+    }
+
+    return back()->with('error', 'File not found.');
+}
+
 
 public function product_report() {
     // $pos_sales = DB::table('pos_sales')
@@ -221,55 +249,6 @@ public function inventory_report() {
 
     return view('inventory_report');
 }
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
-
-public function deact_teacher(Request $request) {
-    $teacherId = $request->teachers_id;
-    $scheduleId = $request->schedule_id; // The specific row to clear
-    $teacher_name = $request->name;
-
-    // 1. UNASSIGN: Clear the teacher from this specific schedule row
-    DB::table('schedules')
-        ->where('schedule_id', $scheduleId)
-        ->update(['teachers_id' => 0]); // Set to 0 to unassign
-
-    // 2. CHECK REMAINING: Count how many schedules this teacher still has
-    $remainingSchedules = DB::table('schedules')
-        ->where('teachers_id', $teacherId)
-        ->count();
-
-    // 3. UPDATE STATUS: If 0 left, update teacher status to 0
-    if ($remainingSchedules == 0) {
-        DB::table('teacher')
-            ->where('teachers_id', $teacherId)
-            ->update(['t_status' => 0]);
-
-        $this->logActivity('updated', 'Unassigned ' . $teacher_name . '. No schedules left, status updated to Inactive.');
-        session()->flash('warning', 'Unassigned successfully. Teacher now has 0 schedules and is hidden.');
-    } else {
-        // They still have other classes, so keep t_status at 1
-        $this->logActivity('updated', 'Unassigned ' . $teacher_name . ' from one schedule. ' . $remainingSchedules . ' left.');
-        session()->flash('success', 'Schedule removed. Teacher still has ' . $remainingSchedules . ' classes.');
-    }
-
-    return redirect()->back();
-}
-
-
-
 
 
 
@@ -528,57 +507,91 @@ public function view_inventory(Request $request) {
   
     
 public function update_inventory(Request $request) {
-    $newQuantity = $request->update_NewQuantity;
-    $remaining = $request->update_remainingstock;
+    // 1. Get the current record from the database
+    $inventory = DB::table('inventory')
+        ->where('inventory_ID', $request->inventory_ID)
+        ->first();
 
-    $totalRemaining = $newQuantity + $remaining;
+    if (!$inventory) {
+        return response()->json(['error' => 'Record not found'], 404);
+    }
 
-    // Default Status (In Stock)
-    $status_ID = 1; 
+    // 2. Treat the input as "New Stock Arriving Today"
+    $incomingStock = (int)$request->update_NewQuantity; 
 
-    if($totalRemaining === "0" || $totalRemaining === 0) {
+    // 3. Update the monthly "New Quantity" counter
+    // We add today's arrival to whatever was already added this month
+    $updatedMonthlyNew = $inventory->invt_NewQuantity + $incomingStock;
+
+    // 4. THE CORE FORMULA:
+    // (Starting Stock from Rollover + Total New Stock this month) - Total Sold this month
+    $totalRemaining = ($inventory->invt_StartingQuantity + $updatedMonthlyNew) - $inventory->invt_totalSold;
+
+    // 5. Determine Status based on the result
+    $status_ID = 1; // In Stock
+    if ($totalRemaining <= 0) {
         $status_ID = 3; // Out of Stock
-    } elseif($totalRemaining <= 5) {
+        $totalRemaining = 0; 
+    } elseif ($totalRemaining <= 5) {
         $status_ID = 2; // Low Stock
     }
 
+    // 6. Update the Database
     $affected = DB::table('inventory')
         ->where('inventory_ID', $request->inventory_ID)
         ->update([
-            'inventory_ID'       => $request->inventory_ID,
-            'product_ID'          => $request->product_ID,
-            'category_ID'         => $request->category_ID,
-            'invt_NewQuantity'       => $newQuantity,
-            'invt_remainingStock'       => $totalRemaining,
+            'invt_NewQuantity'    => $updatedMonthlyNew,
+            'invt_remainingStock' => $totalRemaining,
             'status_ID'           => $status_ID,
             'updated_at'          => now(),
         ]);
 
     return response()->json([
-    'success' => $affected > 0 ? 'Updated!' : 'No rows changed',
-    'debug_info' => [
-        'received_id' => $request->inventory_ID,
-        'rows_affected' => $affected,
-        'data_sent' => $request->all()
-    ]
+        'success' => 'Stock added! Formula applied: (Starting + New) - Sold',
+        'debug' => [
+            'new_starting' => $inventory->invt_StartingQuantity,
+            'monthly_additions' => $updatedMonthlyNew,
+            'total_sold' => $inventory->invt_totalSold,
+            'final_remaining' => $totalRemaining
+        ]
     ]);
 }
 
   
-
 public function import_pos_sales(Request $request) 
 {
-    $request->validate([
-        'inventory_file' => 'required|mimes:xlsx,xls,csv'
+    $request->validate(['pos_import'], [
+        'pos_import' => 'required|mimes:xls,xlsx,csv']);
+
+    $file = $request->file('pos_import');
+    $fileHash = md5_file($file->getRealPath());
+
+    // Check for duplicates
+    $exists = DB::table('import_logs')->where('FileHash', $fileHash)->exists();
+    if ($exists) {
+        return response()->json(['error' => 'This file has already been imported.'], 422);
+    }
+
+    $fileName = time() . '_' . $file->getClientOriginalName();
+    $filePath = $file->storeAs('pos_import', $fileName, 'public');
+
+    // !!! CRITICAL: You must use insertGetId so the DB actually saves the row !!!
+    $importLogID = DB::table('import_logs')->insertGetId([
+        'FileName'    => $fileName,
+        'FilePath'    => $filePath,
+        'FileHash'    => $fileHash,
+        'Status'      => 'Success', // Ensure this matches your Varchar/Enum
+        'UploadedBy'  => session('urs_id') ?? 1, // Fallback to 1 for testing
+        'Uploaded_At' => now()
     ]);
 
-    try {
-        Excel::import(new POSsaleImport, $request->file('inventory_file'));
-        return back()->with('success', 'Inventory updated successfully!');
-    } catch (\Exception $e) {
-        return back()->with('error', 'Import failed: ' . $e->getMessage());
-    }
+    // Now pass that ID to the Import class
+    Excel::import(new POSsaleImport($importLogID), storage_path('app/public/' . $filePath));
+
+    return response()->json(['success' => 'Import completed and inventory updated!']);
 }
+
+
 
 public function getProductsByCategory($id) {
 
@@ -599,7 +612,48 @@ public function getProductsByCategory($id) {
         return response()->json($products);
 }
 
- 
+public function inventory_rollover(Request $request) {
+    if (session('user_role') !== 'admin') {
+        return response()->json(['error' => 'Permission denied.'], 403);
+    }
+
+    DB::beginTransaction();
+    try {
+        $items = DB::table('inventory')->get();
+        $timestamp = now();
+
+        foreach ($items as $item) {
+            // 1. ARCHIVE: Save current data to history table
+            DB::table('inventory_history')->insert([
+                'product_ID'    => $item->product_ID,
+                'starting_qty'  => $item->invt_StartingQuantity ?? 0,
+                'added_qty'     => $item->invt_NewQuantity ?? 0,
+                'sold_qty'      => $item->invt_totalSold ?? 0,
+                'closing_stock' => $item->invt_remainingStock ?? 0,
+                'snapshot_date' => $timestamp,
+                'created_at'    => $timestamp,
+            ]);
+
+            // 2. RESET: Update the main inventory table for the new month
+            DB::table('inventory')
+                ->where('inventory_ID', $item->inventory_ID)
+                ->update([
+                    'invt_StartingQuantity' => $item->invt_remainingStock ?? 0,
+                    'invt_NewQuantity'      => 0,
+                    'invt_totalSold'        => 0,
+                    'invt_remainingStock'   => 0,
+                    'updated_at'            => $timestamp
+                ]);
+        }
+
+        DB::commit();
+        return response()->json(['success' => 'Month closed! History saved and balances reset.']);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json(['error' => 'System error: ' . $e->getMessage()], 500);
+    }
+}
 
 
 
