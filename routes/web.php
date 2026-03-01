@@ -70,6 +70,8 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     Route::post('/import-pos-sales', [MainController::class, 'import_pos_sales'])->name('import_pos_sales');
     Route::post('/inventory/rollover', [MainController::class, 'inventory_rollover'])->name('inventory_rollover');
 
+    Route::post('/batches/supply', [MainController::class, 'store_batch_supply'])->name('batches.supply');
+
 
    Route::get('/get-products-by-category/{id}', [MainController::class, 'getProductsByCategory'])->name('get-products-by-category');
  

@@ -612,6 +612,132 @@ public function getProductsByCategory($id) {
         return response()->json($products);
 }
 
+public function store_batch_supply(Request $request)
+{
+    $validated = $request->validate([
+        'product_ID' => ['required', 'integer'],
+        'expiration_date' => ['required', 'date'],
+        'quantity' => ['required', 'integer', 'min:1'],
+        'batch_code' => ['nullable', 'string', 'max:255'],
+        'mfg_date' => ['nullable', 'date'],
+    ]);
+
+    $product_ID = (int) $validated['product_ID'];
+    $expirationDate = $validated['expiration_date'];
+    $incomingQty = (int) $validated['quantity'];
+
+    DB::beginTransaction();
+    try {
+        // Ensure product exists (we also need category_ID for inventory creation)
+        $product = DB::table('products')->where('product_ID', $product_ID)->lockForUpdate()->first();
+        if (!$product) {
+            DB::rollBack();
+            return back()->with('error', 'Product not found.');
+        }
+
+        // 1) BATCH UPSERT: same product_ID + same expiration_date
+        $existingBatch = DB::table('batches')
+            ->where('product_ID', $product_ID)
+            ->where('expiration_date', $expirationDate)
+            ->lockForUpdate()
+            ->first();
+
+        if ($existingBatch) {
+            DB::table('batches')
+                ->where('batch_ID', $existingBatch->batch_ID)
+                ->update([
+                    'quantity' => (int) $existingBatch->quantity + $incomingQty,
+                    'updated_at' => now(),
+                ]);
+        } else {
+            $batchCode = $validated['batch_code'] ?? null;
+            if (!$batchCode) {
+                $batchCode = 'B-' . $product_ID . '-' . str_replace('-', '', $expirationDate);
+            }
+
+            try {
+                DB::table('batches')->insert([
+                    'product_ID' => $product_ID,
+                    'batch_code' => $batchCode,
+                    'mfg_date' => $validated['mfg_date'] ?? null,
+                    'expiration_date' => $expirationDate,
+                    'quantity' => $incomingQty,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } catch (\Illuminate\Database\QueryException $e) {
+                // If another request created the batch first, just increment it.
+                DB::table('batches')
+                    ->where('product_ID', $product_ID)
+                    ->where('expiration_date', $expirationDate)
+                    ->increment('quantity', $incomingQty, ['updated_at' => now()]);
+            }
+        }
+
+        // 2) INVENTORY UPDATE: treat incoming batch quantity as new stock arriving
+        $inventory = DB::table('inventory')->where('product_ID', $product_ID)->lockForUpdate()->first();
+
+        if (!$inventory) {
+            $starting = 0;
+            $monthlyNew = $incomingQty;
+            $sold = 0;
+            $remaining = $incomingQty;
+
+            $status_ID = 1;
+            if ($remaining <= 0) {
+                $status_ID = 3;
+                $remaining = 0;
+            } elseif ($remaining <= 5) {
+                $status_ID = 2;
+            }
+
+            DB::table('inventory')->insert([
+                'product_ID' => $product_ID,
+                'category_ID' => $product->category_ID,
+                'invt_StartingQuantity' => $starting,
+                'invt_NewQuantity' => $monthlyNew,
+                'invt_totalSold' => $sold,
+                'invt_remainingStock' => $remaining,
+                'status_ID' => $status_ID,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } else {
+            $currentStarting = (int) ($inventory->invt_StartingQuantity ?? 0);
+            $currentMonthlyNew = (int) ($inventory->invt_NewQuantity ?? 0);
+            $currentSold = (int) ($inventory->invt_totalSold ?? 0);
+
+            $updatedMonthlyNew = $currentMonthlyNew + $incomingQty;
+            $totalRemaining = ($currentStarting + $updatedMonthlyNew) - $currentSold;
+
+            $status_ID = 1;
+            if ($totalRemaining <= 0) {
+                $status_ID = 3;
+                $totalRemaining = 0;
+            } elseif ($totalRemaining <= 5) {
+                $status_ID = 2;
+            }
+
+            DB::table('inventory')
+                ->where('inventory_ID', $inventory->inventory_ID)
+                ->update([
+                    'invt_NewQuantity' => $updatedMonthlyNew,
+                    'invt_remainingStock' => $totalRemaining,
+                    'status_ID' => $status_ID,
+                    'updated_at' => now(),
+                ]);
+        }
+
+        DB::commit();
+
+        $this->logActivity('added', 'Added batch supply for product ID ' . $product_ID . ' exp ' . $expirationDate . ' qty ' . $incomingQty);
+        return back()->with('save', 'Batch supply saved and inventory updated.');
+    } catch (\Throwable $e) {
+        DB::rollBack();
+        return back()->with('error', 'System error: ' . $e->getMessage());
+    }
+}
+
 public function inventory_rollover(Request $request) {
     if (session('user_role') !== 'admin') {
         return response()->json(['error' => 'Permission denied.'], 403);

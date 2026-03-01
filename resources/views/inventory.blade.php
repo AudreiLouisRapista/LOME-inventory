@@ -178,7 +178,6 @@
                                                         style="font-size: 11px; letter-spacing: 1px;">Basic
                                                         Information</label>
                                                     <hr class="mt-0 mb-4" style="opacity: 0.1;">
-                                                    <input type="hidden" name="inventory_ID" id="edit_id">
                                                     <div class="row g-3">
                                                         <div class="col-md-6">
                                                             <label class="form-label fw-semibold"
@@ -188,8 +187,8 @@
                                                                     style="border-radius: 10px 0 0 10px;">
                                                                     <i class="bi bi-tag text-muted"></i>
                                                                 </span>
-                                                                <select id="category_ID" name="category_ID"
-                                                                    class="form-select bg-light border-start-0"
+                                                                <select id="category_ID_new" name="category_ID"
+                                                                    class="form-select bg-light border-start-0 js-category-select"
                                                                     style="border-radius: 0 10px 10px 0; height: 45px;"
                                                                     required>
                                                                     <option value="">Select Category</option>
@@ -208,8 +207,8 @@
                                                                     style="border-radius: 10px 0 0 10px;">
                                                                     <i class="bi bi-tag text-muted"></i>
                                                                 </span>
-                                                                <select id="product_ID" name="product_ID"
-                                                                    class="form-select bg-light border-start-0"
+                                                                <select id="product_ID_new" name="product_ID"
+                                                                    class="form-select bg-light border-start-0 js-product-select"
                                                                     style="border-radius: 0 10px 10px 0; height: 45px;"
                                                                     required>
                                                                     <option value="">Select Product</option>
@@ -232,8 +231,8 @@
                                                             <label class="form-label fw-semibold">Cost Price</label>
                                                             <div class="input-group">
                                                                 <span class="input-group-text">$</span>
-                                                                <input id="product_cost" type="number"
-                                                                    name="product_cost" class="form-control"
+                                                                <input id="product_cost_new" type="number"
+                                                                    name="product_cost" class="form-control js-product-cost"
                                                                     step="0.01" placeholder="0.00" value=""
                                                                     required>
                                                             </div>
@@ -242,8 +241,8 @@
                                                             <label class="form-label fw-semibold">Selling Price</label>
                                                             <div class="input-group">
                                                                 <span class="input-group-text">$</span>
-                                                                <input id="product_price" type="number"
-                                                                    name="product_price" class="form-control"
+                                                                <input id="product_price_new" type="number"
+                                                                    name="product_price" class="form-control js-product-price"
                                                                     step="0.01" placeholder="0.00" value=""
                                                                     required>
                                                             </div>
@@ -251,9 +250,9 @@
                                                         <div class="col-md-4">
                                                             <label class="form-label fw-semibold"
                                                                 style="color: #475569;">Quantity</label>
-                                                            <input id="product_StartingQuantity" type="number"
+                                                            <input id="product_StartingQuantity_new" type="number"
                                                                 name="product_StartingQuantity"
-                                                                class="form-control bg-light" placeholder="0"
+                                                                class="form-control bg-light js-product-qty" placeholder="0"
                                                                 style="border-radius: 10px; height: 45px;" value=""
                                                                 required>
                                                         </div>
@@ -267,7 +266,7 @@
                                                         style="border-radius: 10px; color: #64748b;">Cancel</button>
                                                     <button type="submit" class="btn btn-primary px-5 fw-semibold"
                                                         style="border-radius: 10px; background: #007bff; border: none;">Save
-                                                        Product</button>
+                                                        Inventory</button>
                                                 </div>
                                             </form>
                                         </div>
@@ -294,7 +293,7 @@
                                         <div class="modal-body px-4 pb-4">
                                             @include('layout.partials.alerts')
 
-                                            <form method="POST" action="{{ route('save_inventory') }}"
+                                            <form method="POST" action="{{ route('batches.supply') }}"
                                                 enctype="multipart/form-data">
                                                 @csrf
 
@@ -303,7 +302,6 @@
                                                         style="font-size: 11px; letter-spacing: 1px;">Basic
                                                         Information</label>
                                                     <hr class="mt-0 mb-4" style="opacity: 0.1;">
-                                                    <input type="hidden" name="inventory_ID" id="edit_id">
                                                     <div class="row g-3">
                                                         <div class="col-md-6">
                                                             <label class="form-label fw-semibold"
@@ -313,8 +311,8 @@
                                                                     style="border-radius: 10px 0 0 10px;">
                                                                     <i class="bi bi-tag text-muted"></i>
                                                                 </span>
-                                                                <select id="category_ID" name="category_ID"
-                                                                    class="form-select bg-light border-start-0"
+                                                                <select id="category_ID_add" name="category_ID"
+                                                                    class="form-select bg-light border-start-0 js-category-select"
                                                                     style="border-radius: 0 10px 10px 0; height: 45px;"
                                                                     required>
                                                                     <option value="">Select Category</option>
@@ -333,14 +331,46 @@
                                                                     style="border-radius: 10px 0 0 10px;">
                                                                     <i class="bi bi-tag text-muted"></i>
                                                                 </span>
-                                                                <select id="product_ID" name="product_ID"
-                                                                    class="form-select bg-light border-start-0"
+                                                                <select id="product_ID_add" name="product_ID"
+                                                                    class="form-select bg-light border-start-0 js-product-select"
                                                                     style="border-radius: 0 10px 10px 0; height: 45px;"
                                                                     required>
                                                                     <option value="">Select Product</option>
 
                                                                 </select>
                                                             </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="mb-4">
+                                                    <label class="text-uppercase text-muted fw-bold mb-3"
+                                                        style="font-size: 11px; letter-spacing: 1px;">Batch
+                                                        Information</label>
+                                                    <hr class="mt-0 mb-4" style="opacity: 0.1;">
+
+                                                    <div class="row g-3">
+                                                        <div class="col-md-4">
+                                                            <label class="form-label fw-semibold">Batch Code
+                                                                (optional)</label>
+                                                            <input type="text" name="batch_code"
+                                                                class="form-control bg-light" placeholder="Auto-generate"
+                                                                style="border-radius: 10px; height: 45px;" value="">
+                                                        </div>
+
+                                                        <div class="col-md-4">
+                                                            <label class="form-label fw-semibold">MFG Date
+                                                                (optional)</label>
+                                                            <input type="date" name="mfg_date"
+                                                                class="form-control bg-light"
+                                                                style="border-radius: 10px; height: 45px;" value="">
+                                                        </div>
+
+                                                        <div class="col-md-4">
+                                                            <label class="form-label fw-semibold">Expiration Date</label>
+                                                            <input type="date" name="expiration_date"
+                                                                class="form-control bg-light"
+                                                                style="border-radius: 10px; height: 45px;" required>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -357,8 +387,8 @@
                                                             <label class="form-label fw-semibold">Cost Price</label>
                                                             <div class="input-group">
                                                                 <span class="input-group-text">$</span>
-                                                                <input id="product_cost" type="number"
-                                                                    name="product_cost" class="form-control"
+                                                                <input id="product_cost_add" type="number"
+                                                                    name="product_cost" class="form-control js-product-cost"
                                                                     step="0.01" placeholder="0.00" value=""
                                                                     required>
                                                             </div>
@@ -367,8 +397,8 @@
                                                             <label class="form-label fw-semibold">Selling Price</label>
                                                             <div class="input-group">
                                                                 <span class="input-group-text">$</span>
-                                                                <input id="product_price" type="number"
-                                                                    name="product_price" class="form-control"
+                                                                <input id="product_price_add" type="number"
+                                                                    name="product_price" class="form-control js-product-price"
                                                                     step="0.01" placeholder="0.00" value=""
                                                                     required>
                                                             </div>
@@ -376,9 +406,9 @@
                                                         <div class="col-md-4">
                                                             <label class="form-label fw-semibold"
                                                                 style="color: #475569;">Quantity</label>
-                                                            <input id="product_StartingQuantity" type="number"
-                                                                name="product_StartingQuantity"
-                                                                class="form-control bg-light" placeholder="0"
+                                                            <input id="product_StartingQuantity_add" type="number"
+                                                                name="quantity"
+                                                                class="form-control bg-light js-product-qty" placeholder="0"
                                                                 style="border-radius: 10px; height: 45px;" value=""
                                                                 required>
                                                         </div>
@@ -392,7 +422,7 @@
                                                         style="border-radius: 10px; color: #64748b;">Cancel</button>
                                                     <button type="submit" class="btn btn-primary px-5 fw-semibold"
                                                         style="border-radius: 10px; background: #007bff; border: none;">Save
-                                                        Product</button>
+                                                        Inventory</button>
                                                 </div>
                                             </form>
                                         </div>
@@ -719,10 +749,33 @@
             // ==========================================
             // 4. DYNAMIC DROPDOWNS (Filtered Products)
             // ==========================================
-            $(document).on('change', '#category_ID, #tableCategoryFilter', function() {
+            function populateProductsIntoSelect(productSelect, data, isFilter) {
+                var defaultText = isFilter ? ' - All Products - ' : '--Select Product--';
+                var defaultValue = isFilter ? 'all' : '';
+
+                productSelect.empty().append('<option value="' + defaultValue + '">' + defaultText + '</option>');
+
+                $.each(data, function(key, value) {
+                    productSelect.append(
+                        `<option value="${value.product_ID}" data-cost="${value.product_cost}" data-price="${value.product_price}">${value.product_name}</option>`
+                    );
+                });
+            }
+
+            $(document).on('change', '.js-category-select, #tableCategoryFilter', function() {
                 var categoryId = $(this).val();
                 var isFilter = ($(this).attr('id') === 'tableCategoryFilter');
-                var productSelect = isFilter ? $('#tableProductFilter') : $('#product_ID');
+
+                var productSelect = isFilter ? $('#tableProductFilter') : $(this).closest('form').find(
+                    '.js-product-select');
+
+                // reset dependent fields for modal forms
+                if (!isFilter) {
+                    var form = $(this).closest('form');
+                    form.find('.js-product-cost').val('');
+                    form.find('.js-product-price').val('');
+                    form.find('.js-product-qty').val('');
+                }
 
                 productSelect.empty().append('<option value="">Loading...</option>');
 
@@ -731,34 +784,37 @@
                         url: "/admin/get-products-by-category/" + categoryId,
                         type: 'GET',
                         success: function(data) {
-                            var defaultText = isFilter ? ' - All Products - ' :
-                                '--Select Product--';
-                            var defaultValue = isFilter ? 'all' : '';
-
-                            productSelect.empty().append('<option value="' + defaultValue +
-                                '">' + defaultText + '</option>');
-
-                            $.each(data, function(key, value) {
-                                productSelect.append(
-                                    `<option value="${value.product_ID}" data-cost="${value.product_cost}" data-price="${value.product_price}" data-qty="${value.current_stock || 0}">${value.product_name}</option>`
-                                );
-                            });
+                            populateProductsIntoSelect(productSelect, data, isFilter);
+                        },
+                        error: function() {
+                            productSelect.empty().append(
+                                '<option value="">Failed to load products</option>'
+                            );
                         }
                     });
                 } else {
-                    productSelect.empty().append('<option value="all"> - All Products - </option>');
+                    if (isFilter) {
+                        productSelect.empty().append('<option value="all"> - All Products - </option>');
+                    } else {
+                        productSelect.empty().append('<option value="">Select Product</option>');
+                    }
                 }
             });
 
-            $(document).on('change', '#product_ID, #tableProductFilter', function() {
-                var selected = $(this).find('option:selected');
-                if ($(this).attr('id') === 'product_ID') {
-                    $('#product_cost').val(selected.data('cost'));
-                    $('#product_price').val(selected.data('price'));
-                    $('#product_StartingQuantity').val(selected.data('qty'));
-                } else {
+            $(document).on('change', '.js-product-select, #tableProductFilter', function() {
+                if ($(this).attr('id') === 'tableProductFilter') {
                     table.draw();
+                    return;
                 }
+
+                var selected = $(this).find('option:selected');
+                var form = $(this).closest('form');
+
+                var cost = selected.data('cost');
+                var price = selected.data('price');
+
+                form.find('.js-product-cost').val(cost === undefined ? '' : cost);
+                form.find('.js-product-price').val(price === undefined ? '' : price);
             });
 
 
