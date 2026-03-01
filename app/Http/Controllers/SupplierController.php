@@ -34,7 +34,7 @@ class SupplierController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request)
     {
         $validated = $request->validate([
             'supplier_name' => ['required', 'string', 'max:255'],
@@ -42,7 +42,15 @@ class SupplierController extends Controller
             'contact_no' => ['required', 'string', 'max:50'],
         ]);
 
-        Supplier::create($validated);
+        $supplier = Supplier::create($validated);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => "✓ Supplier {$supplier->supplier_name} added successfully!",
+                'supplier' => $supplier,
+            ], 201);
+        }
 
         return redirect()
             ->route('supplier.index')

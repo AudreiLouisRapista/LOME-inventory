@@ -452,7 +452,10 @@
     <div class="container">
         <div class="page-header">
             <h1>💰 Supplier Payment Tracking</h1>
-            <button class="btn btn-add" id="addInvoiceBtn">Add New Invoice</button>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn btn-add" id="addInvoiceBtn">Add New Invoice</button>
+                <button class="btn btn-add" id="addSupplierBtn">Add Supplier</button>
+            </div>
         </div>
 
         <!-- Filters -->
@@ -565,6 +568,39 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" id="cancelAddInvoice">Cancel</button>
                 <button type="button" class="btn btn-success" id="saveNewInvoice">Save Invoice</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Supplier Modal -->
+    <div id="addSupplierModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Supplier</h2>
+                <span class="close" id="closeAddSupplier">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="info-box">
+                    🏢 Add a new supplier. Fields marked with * are required.
+                </div>
+                <form id="addSupplierForm">
+                    <div class="form-group">
+                        <label for="supplierName" class="required">Supplier Name</label>
+                        <input type="text" id="supplierName" name="supplier_name" placeholder="e.g., ABC Trading" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="supplierAddress" class="required">Address</label>
+                        <input type="text" id="supplierAddress" name="address" placeholder="Supplier address" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="supplierContact" class="required">Contact No.</label>
+                        <input type="text" id="supplierContact" name="contact_no" placeholder="e.g., 09xxxxxxxxx" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelAddSupplier">Cancel</button>
+                <button type="button" class="btn btn-success" id="saveNewSupplier">Save Supplier</button>
             </div>
         </div>
     </div>
@@ -1095,6 +1131,7 @@
     </script> --}}
     <script>
         let invoices = @json($purchases);
+        let suppliers = @json($suppliers);
         let currentInvoiceId = null;
         let nextInvoiceId = invoices.length + 1;
         const purchaseItemsBaseUrl = "{{ url('purchases') }}";
@@ -1186,7 +1223,7 @@ function renderInvoices() {
 
             return invoices.filter(inv => {
                 if (supplier && inv.supplier !== supplier) return false;
-                if (status && inv.status !== status) return false;
+                if (status && String(inv.status || '').toLowerCase() !== String(status).toLowerCase()) return false;
                 if (dateFrom && inv.invoiceDate < dateFrom) return false;
                 if (dateTo && inv.invoiceDate > dateTo) return false;
                 return true;
@@ -1194,10 +1231,10 @@ function renderInvoices() {
         }
 
         function populateSupplierFilter() {
-            const suppliers = [...new Set(invoices.map(i => i.supplier))].sort();
+            const supplierNames = [...new Set((suppliers || []).map(s => s.supplier_name).filter(Boolean))].sort();
             const select = document.getElementById('filterSupplier');
             select.innerHTML = '<option value="">All Suppliers</option>';
-            suppliers.forEach(s => {
+            supplierNames.forEach(s => {
                 const option = document.createElement('option');
                 option.value = s;
                 option.textContent = s;
@@ -1234,29 +1271,101 @@ function renderInvoices() {
         }
 
         // -----------------------------
-        // Add Invoice Modal
+        // Add Supplier Modal
         // -----------------------------
-        function openAddInvoiceModal() {
-            const modal = document.getElementById('addInvoiceModal');
+        function openAddSupplierModal() {
+            const modal = document.getElementById('addSupplierModal');
             modal.classList.add('show');
             modal.style.display = 'block';
             document.body.style.overflow = 'hidden';
-
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('invoiceDate').value = today;
-
-            const due = new Date();
-            due.setDate(due.getDate() + 30);
-            document.getElementById('dueDate').value = due.toISOString().split('T')[0];
         }
 
-        function closeAddInvoiceModal() {
-            const modal = document.getElementById('addInvoiceModal');
+        function closeAddSupplierModal() {
+            const modal = document.getElementById('addSupplierModal');
             modal.classList.remove('show');
             modal.style.display = 'none';
             document.body.style.overflow = 'auto';
-            document.getElementById('addInvoiceForm').reset();
-            document.getElementById('supplierId').value = ''; // Clear hidden field
+            document.getElementById('addSupplierForm').reset();
+        }
+
+        function addSupplierOptionToInvoiceSelect(supplier) {
+            const invoiceSupplierSelect = document.getElementById('supplier');
+            if (!invoiceSupplierSelect) return;
+
+            const option = document.createElement('option');
+            option.value = supplier.supplier_id;
+            option.textContent = supplier.supplier_name;
+            invoiceSupplierSelect.appendChild(option);
+
+            invoiceSupplierSelect.value = String(supplier.supplier_id);
+        }
+
+        function saveNewSupplier() {
+            const form = document.getElementById('addSupplierForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const payload = {
+                supplier_name: document.getElementById('supplierName').value.trim(),
+                address: document.getElementById('supplierAddress').value.trim(),
+                contact_no: document.getElementById('supplierContact').value.trim(),
+            };
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (!csrfToken) {
+                alert('⚠️ Missing CSRF token meta tag.');
+                return;
+            }
+
+            const saveBtn = document.getElementById('saveNewSupplier');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+
+            fetch('/suppliers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => Promise.reject(err));
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (!data.success || !data.supplier) return;
+
+                suppliers = suppliers || [];
+                suppliers.push(data.supplier);
+
+                addSupplierOptionToInvoiceSelect(data.supplier);
+                populateSupplierFilter();
+
+                alert(data.message || '✓ Supplier added successfully!');
+                closeAddSupplierModal();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                if (error.errors) {
+                    let errorMessage = 'Validation errors:\n';
+                    for (let field in error.errors) {
+                        errorMessage += `${field}: ${error.errors[field].join(', ')}\n`;
+                    }
+                    alert(errorMessage);
+                } else {
+                    alert(error.message || '⚠️ An error occurred while saving the supplier. Please try again.');
+                }
+            })
+            .finally(() => {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Supplier';
+            });
         }
 
         // Auto-calculate net amount and handle supplier selection
@@ -1323,17 +1432,17 @@ function renderInvoices() {
                 return;
             }
 
-            const supplierId = document.getElementById('supplierId').value;
-
+            const supplierIdRaw = document.getElementById('supplier')?.value;
+            const supplierId = supplierIdRaw ? parseInt(supplierIdRaw, 10) : NaN;
             if (!supplierId) {
-                alert('⚠️ Please select a valid supplier from the list!');
+                alert('⚠️ Please select a supplier!');
                 return;
             }
 
             // Prepare form data
             const formData = {
                 invoice_number: document.getElementById('invoiceNumber').value.trim(),
-                supplier_id: parseInt(supplierId),
+                supplier_id: supplierId,
                 invoice_date: document.getElementById('invoiceDate').value,
                 due_date: document.getElementById('dueDate').value,
                 gross_amount: parseFloat(document.getElementById('grossAmount').value),
@@ -1386,11 +1495,6 @@ function renderInvoices() {
                 }
             });
         }
-
-        // Event listeners
-        document.getElementById('closeAddInvoice')?.addEventListener('click', closeAddInvoiceModal);
-        document.getElementById('cancelAddInvoice')?.addEventListener('click', closeAddInvoiceModal);
-        document.getElementById('saveNewInvoice')?.addEventListener('click', saveNewInvoice);
 
         // -----------------------------
         // Payment Modal
@@ -1542,6 +1646,12 @@ function renderInvoices() {
             document.getElementById('cancelAddInvoice').addEventListener('click', closeAddInvoiceModal);
             document.getElementById('saveNewInvoice').addEventListener('click', saveNewInvoice);
 
+            // Add Supplier modal
+            document.getElementById('addSupplierBtn').addEventListener('click', openAddSupplierModal);
+            document.getElementById('closeAddSupplier').addEventListener('click', closeAddSupplierModal);
+            document.getElementById('cancelAddSupplier').addEventListener('click', closeAddSupplierModal);
+            document.getElementById('saveNewSupplier').addEventListener('click', saveNewSupplier);
+
             // Payment modal
             document.getElementById('savePaymentBtn').addEventListener('click', savePayment);
             document.getElementById('cancelPayment').addEventListener('click', closePaymentModal);
@@ -1558,6 +1668,7 @@ function renderInvoices() {
             window.addEventListener('click', function(event) {
                 if (event.target === document.getElementById('addInvoiceModal')) closeAddInvoiceModal();
                 if (event.target === document.getElementById('paymentModal')) closePaymentModal();
+                if (event.target === document.getElementById('addSupplierModal')) closeAddSupplierModal();
             });
 
             // Escape key
@@ -1565,6 +1676,7 @@ function renderInvoices() {
                 if (event.key === 'Escape') {
                     closeAddInvoiceModal();
                     closePaymentModal();
+                    closeAddSupplierModal();
                 }
             });
         }

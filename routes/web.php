@@ -6,6 +6,7 @@ use App\Http\Controllers\MainController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\SupplierController;
 
 
 
@@ -116,3 +117,5 @@ Route::prefix('purchases')->group(function () {
 });
 
 Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
+
+Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
