@@ -75,7 +75,7 @@
                                                 </div>
 
                                                 <p class="text-muted small fw-bold text-uppercase mb-3 border-bottom pb-1">
-                                                    Pricing & Expiry</p>
+                                                    Pricing</p>
                                                 <div class="row g-3 mb-4">
                                                     <div class="col-md-4">
                                                         <label class="form-label fw-semibold">Cost Price</label>
@@ -95,13 +95,37 @@
                                                                 value="{{ old('product_price') }}" required>
                                                         </div>
                                                     </div>
-                                                    <div class="col-md-4">
-                                                        <label class="form-label fw-semibold">Expiry Date</label>
-                                                        <input type="date" name="product_exp" class="form-control"
-                                                            value="{{ old('product_exp') }}" required>
-                                                    </div>
                                                 </div>
 
+                                                <div class="mb-4">
+                                                    <p
+                                                        class="text-muted small fw-bold text-uppercase mb-3 border-bottom pb-1">
+                                                        Batch Information</p>
+                                                    <div class="row g-3">
+                                                        <div class="col-md-4">
+                                                            <label class="form-label fw-semibold">Batch Code
+                                                                (optional)</label>
+                                                            <input type="text" name="batch_code"
+                                                                class="form-control bg-light" placeholder="Auto-generate"
+                                                                style="border-radius: 10px; height: 45px;" value="">
+                                                        </div>
+
+                                                        <div class="col-md-4">
+                                                            <label class="form-label fw-semibold">MFG Date
+                                                                (optional)</label>
+                                                            <input type="date" name="mfg_date"
+                                                                class="form-control bg-light"
+                                                                style="border-radius: 10px; height: 45px;" value="">
+                                                        </div>
+
+                                                        <div class="col-md-4">
+                                                            <label class="form-label fw-semibold">Expiration Date</label>
+                                                            <input type="date" name="expiration_date"
+                                                                class="form-control bg-light"
+                                                                style="border-radius: 10px; height: 45px;" required>
+                                                        </div>
+                                                    </div>
+                                                </div>
 
 
 
@@ -109,7 +133,8 @@
                                                     <button type="button" class="btn btn-light px-4"
                                                         data-bs-dismiss="modal">Cancel</button>
                                                     <button type="submit"
-                                                        class="btn btn-primary px-5 fw-bold shadow-sm">Save Product</button>
+                                                        class="btn btn-primary px-5 fw-bold shadow-sm">Save
+                                                        Product</button>
                                                 </div>
                                             </form>
                                         </div>
@@ -120,7 +145,8 @@
                         </div>
 
                         <div class="card-body">
-                            <table id="example2" class="table table-bordered table-hover display block" style="width:100%">
+                            <table id="example2" class="table table-bordered table-hover display block"
+                                style="width:100%">
                                 <thead style="text-align: center;">
                                     <tr>
                                         <th>Product ID</th>

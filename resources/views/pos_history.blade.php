@@ -79,7 +79,7 @@
                                     <br><small class="text-muted">{{ date('h:i A', strtotime($log->Uploaded_At)) }}</small>
                                 </td>
                                 <td>{{ number_format($log->row_count) }} Rows</td>
-                                <td>{{ $log->urs_username ?? 'System' }}</td>
+                                <td>{{ $log->name ?? 'System' }}</td>
                                 <td>
                                     <span
                                         class="badge {{ $log->Status == 'Success' ? 'bg-success-subtle text-success border border-success' : 'bg-danger-subtle text-danger border border-danger' }}">

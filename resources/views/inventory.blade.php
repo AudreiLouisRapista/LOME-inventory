@@ -159,7 +159,7 @@
 
                                         <div class="modal-header bg-dark text-white py-3">
                                             <h5 class="modal-title fw-bold" id="addTeacherModalLabel">
-                                                <i class="fas fa-box-open me-2"></i> Inventory
+                                                <i class="fas fa-box-open me-2"></i> Add new Product
                                             </h5>
                                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                                                 aria-label="Close"></button>
@@ -232,9 +232,9 @@
                                                             <div class="input-group">
                                                                 <span class="input-group-text">$</span>
                                                                 <input id="product_cost_new" type="number"
-                                                                    name="product_cost" class="form-control js-product-cost"
-                                                                    step="0.01" placeholder="0.00" value=""
-                                                                    required>
+                                                                    name="product_cost"
+                                                                    class="form-control js-product-cost" step="0.01"
+                                                                    placeholder="0.00" value="" required>
                                                             </div>
                                                         </div>
                                                         <div class="col-md-4">
@@ -242,9 +242,9 @@
                                                             <div class="input-group">
                                                                 <span class="input-group-text">$</span>
                                                                 <input id="product_price_new" type="number"
-                                                                    name="product_price" class="form-control js-product-price"
-                                                                    step="0.01" placeholder="0.00" value=""
-                                                                    required>
+                                                                    name="product_price"
+                                                                    class="form-control js-product-price" step="0.01"
+                                                                    placeholder="0.00" value="" required>
                                                             </div>
                                                         </div>
                                                         <div class="col-md-4">
@@ -252,9 +252,9 @@
                                                                 style="color: #475569;">Quantity</label>
                                                             <input id="product_StartingQuantity_new" type="number"
                                                                 name="product_StartingQuantity"
-                                                                class="form-control bg-light js-product-qty" placeholder="0"
-                                                                style="border-radius: 10px; height: 45px;" value=""
-                                                                required>
+                                                                class="form-control bg-light js-product-qty"
+                                                                placeholder="0" style="border-radius: 10px; height: 45px;"
+                                                                value="" required>
                                                         </div>
                                                     </div>
 
@@ -343,37 +343,6 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="mb-4">
-                                                    <label class="text-uppercase text-muted fw-bold mb-3"
-                                                        style="font-size: 11px; letter-spacing: 1px;">Batch
-                                                        Information</label>
-                                                    <hr class="mt-0 mb-4" style="opacity: 0.1;">
-
-                                                    <div class="row g-3">
-                                                        <div class="col-md-4">
-                                                            <label class="form-label fw-semibold">Batch Code
-                                                                (optional)</label>
-                                                            <input type="text" name="batch_code"
-                                                                class="form-control bg-light" placeholder="Auto-generate"
-                                                                style="border-radius: 10px; height: 45px;" value="">
-                                                        </div>
-
-                                                        <div class="col-md-4">
-                                                            <label class="form-label fw-semibold">MFG Date
-                                                                (optional)</label>
-                                                            <input type="date" name="mfg_date"
-                                                                class="form-control bg-light"
-                                                                style="border-radius: 10px; height: 45px;" value="">
-                                                        </div>
-
-                                                        <div class="col-md-4">
-                                                            <label class="form-label fw-semibold">Expiration Date</label>
-                                                            <input type="date" name="expiration_date"
-                                                                class="form-control bg-light"
-                                                                style="border-radius: 10px; height: 45px;" required>
-                                                        </div>
-                                                    </div>
-                                                </div>
 
                                                 <div class="mb-4">
                                                     <label class="text-uppercase text-muted fw-bold mb-3"
@@ -388,9 +357,9 @@
                                                             <div class="input-group">
                                                                 <span class="input-group-text">$</span>
                                                                 <input id="product_cost_add" type="number"
-                                                                    name="product_cost" class="form-control js-product-cost"
-                                                                    step="0.01" placeholder="0.00" value=""
-                                                                    required>
+                                                                    name="product_cost"
+                                                                    class="form-control js-product-cost" step="0.01"
+                                                                    placeholder="0.00" value="" required>
                                                             </div>
                                                         </div>
                                                         <div class="col-md-4">
@@ -398,19 +367,19 @@
                                                             <div class="input-group">
                                                                 <span class="input-group-text">$</span>
                                                                 <input id="product_price_add" type="number"
-                                                                    name="product_price" class="form-control js-product-price"
-                                                                    step="0.01" placeholder="0.00" value=""
-                                                                    required>
+                                                                    name="product_price"
+                                                                    class="form-control js-product-price" step="0.01"
+                                                                    placeholder="0.00" value="" required>
                                                             </div>
                                                         </div>
                                                         <div class="col-md-4">
                                                             <label class="form-label fw-semibold"
-                                                                style="color: #475569;">Quantity</label>
+                                                                style="color: #475569;">Add new Quantity</label>
                                                             <input id="product_StartingQuantity_add" type="number"
                                                                 name="quantity"
-                                                                class="form-control bg-light js-product-qty" placeholder="0"
-                                                                style="border-radius: 10px; height: 45px;" value=""
-                                                                required>
+                                                                class="form-control bg-light js-product-qty"
+                                                                placeholder="0" style="border-radius: 10px; height: 45px;"
+                                                                value="" required>
                                                         </div>
                                                     </div>
 
