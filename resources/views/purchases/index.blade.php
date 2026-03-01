@@ -1097,6 +1097,7 @@
         let invoices = @json($purchases);
         let currentInvoiceId = null;
         let nextInvoiceId = invoices.length + 1;
+        const purchaseItemsBaseUrl = "{{ url('purchases') }}";
 
         document.addEventListener('DOMContentLoaded', function () {
             populateSupplierFilter();
@@ -1156,6 +1157,7 @@ function renderInvoices() {
             <td><strong>${formatCurrency(remaining)}</strong></td>
             <td><span class="status-badge status-${invoice.status.toLowerCase()}">${invoice.status}</span></td>
             <td>
+                <a class="btn btn-secondary" href="${purchaseItemsBaseUrl}/${invoice.id}/items">Items</a>
                 ${
                     remaining <= 0 || invoice.status.toUpperCase() === 'PAID'
                     ? `<span style="color:green">✓ Completed</span>`

@@ -359,6 +359,14 @@
                     </a>
                 </li>
 
+                <li class="nav-item">
+                    <a href="{{ route('purchases.items') }}"
+                        class="nav-link {{ Route::is('purchases.items') ? 'active' : '' }}"
+                        style="display:flex; align-items:center; gap:10px; color:{{ Route::is('purchases.items') ? '#fff' : '#333' }}; background:{{ Route::is('purchases.items') ? '#ff5757' : 'transparent' }};">
+                        <i class="bi bi-bank"></i></i> Purchase Items
+                    </a>
+                </li>
+
             </ul>
         </nav>
     </div>

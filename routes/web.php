@@ -25,6 +25,10 @@ Route::get('/index', function () {
     return view('welcome');
 });
 
+Route::get('/purchases/items', function () {
+    return view('purchases.items');
+})->name('purchases.items');
+
 Route::get('/', [MainController::class, 'main'])->name('login');
 
 
@@ -104,6 +108,9 @@ Route::prefix('purchases')->group(function () {
 
     Route::post('/', [PurchaseController::class, 'store'])
         ->name('purchases.store');
+
+    // Route::get('/{purchase_id}/items', [PurchaseController::class, 'items'])
+    //     ->name('purchases.items');
         
    
 });

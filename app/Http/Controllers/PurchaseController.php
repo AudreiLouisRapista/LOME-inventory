@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Product;
 use App\Models\Purchase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PurchaseController extends Controller
 {
@@ -76,6 +78,26 @@ class PurchaseController extends Controller
             'message' => "✓ Invoice {$purchase->invoice_number} added successfully!",
             'purchase' => $purchase
         ], 201);
+    }
+
+    /**
+     * Display items for a specific purchase (UI only).
+     */
+    public function items(int $purchase_id)
+    {
+        $purchase = Purchase::with('supplier')->where('purchase_id', $purchase_id)->firstOrFail();
+
+        $purchaseItems = $purchase->items()->latest()->get();
+
+        // Existing codebase uses `category` table with category_ID/category_name
+        $categories = DB::table('category')->orderBy('category_name', 'ASC')->get();
+
+        $products = Product::query()
+            ->select(['product_ID', 'product_name', 'category_ID'])
+            ->orderBy('product_name', 'ASC')
+            ->get();
+
+        return view('purchases.items', compact('purchase', 'purchaseItems', 'categories', 'products'));
     }
 
     /**
