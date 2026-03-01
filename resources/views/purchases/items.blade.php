@@ -232,14 +232,14 @@
 										@endisset
 									</select>
 								</div>
-								<div class="form-text">Select category first to filter products.</div>
+								{{-- <div class="form-text">Select category first to filter products.</div> --}}
 							</div>
 
 							<div class="col-md-7">
 								<label for="purchase_item_product_id" class="form-label fw-semibold">Product</label>
 								<div class="input-group">
 									<span class="input-group-text bg-light"><i class="fas fa-box"></i></span>
-									<select name="product_id" id="purchase_item_product_id" class="form-select border-start-0" required>
+									{{-- <select name="product_id" id="purchase_item_product_id" class="form-select border-start-0" required>
 										<option value="" selected disabled>Select Product</option>
 										@isset($products)
 											@foreach ($products as $product)
@@ -250,9 +250,10 @@
 												</option>
 											@endforeach
 										@endisset
-									</select>
+									</select> --}}
+									<input type="text" name="product_name" id="purchase_item_product_name" class="form-control border-start-0" placeholder="Enter product name">
 								</div>
-								<div class="form-text">Products will show based on selected category.</div>
+								{{-- <div class="form-text">Products will show based on selected category.</div> --}}
 							</div>
 
 							<div class="col-md-5">
