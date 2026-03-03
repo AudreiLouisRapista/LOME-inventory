@@ -6,49 +6,14 @@ use App\Models\Product;
 use App\Models\Purchase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Yajra\DataTables\Facades\DataTables;
 
 class PurchaseController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
-        $purchases = Purchase::with('supplier')
-            ->latest()
-            ->get()
-            ->map(function ($purchase) {
 
-                $remaining = $purchase->net_amount - $purchase->total_paid;
-                $today = now()->toDateString();
-
-                if ($remaining <= 0) {
-                    $status = 'PAID';
-                } elseif ($remaining < $purchase->net_amount) {
-                    $status = 'PARTIAL';
-                } elseif ($purchase->due_date < $today) {
-                    $status = 'OVERDUE';
-                } else {
-                    $status = 'UNPAID';
-                }
-
-                return [
-                    'id' => $purchase->purchase_id,
-                    'invoiceNumber' => $purchase->invoice_number,
-                    'supplier' => optional($purchase->supplier)->supplier_name,
-                    'invoiceDate' => $purchase->invoice_date,
-                    'dueDate' => $purchase->due_date,
-                    'netAmount' => (float) $purchase->net_amount,
-                    'totalPaid' => (float) $purchase->total_paid,  // Now from database
-                    'status' => $purchase->status
-                ];
-            });
-
-        // Get all suppliers for the dropdown
-        $suppliers = \App\Models\Supplier::orderBy('supplier_name')->get();
-
-        return view('purchases.index', compact('purchases', 'suppliers'));
-    }
 
     /**
      * Store a newly created resource in storage.
@@ -83,23 +48,7 @@ class PurchaseController extends Controller
     /**
      * Display items for a specific purchase (UI only).
      */
-    public function items(int $purchase_id)
-    {
-        $purchase = Purchase::with('supplier')->where('purchase_id', $purchase_id)->firstOrFail();
-
-        $purchaseItems = $purchase->items()->latest()->get();
-
-        // Existing codebase uses `category` table with category_ID/category_name
-        $categories = DB::table('category')->orderBy('category_name', 'ASC')->get();
-
-        $products = Product::query()
-            ->select(['product_ID', 'product_name', 'category_ID'])
-            ->orderBy('product_name', 'ASC')
-            ->get();
-
-        return view('purchases.items', compact('purchase', 'purchaseItems', 'categories', 'products'));
-    }
-
+ 
     /**
      * Display the specified resource.
      */

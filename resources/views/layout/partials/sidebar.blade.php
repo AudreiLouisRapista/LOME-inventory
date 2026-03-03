@@ -352,20 +352,14 @@
 
 
                 <li class="nav-item">
-                    <a href="{{ route('purchases.index') }}"
-                        class="nav-link {{ Route::is('purchases.index') ? 'active' : '' }}"
-                        style="display:flex; align-items:center; gap:10px; color:{{ Route::is('purchases.index') ? '#fff' : '#333' }}; background:{{ Route::is('purchases.index') ? '#ff5757' : 'transparent' }};">
+                    <a href="{{ route('purchase_invoice') }}"
+                        class="nav-link {{ Route::is('purchase_invoice') ? 'active' : '' }}"
+                        style="display:flex; align-items:center; gap:10px; color:{{ Route::is('purchase_invoice') ? '#fff' : '#333' }}; background:{{ Route::is('purchase_invoice') ? '#ff5757' : 'transparent' }};">
                         <i class="bi bi-bank"></i></i> Supplier Payment
                     </a>
                 </li>
 
-                <li class="nav-item">
-                    <a href="{{ route('purchases.items') }}"
-                        class="nav-link {{ Route::is('purchases.items') ? 'active' : '' }}"
-                        style="display:flex; align-items:center; gap:10px; color:{{ Route::is('purchases.items') ? '#fff' : '#333' }}; background:{{ Route::is('purchases.items') ? '#ff5757' : 'transparent' }};">
-                        <i class="bi bi-bank"></i></i> Purchase Items
-                    </a>
-                </li>
+
 
             </ul>
         </nav>

@@ -26,9 +26,7 @@ Route::get('/index', function () {
     return view('welcome');
 });
 
-Route::get('/purchases/items', function () {
-    return view('purchases.items');
-})->name('purchases.items');
+
 
 Route::get('/', [MainController::class, 'main'])->name('login');
 
@@ -57,6 +55,8 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     Route::get('/inventory_report', [MainController::class, 'inventory_report'])->name('inventory_report');
     Route::get('/download-import/{id}', [MainController::class, 'download_import'])->name('download_import');
     Route::get('/updateTeacherStatus', [MainController::class, 'updateTeacherStatus'])->name('updateTeacherStatus');
+    Route::get('/purchase_invoice', [MainController::class, 'purchase_invoice'])->name('purchase_invoice');
+
     
 
     Route::post('/save_product', [MainController::class, 'save_product'])->name('save_product');
@@ -74,47 +74,39 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     Route::post('/delete-schedule', [MainController::class, 'delete_schedule'])->name('delete_schedule');
     Route::post('/import-pos-sales', [MainController::class, 'import_pos_sales'])->name('import_pos_sales');
     Route::post('/inventory/rollover', [MainController::class, 'inventory_rollover'])->name('inventory_rollover');
+    Route::post('/storePayment', [MainController::class, 'storePayment'])->name('storePayment');
+    Route::post('/storeSupplier', [MainController::class, 'storeSupplier'])->name('storeSupplier');
+    Route::post('/storePurchase', [MainController::class, 'storePurchase'])->name('storePurchase');
+    Route::post('/storePurchaseItems', [MainController::class, 'storePurchaseItems'])->name('storePurchaseItems');
+    Route::post('/save_invoice', [MainController::class, 'save_invoice'])->name('save_invoice');
+
+
 
     Route::post('/batches/supply', [MainController::class, 'store_batch_supply'])->name('batches.supply');
-
-
-   Route::get('/get-products-by-category/{id}', [MainController::class, 'getProductsByCategory'])->name('get-products-by-category');
- 
-
+    Route::get('/get-products-by-category/{id}', [MainController::class, 'getProductsByCategory'])->name('get-products-by-category');
    // Add {id} to the URL
     Route::post('/admin-profile/{id}', [MainController::class, 'adminProfile'])->name('adminProfile');
 });
 
-// Worker Specific Routes
-Route::group(['prefix' => 'Worker', 'middleware' => ['role:worker']], function () {
-    
-    // Main Dashboard for the Shop Worker
-    Route::get('/workersDB', [MainController::class, 'workersDB'])->name('worker.workersDB');
-    Route::get('/view_pig', [MainController::class, 'view_pig'])->name('view_pig');
-    Route::post('/save_pig', [MainController::class, 'save_pig'])->name('save_pig');
-    Route::post('/profile/update/{urs_id}', [MainController::class, 'Update_workerProfile'])->name('Update_workerProfile'); 
-
-    // Example of a new route for managing tasks/orders
-    // Route::get('/tasks', [MainController::class, 'WorkerTasks'])->name('worker.tasks');
-}); 
 
 
-Route::prefix('purchases')->group(function () {
 
-    Route::get('/', [PurchaseController::class, 'index'])
-        ->name('purchases.index');
+// Route::prefix('purchases')->group(function () {
 
-    Route::get('/create', [PurchaseController::class, 'create'])
-        ->name('purchases.create');
+//     Route::get('/', [PurchaseController::class, 'index'])
+//         ->name('purchases.index');
 
-    Route::post('/', [PurchaseController::class, 'store'])
-        ->name('purchases.store');
+//     Route::get('/create', [PurchaseController::class, 'create'])
+//         ->name('purchases.create');
 
-    // Route::get('/{purchase_id}/items', [PurchaseController::class, 'items'])
-    //     ->name('purchases.items');
+//     Route::post('/', [PurchaseController::class, 'store'])
+//         ->name('purchases.store');
+
+//     // Route::get('/{purchase_id}/items', [PurchaseController::class, 'items'])
+//     //     ->name('purchases.items');
         
    
-});
+// });
 
 Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
 

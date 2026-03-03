@@ -2,6 +2,9 @@
 namespace App\Http\Controllers;
 use Exception;
 use DateTime;
+use App\Models\Purchase;  
+use App\Models\Supplier;  
+use App\Models\Payment;   
 use App\Models\ActivityLog;
 use App\Imports\POSsaleImport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -173,10 +176,13 @@ private function logActivity($action, $description)
     $lowStockProducts = DB::table('inventory')->where('status_ID', 2)->count();
     $outOfStock = DB::table('inventory')->where('status_ID', 3)->count();    
     
-    $quantityPercent = $totalProducts > 0 ? round(($totalQuantity / ($totalQuantity + $totalSold)) * 100, 2) : 0;
+   $totalStockPossible = $totalQuantity + $totalSold;
+    $quantityPercent = ($totalStockPossible > 0) 
+    ? round(($totalQuantity / $totalStockPossible) * 100, 2) 
+    : 0;
 
     return view('dashboard', compact('logs', 'totalProducts', 'totalQuantity',
-     'totalSold', 'instockProducts', 'lowStockProducts', 'outOfStock', 'quantityPercent'));
+     'totalSold', 'instockProducts', 'lowStockProducts', 'outOfStock', 'quantityPercent' ,));
     
 }
 
@@ -209,15 +215,15 @@ public function pos_history()
     return view('pos_history', compact('logs', 'totalImports', 'successImports'));
 }
 
-    public function import_history() {
-        $logs = DB::table('import_logs')
+public function import_history() {
+      $logs = DB::table('import_logs')
             ->orderBy('Uploaded_At', 'desc')
             ->get();
         return view('pos_history', compact('logs'));
-    }
+}
 
     // Locate the file in storage and initiate a download for the Admin
-    public function download_import($id) {
+public function download_import($id) {
     // Note: Ensure the column name matches your Navicat (Import_logs_ID vs posImport_ID)
     $log = DB::table('import_logs')->where('Import_logs_ID', $id)->first();
 
@@ -781,15 +787,152 @@ public function inventory_rollover(Request $request) {
     }
 }
 
+public function purchase_invoice(Request $request)
+{
+    // 1. Fetch data using Eloquent (latest first)
+    $query = Purchase::with('supplier')->withSum('payments as total_paid_sum', 'amount_paid')->latest();
 
+    // 2. Apply your existing filters
+    if ($request->supplier_id) {
+        $query->where('supplier_id', $request->supplier_id);
+    }
+    
+    $purchases_data = $query->get();
 
+    // 2. AJAX Response
+    if ($request->ajax()) {
+        return response()->json(['data' => $purchases_data]);
+    }
 
+    // 3. Normal Load Variables (Ensure lowercase names!)
+    $suppliers = DB::table('suppliers')->orderBy('supplier_name', 'ASC')->get();
+    $products  = DB::table('products')->orderBy('product_name', 'ASC')->get();
+    $uoms      = DB::table('uom')->get();
+    $purchases = $purchases_data;
 
+    return view('purchase_invoice', compact('suppliers', 'purchases', 'products', 'uoms'));
+}
+public function storePayment(Request $request) 
+{
+    // 1. Validate the incoming AJAX data
+    $request->validate([
+        'purchase_id'     => 'required|exists:Purchases,purchase_id',
+        'amount_paid'     => 'required|numeric|min:0.01',
+        'payment_date'    => 'required|date',
+        'payment_method'  => 'required',
+        'reference_number'=> 'nullable|string'
+    ]);
+
+    // 2. Fetch the Purchase Invoice to calculate the current balance
+    $invoice = Purchase::findOrFail($request->purchase_id);
+    
+    // 3. Calculate 'old_remaining_balance'
+    // This is (Total Net Amount) minus (Sum of all previous payments)
+    $totalPaidSoFar = $invoice->payments()->sum('amount_paid');
+    $oldBalance = $invoice->net_amount - $totalPaidSoFar;
+
+    // 4. Save the payment with the missing field
+    $payment = Payment::create([
+        'purchase_id'           => $request->purchase_id,
+        'amount_paid'           => $request->amount_paid,
+        'payment_date'          => $request->payment_date,
+        'payment_method'        => $request->payment_method,
+        'reference_number'      => $request->reference_number,
+        'old_remaining_balance' => $oldBalance, // This satisfies the SQL requirement
+    ]);
+
+    // 5. Optional: Update the Invoice Status if fully paid
+    $newBalance = $oldBalance - $request->amount_paid;
+    if ($newBalance <= 0) {
+        $invoice->update(['status' => 'paid']);
+    } elseif ($newBalance < $invoice->net_amount) {
+        $invoice->update(['status' => 'partial']);
+    }
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Payment of ₱' . number_format($request->amount_paid, 2) . ' recorded.'
+    ]);
+}
+
+public function storePurchaseItems(Request $request)
+{
    
+    $request->validate([
+        'purchase_id'      => 'required|exists:purchases,purchase_id',
+        'product_name'     => 'required|string',
+        'uom_id'           => 'required|exists:uom,uom_ID',
+        'quantity_per_uom' => 'required|numeric|min:1',
+        'unit_price'       => 'required|numeric',
+        'quantity'         => 'required|numeric|min:1',
+    ]);
+
+    try {
+        \DB::beginTransaction();
+
+        // [Existing Product Logic remains the same...]
+        $productId = $request->product_id;
+        if (empty($productId)) {
+            $existingProduct = \DB::table('products')->where('product_name', $request->product_name)->first();
+            $productId = $existingProduct ? $existingProduct->product_ID : \DB::table('products')->insertGetId([
+                'product_name' => $request->product_name,
+                'created_at'   => now(),
+            ]);
+        }
+
+        // Calculations
+        $totalPrice = $request->unit_price * $request->uom_per_quantity;
+        $totalAmount = $totalPrice * $request->quantity;
+
+        \DB::table('purchase_items')->insert([
+            'purchase_item_id'       => $request->purchase_id,
+            'purchase_id'            => $request->purchase_id,
+            'product_id'             => $request->product_id,
+            'uom_ID'           => $request->uom_id,
+            'quantity_per_uom' => $request->uom_per_quantity,
+            'quantity'         => $request->quantity,
+            'UnitPrice'        => $request->unit_price,
+            'TotalPrice'       => $totalPrice,  // Formula: uom_per * unit_price
+            'Amount'           => $totalAmount, // Formula: total_price * quantity
+            'CreatedAt'        => now(),
+        ]);
+
+      
+        \DB::commit();
+        return response()->json(['status' => 'success', 'message' => 'Item linked successfully!']);
+
+    } catch (\Exception $e) {
+        \DB::rollBack();
+        return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+    }
+}
+
+
+public function save_invoice(Request $request) 
+{
+    // Laravel ignores the decimal formatting from the front-end and treats it as a raw number
+    $totalAmount = $request->input('net_amount'); 
+
+    $purchase = new Purchase();
+    $purchase->invoice_number = $request->invoice_number;
+    $purchase->supplier_id = $request->supplier_id;
+    $purchase->invoice_date = $request->invoice_date;
+    $purchase->due_date = $request->due_date;
+    
+    // The "Back End" does the official math based on your receipt
+    $purchase->net_amount = $totalAmount; 
+    $purchase->gross_amount = $totalAmount / 1.12; // Vatable Sales
+    $purchase->vat_amount = $totalAmount - ($totalAmount / 1.12); // VAT 12%
+    
+    $purchase->status = 'unpaid'; // Default for new records
+    $purchase->save();
+
+    return response()->json(['success' => true]);
+}
 
         // LOG OUT
 
-    public function logout(Request $request)
+public function logout(Request $request)
 {
     // 1. Tell Laravel's Auth system to log the current user out.
     Auth::logout();
