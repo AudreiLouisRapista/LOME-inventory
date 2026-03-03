@@ -1190,7 +1190,7 @@
                         $('#hidden_product_id').val(option.length ? option.data('id') : '');
                     });
 
-                    // 2. Automated Calculations
+                    // 2. Automated 
                     $(document).on('input', '#uom_per_quantity, #item_uprice, #item_qty', function() {
                         let uomPer = parseFloat($('#uom_per_quantity').val()) || 0;
                         let uPrice = parseFloat($('#item_uprice').val()) || 0;
