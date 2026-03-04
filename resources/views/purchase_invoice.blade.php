@@ -7,7 +7,7 @@
 @section('content_header')
     <div class="content-header">
         <h1>Supplier Payment Tracking</h1>
-        <p>Manage supplier invoices and payments</p>
+        <p>Manage supplier information and payments</p>
     </div>
 @endsection
 
@@ -468,13 +468,9 @@
                     <i class="fas fa-plus"></i> Add Supplier
                 </button>
 
-                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addInvoiceModal">
-                    <i class="fas fa-file-invoice"></i> Add New Invoice
-                </button>
 
-                <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#addItemModal">
-                    <i class="fas fa-cart-plus"></i> Add Items
-                </button>
+
+
             </div>
         </div>
 
@@ -523,96 +519,7 @@
             </table>
         </div>
 
-        <div class="modal fade" id="addInvoiceModal" tabindex="-1" aria-labelledby="addInvoiceModalLabel"
-            aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header bg-dark text-white">
-                        <h5 class="modal-title" id="addInvoiceModalLabel text-white">Add New Invoice</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                    </div>
-                    <form id="addInvoiceForm">
-                        <div class="modal-body">
-                            <div class="alert alert-info py-2 small">
-                                Fill in the invoice details below. Fields marked with <span class="text-danger">*</span> are
-                                required.
-                            </div>
 
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="invoiceNumber" class="form-label small fw-bold">Invoice Number <span
-                                            class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="invoiceNumber" name="invoice_number"
-                                        placeholder="e.g., 10700003440" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="supplier" class="form-label small fw-bold">Supplier <span
-                                            class="text-danger">*</span></label>
-                                    <select class="form-select" id="supplier" name="supplier_id" required>
-                                        <option value="" disabled selected>Select Supplier</option>
-                                        @foreach ($suppliers as $supplier)
-                                            <option value="{{ $supplier->supplier_id }}">{{ $supplier->supplier_name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-bold small">Invoice Date</label>
-                                    <input type="date" name="invoice_date" class="form-control"
-                                        value="{{ date('Y-m-d') }}" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-bold small">Due Date</label>
-                                    <input type="date" name="due_date" class="form-control" required>
-                                </div>
-                            </div>
-
-                            <hr>
-
-                            <div class="row">
-
-                                <div class="col-md-4 mb-3">
-                                    <label for="new_gross" class="form-label small fw-bold">Gross Amount <span
-                                            class="text-danger">*</span></label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">₱</span>
-                                        <input type="number" class="form-control" id="new_gross" name="gross_amount"
-                                            step="0.01" min="0.01" required>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-4 mb-3">
-                                    <label for="new_vat" class="form-label small fw-bold">VAT Amount <span
-                                            class="text-danger">*</span></label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">₱</span>
-                                        <input type="number" class="form-control" id="new_vat" name="vat_amount"
-                                            step="0.01" min="0" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-4 mb-3">
-                                    <label for="new_net" class="form-label small fw-bold text-primary">Net Amount
-                                        (Auto)</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-light">₱</span>
-                                        <input type="number" class="form-control bg-light" id="new_net"
-                                            name="net_amount" step="0.01" readonly>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-success" id="saveInvoiceForm">Save Invoice</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
 
         <div class="modal fade" id="addSupplierModal" tabindex="-1" aria-labelledby="addSupplierModalLabel"
             aria-hidden="true">
@@ -657,8 +564,7 @@
         </div>
 
         <!-- Payment Modal -->
-        <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel"
-            aria-hidden="true">
+        <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-md">
                 <div class="modal-content">
                     <div class="modal-header bg-success text-white">
@@ -723,109 +629,7 @@
                 </div>
             </div>
         </div>
-        <!-- Add Items Modal -->
-        <div class="modal fade" id="addItemModal" tabindex="-1" aria-labelledby="addItemLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-centered">
-                <div class="modal-content border-0 shadow">
-                    <div class="modal-header bg-info text-white">
-                        <h5 class="modal-title" id="addItemLabel">
-                            <i class="fas fa-plus-circle me-2"></i>Add New Item to Invoice
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                    </div>
 
-                    <form id="purchaseItemsForm">
-                        @csrf
-                        <div class="modal-body p-4">
-                            <div class="mb-4">
-                                <label class="form-label fw-bold small text-uppercase text-muted">Target Invoice *</label>
-                                <select name="purchase_id" id="select_purchase_id" class="form-select border-info"
-                                    required>
-                                    <option value="">-- Select Invoice Number --</option>
-                                    @foreach ($purchases as $purchase)
-                                        <option value="{{ $purchase->purchase_id }}">
-                                            INV: {{ $purchase->invoice_number }} |
-                                            {{ $purchase->supplier->supplier_name ?? 'N/A' }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="row g-3">
-                                <div class="col-md-12">
-                                    <label class="form-label small fw-bold">Product Description *</label>
-                                    <input type="text" name="product_name" id="item_product_input"
-                                        class="form-control" list="product_list"
-                                        placeholder="Search or type product name..." required>
-                                    <datalist id="product_list">
-                                        @foreach ($products as $product)
-                                            <option value="{{ $product->product_name }}"
-                                                data-id="{{ $product->product_ID }}">
-                                        @endforeach
-                                    </datalist>
-                                    <input type="hidden" name="product_id" id="hidden_product_id">
-                                </div>
-
-                                <div class="col-md-3">
-                                    <label class="form-label small fw-bold">Expiry Date</label>
-                                    <input type="date" name="expiry_date" class="form-control">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label small fw-bold">Quantity *</label>
-                                    <input type="number" name="quantity" id="item_qty" class="form-control"
-                                        value="1" min="1" required>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label small fw-bold">Unit (UOM) *</label>
-                                    <select name="uom_id" id="item_uom" class="form-select" required>
-                                        <option value="">Select Unit...</option>
-                                        @foreach ($uoms as $uom)
-                                            <option value="{{ $uom->uom_ID }}">{{ $uom->uom_title }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label small fw-bold">Unit Per Quantity *</label>
-                                    <input type="number" name="uom_per_quantity" id="uom_per_quantity"
-                                        class="form-control" step="0.01" value="1" required>
-                                </div>
-
-                                <div class="col-md-4">
-                                    <label class="form-label small fw-bold">Unit Price *</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">₱</span>
-                                        <input type="number" name="unit_price" id="item_uprice" class="form-control"
-                                            step="0.01" placeholder="0.00" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label small fw-bold text-primary">Total Price (Subtotal)</label>
-                                    <input type="text" id="total_price" class="form-control bg-light" readonly
-                                        placeholder="0.00">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label small fw-bold text-success">Total Amount</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-success text-white">₱</span>
-                                        <input type="text" id="total_amount"
-                                            class="form-control bg-light fw-bold text-success" readonly
-                                            placeholder="0.00">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="modal-footer bg-light border-0">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-success px-4 fw-bold" id="saveItemsBtn">
-                                <i class="fas fa-save me-2"></i>Save Item
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
 
         {{-- View item --}}
         <div class="modal fade" id="viewItemsModal" tabindex="-1" aria-hidden="true">
@@ -1056,181 +860,11 @@
                     });
                 });
 
-                $(document).ready(function() {
-                    // Listen to Gross Amount (the Total)
-                    $('#new_gross').on('input', function() {
-                        let totalVal = $(this).val();
-
-                        if (totalVal !== "") {
-                            let total = parseFloat(totalVal);
-
-                            // Math to match your receipt
-                            let vatableSales = total / 1.12;
-                            let vatAmount = total - vatableSales;
-
-                            // Update the other fields
-                            // We use .val() so it fills up automatically
-                            $('#new_vat').val(vatAmount.toFixed(2));
-
-                            // On your receipt, Net Amount is the same as Gross Amount
-                            $('#new_net').val(total.toFixed(2));
-                        } else {
-                            $('#new_vat').val('');
-                            $('#new_net').val('');
-                        }
-                    });
-
-                    // Formatting only on blur to prevent cursor jumping
-                    $('#new_gross').on('blur', function() {
-                        let val = parseFloat($(this).val());
-                        if (!isNaN(val)) {
-                            $(this).val(val.toFixed(2));
-                        }
-                    });
-                });
-
-                // 2. Formatting (Only when you finish typing)
-                $('#new_net').on('blur', function() {
-                    let val = parseFloat($(this).val());
-                    if (!isNaN(val)) {
-                        // Now it's safe to add the .00 without breaking your typing
-                        $(this).val(val.toFixed(2));
-                    }
-                });
-
-                $('#saveInvoiceForm').on('click', function(e) {
-                    e.preventDefault();
-
-                    // 1. Collect the data from the form
-                    let formData = {
-                        _token: "{{ csrf_token() }}", // Required by Laravel for security
-                        invoice_number: $('#invoiceNumber').val(),
-                        supplier_id: $('#supplier').val(),
-                        invoice_date: $('input[name="invoice_date"]').val(),
-                        due_date: $('input[name="due_date"]').val(),
-                        gross_amount: $('#new_gross').val(), // Vatable Sales
-                        vat_amount: $('#new_vat').val(), // VAT 12%
-                        net_amount: $('#new_net').val() // Total Sales
-                    };
-
-                    // 2. Send to Laravel via AJAX
-                    $.ajax({
-                        url: "{{ route('save_invoice') }}", // Make sure this route exists!
-                        type: "POST",
-                        data: formData,
-                        success: function(response) {
-                            // Close the modal and refresh the table
-                            $('#addInvoiceModal').modal('hide');
-                            alert("Invoice Saved Successfully!");
-                            location.reload(); // Or use table.ajax.reload() if using DataTables
-                        },
-                        error: function(xhr) {
-                            // Show errors (like duplicate invoice numbers)
-                            alert("Error: " + xhr.responseText);
-                        }
-                    });
-                });
-
-                $(document).ready(function() {
-                    // This makes the "Add Row" button actually do something
-                    $('#addRow').on('click', function() {
-                        const newRow = getProfessionalRow();
-                        $('#itemRows').append(newRow);
-                    });
-
-                    // Remove row logic
-                    $(document).on('click', '.remove-row', function() {
-                        $(this).closest('tr').remove();
-                        calculateGrandTotal(); // Recalculate if a row is deleted
-                    });
-                });
 
 
-                function getProfessionalRow() {
-                    // We convert the PHP arrays to JS objects safely
-                    const products = {!! json_encode($products) !!};
-                    const uoms = {!! json_encode($uoms) !!};
 
-                    let productOptions = '<option value="">Select Product...</option>';
-                    products.forEach(p => {
-                        productOptions += `<option value="${p.product_ID}">${p.product_name}</option>`;
-                    });
 
-                    let uomOptions = '<option value="">Unit...</option>';
-                    uoms.forEach(u => {
-                        uomOptions += `<option value="${u.uom_ID}">${u.uom_name}</option>`;
-                    });
 
-                    return `
-                        <tr class="item-row">
-                            <td><select name="product_id[]" class="form-select border-0 bg-transparent shadow-none" required>${productOptions}</select></td>
-                            <td><select name="uom_id[]" class="form-select border-0 bg-transparent shadow-none" required>${uomOptions}</select></td>
-                            <td><input type="number" name="quantity_per_uom[]" class="form-control qty-input border-0 bg-transparent shadow-none" value="1" min="1" required></td>
-                            <td>
-                                <div class="input-group input-group-sm border-0">
-                                    <span class="input-group-text bg-transparent border-0">₱</span>
-                                    <input type="number" name="unit_price[]" class="form-control price-input border-0 bg-transparent shadow-none" step="0.01" placeholder="0.00" required>
-                                </div>
-                            </td>
-                            <td><input type="text" class="form-control bg-light fw-bold border-0 row-total" readonly value="0.00"></td>
-                            <td class="text-center">
-                                <button type="button" class="btn btn-link text-danger remove-row p-0 shadow-none"><i class="fas fa-trash-alt"></i></button>
-                            </td>
-                        </tr>`;
-                }
-
-                $(document).ready(function() {
-                    // 1. Datalist ID Handler (Prevents "Zero" or "Null" Product IDs)
-                    $('#item_product_input').on('input', function() {
-                        let val = $(this).val();
-                        let option = $('#product_list option').filter(function() {
-                            return $(this).val() === val;
-                        });
-                        // If found, set hidden ID; if not, leave empty so Controller creates new product
-                        $('#hidden_product_id').val(option.length ? option.data('id') : '');
-                    });
-
-                    // 2. Automated 
-                    $(document).on('input', '#uom_per_quantity, #item_uprice, #item_qty', function() {
-                        let uomPer = parseFloat($('#uom_per_quantity').val()) || 0;
-                        let uPrice = parseFloat($('#item_uprice').val()) || 0;
-                        let qty = parseFloat($('#item_qty').val()) || 0;
-
-                        // Formula 1: Total Price = UOM Per Unit * Unit Price
-                        let totalPrice = uomPer * uPrice;
-                        $('#total_price').val(totalPrice.toFixed(2));
-
-                        // Formula 2: Total Amount = Total Price * Quantity
-                        let totalAmount = totalPrice * qty;
-                        $('#total_amount').val(totalAmount.toFixed(2));
-                    });
-
-                    // 3. Save Item Ajax
-                    $('#saveItemsBtn').on('click', function(e) {
-                        e.preventDefault();
-
-                        if (!$('#select_purchase_id').val() || !$('#item_product_input').val()) {
-                            alert("Please fill in the Invoice and Product name!");
-                            return;
-                        }
-
-                        $.ajax({
-                            url: "{{ route('storePurchaseItems') }}",
-                            method: "POST",
-                            data: $('#purchaseItemsForm').serialize(),
-                            success: function(response) {
-                                alert('Item added to invoice!');
-                                $('#addItemModal').modal('hide');
-                                location.reload();
-                            },
-                            error: function(xhr) {
-                                let errorMsg = xhr.responseJSON ? xhr.responseJSON.message :
-                                    "Something went wrong";
-                                alert("Error: " + errorMsg);
-                            }
-                        });
-                    });
-                });
 
 
                 $(document).on('click', '.view-items-btn', function() {

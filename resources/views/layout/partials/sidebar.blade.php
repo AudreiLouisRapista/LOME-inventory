@@ -360,6 +360,13 @@
                 </li>
 
 
+                <li class="nav-item">
+                    <a href="{{ route('add_invoice') }}"
+                        class="nav-link {{ Route::is('add_invoice') ? 'active' : '' }}"
+                        style="display:flex; align-items:center; gap:10px; color:{{ Route::is('add_invoice') ? '#fff' : '#333' }}; background:{{ Route::is('add_invoice') ? '#ff5757' : 'transparent' }};">
+                        <i class="nav-icon fas fa-file-signature"></i> Invoice Encoder
+                    </a>
+                </li>
 
             </ul>
         </nav>

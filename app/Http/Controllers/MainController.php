@@ -855,80 +855,104 @@ public function storePayment(Request $request)
     ]);
 }
 
-public function storePurchaseItems(Request $request)
-{
-   
-    $request->validate([
-        'purchase_id'      => 'required|exists:purchases,purchase_id',
-        'product_name'     => 'required|string',
-        'uom_id'           => 'required|exists:uom,uom_ID',
-        'quantity_per_uom' => 'required|numeric|min:1',
-        'unit_price'       => 'required|numeric',
-        'quantity'         => 'required|numeric|min:1',
+public function saveInvoiceAndItem(Request $request)
+{   
+    // dd($request->all());
+//     // Validate the incoming data
+//    $request->validate([
+//     'supplier_id' => 'required',
+//     'invoice_number' => 'required',
+//     'product_name.*' => 'required',
+//     'quantity.*' => 'required|numeric|min:1', // Add this
+//     'unit_price.*' => 'required|numeric',    // Add this
+// ]);
+
+    DB::beginTransaction();
+
+   try {
+    // 1. Save the Main Invoice
+    $invoiceId = DB::table('purchases')->insertGetId([
+        'supplier_id'    => $request->supplier_id,
+        'invoice_number'     => $request->invoice_number,
+        'invoice_date'   => $request->invoice_date,
+        'gross_amount'    => $request->gross_total_raw,
+        'vat_amount'     => $request->vat_amount_raw,
+        'net_amount'    => $request->grand_total_raw,
+        'due_date'      => $request->due_date,
+        'invoice_date' => $request->invoice_date,
+        'created_at'     => now(),
     ]);
 
-    try {
-        \DB::beginTransaction();
+    foreach ($request->product_name as $key => $name) {
+        $product = DB::table('products')->where('product_name', $name)->first();
 
-        // [Existing Product Logic remains the same...]
-        $productId = $request->product_id;
-        if (empty($productId)) {
-            $existingProduct = \DB::table('products')->where('product_name', $request->product_name)->first();
-            $productId = $existingProduct ? $existingProduct->product_ID : \DB::table('products')->insertGetId([
-                'product_name' => $request->product_name,
+        if (!$product) {
+            $productId = DB::table('products')->insertGetId([
+                'product_name' => $name,
+                'uom_id'       => $request->uom[$key],
                 'created_at'   => now(),
             ]);
+        } else {
+           
+            $productId = $product->product_ID; 
         }
 
-        // Calculations
-        $totalPrice = $request->unit_price * $request->uom_per_quantity;
-        $totalAmount = $totalPrice * $request->quantity;
-
-        \DB::table('purchase_items')->insert([
-            'purchase_item_id'       => $request->purchase_id,
-            'purchase_id'            => $request->purchase_id,
-            'product_id'             => $request->product_id,
-            'uom_ID'           => $request->uom_id,
-            'quantity_per_uom' => $request->uom_per_quantity,
-            'quantity'         => $request->quantity,
-            'UnitPrice'        => $request->unit_price,
-            'TotalPrice'       => $totalPrice,  // Formula: uom_per * unit_price
-            'Amount'           => $totalAmount, // Formula: total_price * quantity
-            'CreatedAt'        => now(),
+        DB::table('purchase_items')->insert([
+            'purchase_id'        => $invoiceId,
+            'product_id'        => $productId,
+            'uom_ID'            => $request->uom[$key],
+            'quantity_per_uom' => $request->quantity_per_unit[$key],
+            'unit_tie'          => $request->tie_number[$key],
+            'unit_price'        => $request->unit_price[$key],
+            'total_price'       => $request->quantity[$key] * ($request->quantity_per_unit[$key] * $request->tie_number[$key] * $request->unit_price[$key]),
+            'created_at'        => now(),
+            'updated_at'        => now(),
         ]);
+    }
 
-      
-        \DB::commit();
-        return response()->json(['status' => 'success', 'message' => 'Item linked successfully!']);
+    DB::commit();
+    // Use the session key 'save' to match your 'with' call
+    return redirect()->route('add_invoice')->with('save', 'Invoice saved successfully!');
 
     } catch (\Exception $e) {
-        \DB::rollBack();
-        return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        DB::rollback();
+        // Return with the error message so you can see what went wrong
+        return back()->with('errorMessage', 'Error: ' . $e->getMessage());
     }
 }
 
 
-public function save_invoice(Request $request) 
+
+
+
+public function add_invoice(Request $request)
 {
-    // Laravel ignores the decimal formatting from the front-end and treats it as a raw number
-    $totalAmount = $request->input('net_amount'); 
+    //  1. Fetch data using Eloquent (latest first)
+    $query = Purchase::with('supplier')->withSum('payments as total_paid_sum', 'amount_paid')->latest();
 
-    $purchase = new Purchase();
-    $purchase->invoice_number = $request->invoice_number;
-    $purchase->supplier_id = $request->supplier_id;
-    $purchase->invoice_date = $request->invoice_date;
-    $purchase->due_date = $request->due_date;
+    // 2. Apply your existing filters
+    if ($request->supplier_id) {
+        $query->where('supplier_id', $request->supplier_id);
+    }
     
-    // The "Back End" does the official math based on your receipt
-    $purchase->net_amount = $totalAmount; 
-    $purchase->gross_amount = $totalAmount / 1.12; // Vatable Sales
-    $purchase->vat_amount = $totalAmount - ($totalAmount / 1.12); // VAT 12%
-    
-    $purchase->status = 'unpaid'; // Default for new records
-    $purchase->save();
+    $purchases_data = $query->get();
 
-    return response()->json(['success' => true]);
+    // 2. AJAX Response
+    if ($request->ajax()) {
+        return response()->json(['data' => $purchases_data]);
+    }
+
+    // 3. Normal Load Variables (Ensure lowercase names!)
+    $suppliers = DB::table('suppliers')->orderBy('supplier_name', 'ASC')->get();
+    $products  = DB::table('products')->orderBy('product_name', 'ASC')->get();
+    $uoms      = DB::table('uom')->get();
+    $purchases = $purchases_data;
+
+ return view('add_invoice', compact('suppliers', 'purchases', 'products', 'uoms'));
 }
+
+
+
 
         // LOG OUT
 

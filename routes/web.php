@@ -56,6 +56,10 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     Route::get('/download-import/{id}', [MainController::class, 'download_import'])->name('download_import');
     Route::get('/updateTeacherStatus', [MainController::class, 'updateTeacherStatus'])->name('updateTeacherStatus');
     Route::get('/purchase_invoice', [MainController::class, 'purchase_invoice'])->name('purchase_invoice');
+    Route::get('/add_invoice', [MainController::class, 'add_invoice'])->name('add_invoice');
+    Route::get('/import_history', [MainController::class, 'import_history'])->name('import_history');
+   
+
 
     
 
@@ -77,7 +81,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     Route::post('/storePayment', [MainController::class, 'storePayment'])->name('storePayment');
     Route::post('/storeSupplier', [MainController::class, 'storeSupplier'])->name('storeSupplier');
     Route::post('/storePurchase', [MainController::class, 'storePurchase'])->name('storePurchase');
-    Route::post('/storePurchaseItems', [MainController::class, 'storePurchaseItems'])->name('storePurchaseItems');
+    Route::post('/saveInvoiceAndItem', [MainController::class, 'saveInvoiceAndItem'])->name('saveInvoiceAndItem');
     Route::post('/save_invoice', [MainController::class, 'save_invoice'])->name('save_invoice');
 
 
