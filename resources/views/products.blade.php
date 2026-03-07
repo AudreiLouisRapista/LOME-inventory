@@ -46,31 +46,48 @@
                                                 enctype="multipart/form-data">
                                                 @csrf
 
-                                                <p class="text-muted small fw-bold text-uppercase mb-3 border-bottom pb-1">
-                                                    Basic Information</p>
-                                                <div class="row g-3 mb-4">
-                                                    <div class="col-md-6">
-                                                        <label class="form-label fw-semibold">Category</label>
-                                                        <div class="input-group">
-                                                            <span class="input-group-text bg-light"><i
-                                                                    class="fas fa-tag"></i></span>
-                                                            <select name="category_ID" id="category"
-                                                                class="form-select border-start-0" required>
-                                                                <option value="" selected disabled>Select Category
-                                                                </option>
-                                                                @foreach ($categories as $category)
-                                                                    <option value="{{ $category->category_ID }}">
-                                                                        {{ strtoupper($category->category_name) }}
-                                                                    </option>
-                                                                @endforeach
-                                                            </select>
+                                                <div class="mb-4">
+
+                                                    <p class="text-muted small fw-bold text-uppercase mb-3 border-bottom ">
+                                                        basic information</p>
+                                                    <div class="row g-3">
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-semibold"
+                                                                style="color: #475569;">Category</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text bg-light border-end-0"
+                                                                    style="border-radius: 10px 0 0 10px;">
+                                                                    <i class="bi bi-tag text-muted"></i>
+                                                                </span>
+                                                                <select id="category_ID_add" name="category_ID"
+                                                                    class="form-select bg-light border-start-0 js-category-select"
+                                                                    style="border-radius: 0 10px 10px 0; height: 45px;"
+                                                                    required>
+                                                                    <option value="">Select Category</option>
+                                                                    @foreach ($categories as $cat)
+                                                                        <option value="{{ $cat->category_ID }}">
+                                                                            {{ $cat->category_name }}</option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <label class="form-label fw-semibold">Product Name</label>
-                                                        <input type="text" name="product_name" class="form-control"
-                                                            placeholder="e.g. Arabica Coffee Bean"
-                                                            value="{{ old('product_name') }}" required>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-semibold"
+                                                                style="color: #475569;">Product</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text bg-light border-end-0"
+                                                                    style="border-radius: 10px 0 0 10px;">
+                                                                    <i class="bi bi-tag text-muted"></i>
+                                                                </span>
+                                                                <select id="product_ID_add" name="product_ID"
+                                                                    class="form-select bg-light border-start-0 js-product-select"
+                                                                    style="border-radius: 0 10px 10px 0; height: 45px;"
+                                                                    required>
+                                                                    <option value="">Select Category First</option>
+
+                                                                </select>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
 
@@ -97,38 +114,6 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="mb-4">
-                                                    <p
-                                                        class="text-muted small fw-bold text-uppercase mb-3 border-bottom pb-1">
-                                                        Batch Information</p>
-                                                    <div class="row g-3">
-                                                        <div class="col-md-4">
-                                                            <label class="form-label fw-semibold">Batch Code
-                                                                (optional)</label>
-                                                            <input type="text" name="batch_code"
-                                                                class="form-control bg-light" placeholder="Auto-generate"
-                                                                style="border-radius: 10px; height: 45px;" value="">
-                                                        </div>
-
-                                                        <div class="col-md-4">
-                                                            <label class="form-label fw-semibold">MFG Date
-                                                                (optional)</label>
-                                                            <input type="date" name="mfg_date"
-                                                                class="form-control bg-light"
-                                                                style="border-radius: 10px; height: 45px;" value="">
-                                                        </div>
-
-                                                        <div class="col-md-4">
-                                                            <label class="form-label fw-semibold">Expiration Date</label>
-                                                            <input type="date" name="expiration_date"
-                                                                class="form-control bg-light"
-                                                                style="border-radius: 10px; height: 45px;" required>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-
-
                                                 <div class="d-flex justify-content-end gap-2 mt-4">
                                                     <button type="button" class="btn btn-light px-4"
                                                         data-bs-dismiss="modal">Cancel</button>
@@ -145,8 +130,7 @@
                         </div>
 
                         <div class="card-body">
-                            <table id="example2" class="table table-bordered table-hover display block"
-                                style="width:100%">
+                            <table id="example2" class="table table-bordered table-hover display block" style="width:100%">
                                 <thead style="text-align: center;">
                                     <tr>
                                         <th>Product ID</th>
@@ -324,7 +308,7 @@
 
 @endsection
 
-@section('tables')
+@section('scripts src')
 
     <script>
         $(document).ready(function() {
@@ -411,6 +395,84 @@
                         alert('Something went wrong!');
                     }
                 });
+            });
+
+            // ==========================================
+            // 4. DYNAMIC DROPDOWNS (Filtered Products with Batch Qty)
+            // ==========================================
+            function populateProductsIntoSelect(productSelect, data, isFilter) {
+                var defaultText = isFilter ? ' - All Products - ' : '--Select Product--';
+                var defaultValue = isFilter ? 'all' : '';
+
+                productSelect.empty().append('<option value="' + defaultValue + '">' + defaultText + '</option>');
+
+                $.each(data, function(key, value) {
+                    // We added data-qty here to capture the Batch Quantity
+                    productSelect.append(
+                        `<option value="${value.product_ID}" 
+                     data-cost="${value.product_cost}" 
+                     data-price="${value.product_price}" 
+                     data-qty="${value.batch_quantity}">
+                ${value.product_name}
+            </option>`
+                    );
+                });
+            }
+
+            $(document).on('change', '.js-category-select, #tableCategoryFilter', function() {
+                var categoryId = $(this).val();
+                var isFilter = ($(this).attr('id') === 'tableCategoryFilter');
+
+                var productSelect = isFilter ? $('#tableProductFilter') : $(this).closest('form').find(
+                    '.js-product-select');
+
+                // Reset dependent fields
+                if (!isFilter) {
+                    var form = $(this).closest('form');
+                    form.find('.js-product-cost').val('');
+                    form.find('.js-product-price').val('');
+                    form.find('.js-product-qty').val(''); // Clear quantity too
+                }
+
+                productSelect.empty().append('<option value="">Loading...</option>');
+
+                if (categoryId && categoryId !== 'all') {
+                    $.ajax({
+                        url: "/admin/get-products-by-category/" + categoryId,
+                        type: 'GET',
+                        success: function(data) {
+                            populateProductsIntoSelect(productSelect, data, isFilter);
+                        },
+                        error: function() {
+                            productSelect.empty().append(
+                                '<option value="">Failed to load products</option>');
+                        }
+                    });
+                } else {
+                    productSelect.empty().append('<option value="' + (isFilter ? 'all' : '') + '">' + (
+                        isFilter ? ' - All Products - ' : 'Select Product') + '</option>');
+                }
+            });
+
+            $(document).on('change', '.js-product-select, #tableProductFilter', function() {
+                if ($(this).attr('id') === 'tableProductFilter') {
+                    table.draw();
+                    return;
+                }
+
+                var selected = $(this).find('option:selected');
+                var form = $(this).closest('form');
+
+                var cost = selected.data('cost');
+                var price = selected.data('price');
+
+                var batchQty = selected.data('qty'); // Get quantity from the new data attribute
+
+                form.find('.js-product-cost').val(cost === undefined ? '' : cost);
+                form.find('.js-product-price').val(price === undefined ? '' : price);
+
+                // This is the specific part you wanted: Auto-filling the quantity from the batch
+                form.find('.js-product-qty').val(batchQty === undefined ? '' : batchQty);
             });
         });
     </script>

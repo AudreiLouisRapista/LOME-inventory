@@ -282,9 +282,7 @@ public function view_products(Request $request) {
                         data-category-ID="'.$row->category_ID.'"
                         data-cost="'.$row->product_cost.'"
                         data-price="'.$row->product_price.'">
-                      
-
-                        <i class="bi bi-pen"></i></button>';
+                      <i class="bi bi-pen"></i></button>';
             })
             ->rawColumns(['action']) // Tells Yajra to render HTML, not just text
             ->make(true);
@@ -862,10 +860,8 @@ public function saveInvoiceAndItem(Request $request)
             'created_at'        => now(),
             'updated_at'        => now(),
         ]);
-    }
 
-
-     $batchId = DB::table('batches')->insert([
+         $batchId = DB::table('batches')->insert([
         'purchase_item_id' => $purchaseItemID,
         'product_id' => $productId,
         'batch_code' => $request->batch_number,
@@ -875,6 +871,7 @@ public function saveInvoiceAndItem(Request $request)
         'created_at' => now(),
         'updated_at' => now(),
     ]);
+    }
 
     DB::commit();
     // Use the session key 'save' to match your 'with' call

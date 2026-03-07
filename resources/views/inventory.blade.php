@@ -556,7 +556,7 @@
 
 @endsection
 
-@section('tables')
+@section('scripts src')
     `
     <script>
         $(document).ready(function() {

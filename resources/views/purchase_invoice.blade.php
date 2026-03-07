@@ -753,7 +753,7 @@
 
     @endsection
 
-    @section('tables')
+    @section('scripts src')
         <script>
             $(document).ready(function() {
                 // 1. Initialize DataTable once

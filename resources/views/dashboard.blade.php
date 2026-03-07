@@ -1,532 +1,465 @@
 @extends('themes.main')
 
-{{-- Define the page title that goes into the <title> tag in head.blade.php --}}
 @section('title', 'Dashboard')
 
-
-{{-- This section replaces the content-header section in the master layout --}}
-@section('content_header')
-
+@section('content')
     <style>
-        /* --- Dashboard Layout --- */
-        .dash-header-section {
-            background-color: rgba(252, 252, 252, 0.876);
-            transition: background-color 0.3s ease;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-        /* --- Stat Cards --- */
-        .dash-stat-card {
-            background: rgb(255, 255, 255);
-            padding: 20px;
-            border-radius: 20px;
-            border: 1px solid #f0f0f0;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            height: 155px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            transition: all 0.3s ease;
-        }
-
-        .dash-stat-title {
-            color: #64748b;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .dash-stat-value {
-            font-size: 32px;
-            font-weight: 700;
-            margin: 0;
+        .lome-dashboard {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            padding: 30px;
+            /* Enhanced outer spacing */
             color: #1e293b;
         }
 
-        .dash-stat-subtext {
-            color: #94a3b8;
-            font-size: 11px;
+        /* --- Header Spacing --- */
+        .dash-header {
+            margin-bottom: 35px;
+            padding-left: 10px;
         }
 
-        /* --- Recent Activity --- */
-        .dash-activity-item {
-            margin-bottom: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .dash-activity-text {
+        .dash-header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0f172a;
             margin: 0;
+        }
+
+        .dash-header p {
             font-size: 14px;
-            color: #555;
+            color: #64748b;
+            margin-top: 4px;
         }
 
-        .dash-activity-time {
-            font-size: 12px;
-            color: gray;
+        /* --- Spaced Grid --- */
+        .dashboard-row {
+            margin-bottom: 30px;
+            /* Vertical gap between sections */
         }
 
-        /* =========================================================
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                         DARK MODE OVERRIDES (Only triggers when .dark-mode is active)
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ========================================================= */
-
-        .dark-mode .dash-header-section {
-            background-color: #121212 !important;
+        /* --- Stat Cards (Soft Rounded) --- */
+        .stat-card-modern {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+            height: 110px;
         }
 
-        .dark-mode .dash-stat-card,
-        .dark-mode .chart-container,
-        .dark-mode .card {
-            background-color: #1a1a1a !important;
-            border-color: #333 !important;
+        .pill-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
         }
 
-        .dark-mode .dash-stat-value,
-        .dark-mode .dash-activity-text,
-        .dark-mode .chart-container canvas,
-        label,
-        input,
-        select,
-        text {
-            color: #e0e0e0 !important;
+        /* Modern Palette */
+        .pill-green {
+            background: #f0fdf4;
+            color: #16a34a;
         }
 
-        .dark-mode h1,
-        .dark-mode h3,
-        .dark-mode h4,
-        .dark-mode p {
-            color: #ffffff !important;
+        .pill-blue {
+            background: #eff6ff;
+            color: #2563eb;
         }
 
-        .dark-mode .dash-stat-title,
-        .dark-mode .dash-stat-subtext,
-        .dark-mode .dash-activity-time {
-            color: #94a3b8 !important;
+        .pill-purple {
+            background: #faf5ff;
+            color: #7c3aed;
         }
 
-        .dark-mode .dash-activity-item {
-            border-bottom-color: #333 !important;
+        .pill-orange {
+            background: #fff7ed;
+            color: #ea580c;
+        }
+
+        .stat-val {
+            font-size: 26px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #64748b;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        /* --- Main Content Cards --- */
+        .content-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 24px;
+            padding: 28px;
+            height: 100%;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04);
+        }
+
+        .card-head {
+            margin-bottom: 25px;
+        }
+
+        .card-head h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+        }
+
+        /* --- Sleek Progress Bars (Medium Size) --- */
+        .sales-item {
+            margin-bottom: 18px;
+        }
+
+        .progress-track {
+            height: 10px;
+            /* Sleek medium height */
+            background: #f1f5f9;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6366f1, #a855f7);
+            border-radius: 10px;
+        }
+
+        /* --- Expiration Center Actions --- */
+        .exp-btn {
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            padding: 16px;
+            border-radius: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .exp-btn:hover {
+            border-color: #6366f1;
+            background: #f8fafc;
+            transform: translateX(5px);
+        }
+
+        .text-crit {
+            color: #dc2626;
+            font-weight: 700;
+        }
+
+        .text-warn {
+            color: #d97706;
+            font-weight: 700;
+        }
+
+        /* Modal Styling */
+        .modal-content {
+            border-radius: 24px;
+            border: none;
+            padding: 15px;
+        }
+
+        .modal-header {
+            border-bottom: none;
+        }
+
+        .modal-title {
+            font-weight: 800;
+            color: #0f172a;
         }
     </style>
 
-
-
-    <div class="col dash-header-section">
-        <div class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-2">
-                    <div class="col-sm-6">
-                        <h1 class="font-weight-bold text-dark mb-0">Dashboard</h1>
-                    </div>
-                </div>
-            </div>
+    <div class="lome-dashboard">
+        <div class="dash-header">
+            <h1>Dashboard</h1>
+            <p>Over View</p>
         </div>
-    @endsection
 
-
-
-    {{-- This section replaces the main content block --}}
-    @section('content')
-
-
-        <div class="row mb-4 g-3" style="font-family: 'Inter', sans-serif;">
-            <div class="col-lg-3 col-6">
-                <div class="dash-stat-card"
-                    style="background: white; padding: 20px; border-radius: 20px; border: 1px solid #f0f0f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); height: 155px; display: flex; flex-direction: column; justify-content: space-between;">
-                    <div>
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: #64748b; font-size: 14px; font-weight: 500;">Total Products</span>
-
-                        </div>
-                    </div>
-                    <div>
-                        <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                            <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #1e293b;">
-                                {{ number_format($totalProducts) }}</h3>
-                            {{-- Accurate Percentage Design --}}
-                            @php
-                                $isPositive = $quantityPercent >= 0;
-                                $bgColor = $isPositive ? '#f0fdf4' : '#fef2f2';
-                                $textColor = $isPositive ? '#16a34a' : '#dc2626';
-                                $icon = $isPositive ? '↗' : '↘';
-                            @endphp
-                            <div
-                                style="background: {{ $bgColor }}; color: {{ $textColor }}; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-                                {{ $icon }}
-                                {{ $quantityPercent }} %
-                            </div>
-                        </div>
-                        <small style="color: #94a3b8; font-size: 11px;">From last week</small>
+        <div class="row dashboard-row">
+            <div class="col-md-3">
+                <div class="stat-card-modern">
+                    <div class="pill-icon pill-green"><i class="fas fa-box"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-val">5,483</div>
+                        <div class="stat-label">Total Products</div>
                     </div>
                 </div>
             </div>
-
-            <div class="col-lg-3 col-6">
-                <div class="dash-stat-card"
-                    style="background: white; padding: 20px; border-radius: 20px; border: 1px solid #f0f0f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); height: 155px; display: flex; flex-direction: column; justify-content: space-between;">
-                    <div>
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: #64748b; font-size: 14px; font-weight: 500;">Available Stock</span>
-
-                        </div>
-                    </div>
-                    <div>
-                        <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                            <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #1e293b;">
-                                {{ number_format($totalQuantity) }}</h3>
-                            <div
-                                style="background: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-                                ↘ 1.24%
-                            </div>
-                        </div>
-                        <small style="color: #94a3b8; font-size: 11px;">From last week</small>
+            <div class="col-md-3">
+                <div class="stat-card-modern">
+                    <div class="pill-icon pill-blue"><i class="fas fa-shopping-cart"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-val">2,859</div>
+                        <div class="stat-label">Orders</div>
                     </div>
                 </div>
             </div>
-
-            <div class="col-lg-3 col-6">
-                <div class="dash-stat-card"
-                    style="background: white; padding: 20px; border-radius: 20px; border: 1px solid #f0f0f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); height: 155px; display: flex; flex-direction: column; justify-content: space-between;">
-                    <div>
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: #64748b; font-size: 14px; font-weight: 500;">Low Stock</span>
-
-                        </div>
-                    </div>
-                    <div>
-                        <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                            <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #1e293b;">
-                                {{ number_format($lowStockProducts) }}</h3>
-                            <div
-                                style="background: #f0fdf4; color: #16a34a; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-                                ↗ 1.52%
-                            </div>
-                        </div>
-                        <small style="color: #94a3b8; font-size: 11px;">From last week</small>
+            <div class="col-md-3">
+                <div class="stat-card-modern">
+                    <div class="pill-icon pill-purple"><i class="fas fa-chart-line"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-val">5,483</div>
+                        <div class="stat-label">Total Stock</div>
                     </div>
                 </div>
             </div>
-
-            <div class="col-lg-3 col-6">
-                <div class="dash-stat-card"
-                    style="background: white; padding: 20px; border-radius: 20px; border: 1px solid #f0f0f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); height: 155px; display: flex; flex-direction: column; justify-content: space-between;">
-                    <div>
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: #64748b; font-size: 14px; font-weight: 500;">Out of Stock</span>
-
-                        </div>
-                    </div>
-                    <div>
-                        <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                            <h3 style="font-size: 32px; font-weight: 700; margin: 0; color: #1e293b;">
-                                {{ number_format($outOfStock) }}</h3>
-                            <div
-                                style="background: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-                                ↘ 1.55%
-                            </div>
-                        </div>
-                        <small style="color: #94a3b8; font-size: 11px;">From last week</small>
+            <div class="col-md-3">
+                <div class="stat-card-modern">
+                    <div class="pill-icon pill-orange"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-val">38</div>
+                        <div class="stat-label">Out of Stock</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="row">
-
-            <section class="col-md-8 ">
-
-                <!-- Line Graph Section -->
-                <div class="chart-container bg-white p-3 "
-                    style="border-radius: 30px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.222);">
-                    <canvas id="lineChart"></canvas>
+        <div class="row dashboard-row">
+            <div class="col-lg-7">
+                <div class="content-card">
+                    <div class="card-head">
+                        <h3>Expense vs Profit</h3>
+                    </div>
+                    <div style="height: 300px;"><canvas id="expenseChart"></canvas></div>
                 </div>
-                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-                <script>
-                    const labels = ['jan', 'feb', 'mar', 'apr', 'may'];
-                    const TotalStockData = [500, 700, 400, 600, 800];
-                    const SoldData = [300, 400, 200, 350, 500];
+            </div>
 
-                    const ctx = document.getElementById('lineChart').getContext('2d');
+            <div class="col-lg-5">
+                <div class="content-card">
+                    <div class="card-head">
+                        <h3>Top Sales Product</h3>
+                    </div>
+                    @php
+                        $prods = [
+                            ['Wireless Mouse', 92],
+                            ['USB-C Cable', 85],
+                            ['Laptop Stand', 78],
+                            ['Mechanical Keyboard', 71],
+                            ['Desk Lamp', 65],
+                        ];
+                    @endphp
+                    @foreach ($prods as $p)
+                        <div class="sales-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="small font-weight-bold">{{ $p[0] }}</span>
+                                <span class="small text-muted">{{ $p[1] }}%</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill" style="width: {{ $p[1] }}%"></div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
 
-                    new Chart(ctx, {
+        <div class="row dashboard-row">
+            <div class="col-lg-8">
+                <div class="content-card">
+                    <div class="card-head">
+                        <h3>Monthly Inventory vs Sales</h3>
+                    </div>
+                    <div style="height: 280px;"><canvas id="comboChart"></canvas></div>
+                </div>
+            </div>
 
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                    type: 'line',
-                                    label: 'Sold',
-                                    data: SoldData,
-                                    borderColor: '#8b5cf6',
-                                    backgroundColor: 'rgba(139, 92, 246, 0.2)',
-                                    fill: false,
-                                    tension: 0.4,
-                                    pointRadius: 5,
-                                    pointBackgroundColor: '#8b5cf6'
-                                },
-                                {
-                                    type: 'bar',
-                                    label: 'Total Stock',
-                                    data: TotalStockData,
-                                    borderColor: '#87CEEB',
-                                    backgroundColor: 'rgba(135, 206, 235, 0.6)',
-                                    fill: true,
-                                    tension: 0.4,
-                                    pointRadius: 5,
+            <div class="col-lg-4">
+                <div class="content-card">
+                    <div class="card-head">
+                        <h3>Expiration Center</h3>
+                    </div>
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <div class="pill-icon pill-orange" style="width: 60px; height: 60px;"><i
+                                class="fas fa-hourglass-half"></i></div>
+                        <div>
+                            <h2 class="m-0" style="font-size: 32px; font-weight: 800;">127</h2>
+                            <span class="small text-muted">Items Near Expiry</span>
+                        </div>
+                    </div>
 
+                    <button class="exp-btn" data-toggle="modal" data-target="#crit7Modal">
+                        <span class="small font-weight-bold">Critical (7 Days)</span>
+                        <span class="text-crit">23 items <i class="fas fa-chevron-right ml-2"></i></span>
+                    </button>
+
+                    <button class="exp-btn" data-toggle="modal" data-target="#warn30Modal">
+                        <span class="small font-weight-bold">Warning (30 Days)</span>
+                        <span class="text-warn">104 items <i class="fas fa-chevron-right ml-2"></i></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="crit7Modal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Critical Expiration (Next 7 Days)</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead class="text-muted small">
+                                <tr>
+                                    <th>PRODUCT</th>
+                                    <th>SKU</th>
+                                    <th>EXPIRY</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Sample Item A</td>
+                                    <td>#12345</td>
+                                    <td class="text-danger font-weight-bold">Mar 14, 2026</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="warn30Modal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Warning Expiration (Next 30 Days)</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted">Filtering products expiring within 30 days...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection
+
+@section('scripts src')
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Profit Line Chart
+            new Chart(document.getElementById('expenseChart'), {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Profit',
+                        data: [35, 42, 38, 55, 48, 62],
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.05)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#fff',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            grid: {
+                                // To hide the grid lines entirely
+                                display: true,
+
+                                // To make the lines dashed (like in your 'Expense vs Profit' image)
+                                borderDash: [5, 5],
+
+                                // Change the color to match a soft professional look
+                                color: '#e2e8f0',
+
+                                // Remove the line on the very edge of the axis
+                                drawBorder: false,
+                            },
+                            ticks: {
+                                // Customizing the labels on the side
+                                color: '#64748b',
+                                font: {
+                                    family: 'Plus Jakarta Sans'
                                 }
-                            ]
+                            }
                         },
-                        options: {
-                            responsive: true,
-                            maintainingAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    labels: {
-                                        color: 'black'
-                                    }
-                                },
-                                title: {
-                                    display: true,
-                                    text: 'Stock & Sold Over Time',
-                                    color: 'black',
-                                    font: {
-                                        size: 18
-
-                                    }
-                                }
-                            },
-                            scales: {
-                                x: {
-                                    ticks: {
-                                        color: '#64748b', // Professional slate grey
-                                    },
-                                    grid: {
-                                        display: false,
-                                        borderDash: [5, 5],
-                                        drawTicks: false // Hides the vertical lines like in your image
-                                    },
-                                    border: {
-                                        display: true // Removes the bottom solid line
-                                    }
-                                },
-                                y: {
-                                    beginAtZero: true,
-                                    ticks: {
-                                        color: '#64748b',
-                                        stepSize: 200 // Matches the 0, 200, 400, 600, 800 spacing in your image
-                                    },
-                                    grid: {
-                                        color: '#f1f5f9', // Very light grey for the horizontal lines
-                                        borderDash: [5, 5], // This creates the "cut lines"
-                                        drawTicks: true,
-                                    },
-                                    border: {
-                                        display: true // Removes the left solid line
-                                    }
-                                }
+                        x: {
+                            grid: {
+                                // Usually, the x-axis grid is hidden for a cleaner look
+                                display: false,
+                                drawBorder: false
                             }
                         }
-                    });
-                </script>
-
-            </section>
-
-
-            <!-- PIE CHART -->
-
-            <section class="col-md-4">
-                <div class="card shadow-sm" style="border-radius: 20px; border: none; overflow: hidden;">
-
-                    <div class="card-header border-0 bg-white pt-4 px-4">
-                        <h3 class="card-title text-bold" style="font-size: 1.1rem; color: #1e293b;">Category Breakdown</h3>
-                    </div>
-
-                    <div class="card-body px-4 pb-4 pt-0">
-                        <div class="chart-container mb-4" style="height: 220px; position: relative;">
-                            <canvas id="categoryChart"></canvas>
-                        </div>
-
-                        <ul class="nav flex-column">
-                            <li class="nav-item mb-2 border-bottom pb-2" style="border-color: #f1f5f9 !important;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="text-muted" style="font-size: 0.9rem;">
-                                        <i class="fas fa-circle mr-2" style="color: #3b82f6;"></i> Electronics
-                                    </span>
-                                    <span class="font-weight-bold text-dark">1,250</span>
-                                </div>
-                            </li>
-                            <li class="nav-item mb-2 border-bottom pb-2" style="border-color: #f1f5f9 !important;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="text-muted" style="font-size: 0.9rem;">
-                                        <i class="fas fa-circle mr-2" style="color: #a78bfa;"></i> Accessories
-                                    </span>
-                                    <span class="font-weight-bold text-dark">980</span>
-                                </div>
-                            </li>
-                            <li class="nav-item mb-2 border-bottom pb-2" style="border-color: #f1f5f9 !important;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="text-muted" style="font-size: 0.9rem;">
-                                        <i class="fas fa-circle mr-2" style="color: #ec4899;"></i> Furniture
-                                    </span>
-                                    <span class="font-weight-bold text-dark">750</span>
-                                </div>
-                            </li>
-
-                            <li class="nav-item mt-3">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="font-weight-bold text-dark" style="font-size: 1rem;">Total Items</span>
-                                    <span class="font-weight-bold text-dark" style="font-size: 1rem;">4,092</span>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-
-                <script>
-                    $(function() {
-                        // Select the canvas by ID
-                        var doughnutCanvas = document.getElementById('categoryChart');
-
-                        if (doughnutCanvas) {
-                            new Chart(doughnutCanvas.getContext('2d'), {
-                                type: 'doughnut',
-                                data: {
-                                    labels: ['Electronics', 'Accessories', 'Furniture', 'Stationery', 'Others'],
-                                    datasets: [{
-                                        data: [1250, 980, 750, 620, 492],
-                                        backgroundColor: [
-                                            '#3b82f6', // Blue
-                                            '#a78bfa', // Purple
-                                            '#ec4899', // Pink
-                                            '#f59e0b', // Orange
-                                            '#64748b' // Grey
-                                        ],
-                                        borderWidth: 5, // White space between segments
-                                        hoverOffset: 10
-                                    }]
-                                },
-                                options: {
-                                    cutout: '70%', // Creates the "ring" look
-                                    maintainAspectRatio: false,
-                                    plugins: {
-                                        legend: {
-                                            display: false // We use the HTML list above instead
-                                        },
-                                        tooltip: {
-                                            enabled: true
-                                        }
-                                    }
-                                }
-                            });
-                        }
-                    });
-                </script>
-
-                <script>
-                    $(function() {
-                        var ctx2 = document.getElementById('categoryChart').getContext('2d');
-                        new Chart(ctx2, {
-                            type: 'doughnut',
-                            data: {
-                                labels: ['Electronics', 'Accessories', 'Furniture', 'Stationery', 'Others'],
-                                datasets: [{
-                                    data: [1250, 980, 750, 620, 492],
-                                    backgroundColor: ['#007bff', '#a78bfa', '#ec4899', '#ffc107', '#6c757d'],
-                                    borderWidth: 4, // Adds white spacing between slices
-                                    hoverOffset: 4
-                                }]
-                            },
-                            options: {
-                                cutout: '70%', // This creates the thin ring effect
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: {
-                                        display: false // We use our custom HTML legend instead
-                                    }
-                                }
+                    },
+                    option: {
+                        plugins: {
+                            legend: {
+                                display: false
                             }
-                        });
-                    });
-                </script>
-            </section>
-        </div>
+                        }
 
-        <section class="col " style="margin-top: 20px;">
-            <div class="container-fluid">
-                <div class="col">
-                    <div class="col-12">
-                        <div class="card" style="border-radius: 10px; padding:15px;">
+                    }
+                }
 
-                            <!-- Role above Name -->
-                            <h3 style="margin: 0; font-size: 20px; font-weight: 600; text-align:center;">
-                                Welcome back!!
-                            </h3>
-                            <p style="text-align:center;"> {{ session('name') }}</p>
+            });
 
-                            <!-- Activity Log Section -->
-                            <div class="activity-log mt-4">
-                                <h4 style="font-size: 18px; font-weight: 600; margin-bottom: 10px;">
-                                    Recent Activity
-                                </h4>
-                                <ul style="list-style-type: none; padding: 0; max-height: 300px; overflow-y: auto;">
-                                    @foreach ($logs as $log)
-                                        @php
-                                            // Set styles based on action
-                                            switch ($log->action) {
-                                                case 'added':
-                                                    $bgColor = 'rgba(0, 128, 0, 0.2)'; // green
-                                                    $textColor = '#28a745';
-                                                    break;
-                                                case 'updated':
-                                                    $bgColor = 'rgba(255, 165, 0, 0.2)'; // orange
-                                                    $textColor = 'orange';
-                                                    break;
-                                                case 'deleted':
-                                                    $bgColor = 'rgba(255, 0, 0, 0.2)'; // red
-                                                    $textColor = '#E3242B';
-                                                    break;
-                                                default:
-                                                    $bgColor = 'transparent';
-                                                    $textColor = '#000';
-                                            }
-                                        @endphp
-                                        <li
-                                            style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
-                                            <p style="margin: 0; font-size: 14px; color: #555;">
-                                                <strong
-                                                    style="background: {{ $bgColor }}; color: {{ $textColor }}; padding: 3px 8px; border-radius: 12px;">
-                                                    {{ ucfirst($log->action) }}
-                                                </strong> - {{ $log->description }}
-                                            </p>
-                                            <span style="font-size: 12px; color: gray;">
-                                                {{ $log->created_at->diffForHumans() }}
-                                            </span>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
-        </section>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    @endsection
-
-    {{-- Inject the dashboard-specific scripts --}}
-    @section('scripts')
-        <script src="{{ asset('java/calendar.js') }}"></script>
-        <script src="{{ asset('dist/js/demo.js') }}"></script>
-        <script src="{{ asset('dist/js/pages/dashboard.js') }}"></script>
-
-    @endsection
+            // Modern Combo Chart (Inventory vs Sales)
+            new Chart(document.getElementById('comboChart'), {
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        type: 'bar',
+                        label: 'Items Sold',
+                        data: [440, 510, 470, 590, 630, 680],
+                        backgroundColor: '#6366f1',
+                        borderRadius: 8,
+                        barThickness: 22
+                    }, {
+                        type: 'line',
+                        label: 'Stock Level',
+                        data: [700, 850, 720, 950, 880, 1020],
+                        borderColor: '#10b981',
+                        borderWidth: 3,
+                        tension: 0,
+                        fill: false,
+                        pointStyle: 'circle'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            grid: {
+                                borderDash: [5, 5]
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+@endsection

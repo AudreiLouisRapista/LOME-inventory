@@ -38,15 +38,7 @@
                 @include('layout.partials.alerts')
 
                 {{-- HELP FOR DEBUGGING --}}
-                {{-- @if ($errors->any())
-                    <div class="alert alert-danger">
-                        <ul>
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif --}}
+
 
                 @if (session('errorMessage'))
                     <div class="alert alert-warning">{{ session('errorMessage') }}</div>
@@ -167,7 +159,8 @@
                                                 class="form-control border-0 bg-light shadow-none qty_per_unit"
                                                 value="1" min="1"></td>
                                         <td><input type="text" name="tie_number[]"
-                                                class="form-control border-0 bg-light shadow-none">
+                                                class="form-control border-0 bg-light shadow-none tie_number"
+                                                value="0">
                                         </td>
                                         <td>
                                             <input type="text" name="product_name[]" list="productData"
@@ -260,7 +253,7 @@
     </style>
 @endsection
 
-@section('tables')
+@section('scripts src')
     <script>
         $(document).ready(function() {
             // 1. Build UOM options
@@ -280,7 +273,7 @@
                             </select>
                         </td>
                         <td><input type="number" name="quantity_per_unit[]" class="form-control border-0 bg-light shadow-none qty_per_unit" value="1" min="1"></td>
-                        <td><input type="number" name="tie_number[]" class="form-control border-0 bg-light shadow-none tie_number" value="1"></td>
+                        <td><input type="number" name="tie_number[]" class="form-control border-0 bg-light shadow-none tie_number" value="0"></td>
                         <td>
                             <input type="text" name="product_name[]" list="productData" class="form-control border-0 bg-light shadow-none" placeholder="Enter product name..." required>
                         </td>
@@ -317,7 +310,7 @@
                     let qty = parseFloat($(this).find('.qty').val()) || 0;
                     let unit_price = parseFloat($(this).find('.unit_price').val()) || 0;
                     let qty_per_unit = parseFloat($(this).find('.qty_per_unit').val()) || 0;
-                    let tie_number = parseFloat($(this).find('.tie_number').val()) || 1;
+                    let tie_number = parseFloat($(this).find('.tie_number').val()) || 0;
 
                     // Price = Qty/Unit * Tie * Unit Price
                     let priceCalculated = qty_per_unit * tie_number * unit_price;
@@ -326,7 +319,7 @@
                     }));
 
                     // Amount = Qty * Price
-                    let rowTotal = qty * priceCalculated;
+                    let rowTotal = priceCalculated * qty;
                     $(this).find('.row-total').text(rowTotal.toLocaleString(undefined, {
                         minimumFractionDigits: 2
                     }));
