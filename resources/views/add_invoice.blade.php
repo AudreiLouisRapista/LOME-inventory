@@ -101,6 +101,31 @@
                         </div>
                     </div>
 
+                    <div class="mb-5">
+                        <h5 class="text-dark fw-bold mb-4 d-flex align-items-center">
+                            <span class="badge bg-danger me-2 p-2"><i class="bi bi-box-seam-fill"></i></span> Batch
+                            Information
+                        </h5>
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-muted">Batch Number</label>
+                                <input type="number" name="batch_number"
+                                    class="form-control form-control-lg bg-light border-0 shadow-none" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-muted">Mfg. Date</label>
+                                <input type="date" name="mfg_date"
+                                    class="form-control form-control-lg bg-light border-0 shadow-none" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-muted">Expiration Date</label>
+                                <input type="date" name="exp_date"
+                                    class="form-control form-control-lg bg-light border-0 shadow-none" required>
+                            </div>
+
+                        </div>
+                    </div>
+
                     <div class="mb-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 class="text-dark fw-bold mb-0">Invoice Items</h5>
@@ -114,9 +139,9 @@
                                 <thead class="table-light">
                                     <tr class="small text-uppercase text-muted">
                                         <th style="width: 7%;">Qty</th>
-                                        <th style="width: 10%;">UOM</th>
-                                        <th style="width: 8%;">Qty/Unit</th>
-                                        <th style="width: 10%;">Tie #</th>
+                                        <th style="width: 12%;">UOM</th>
+                                        <th style="width: 8%;">Tie #</th>
+                                        <th style="width: 10%;">Qty. per Tie</th>
                                         <th style="width: 30%;">Description (Product)</th>
                                         <th style="width: 12%;">Unit Price</th>
                                         <th style="width: 10%;">Price</th>
@@ -142,7 +167,7 @@
                                                 class="form-control border-0 bg-light shadow-none qty_per_unit"
                                                 value="1" min="1"></td>
                                         <td><input type="text" name="tie_number[]"
-                                                class="form-control border-0 bg-light shadow-none" placeholder="Tie #">
+                                                class="form-control border-0 bg-light shadow-none">
                                         </td>
                                         <td>
                                             <input type="text" name="product_name[]" list="productData"
@@ -207,6 +232,32 @@
         </div>
     </div>
 
+
+    <style>
+        /* Container for better targeting */
+        .mb-5 .form-control {
+            transition: all 0.3s ease-in-out;
+            border: 1px solid transparent;
+            /* Prevents layout jump on hover */
+        }
+
+        /* Hover State */
+        .mb-5 .form-control:hover {
+            background-color: #ffffff !important;
+            border-color: #dee2e6;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+            transform: translateY(-1px);
+        }
+
+        /* Focus State (Optional but recommended for accessibility) */
+        .mb-5 .form-control:focus {
+            background-color: #ffffff !important;
+            border-color: #dc3545;
+            /* Matches your bg-danger badge color */
+            box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.1) !important;
+        }
+        }
+    </style>
 @endsection
 
 @section('tables')

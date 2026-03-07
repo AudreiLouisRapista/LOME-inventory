@@ -462,7 +462,7 @@
 
     <div class="container">
         <div class="page-header">
-            <h1>💰 Supplier Payment Tracking</h1>
+            <h1>Supplier Payment Tracking</h1>
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
                     <i class="fas fa-plus"></i> Add Supplier
@@ -484,6 +484,8 @@
                     @endforeach
                 </select>
             </div>
+
+            @include('layout.partials.alerts')
             <div class="filter-group">
                 <label for="filterStatus">Status</label>
                 <select id="filterStatus">
@@ -513,8 +515,44 @@
                     </tr>
                 </thead>
                 <tbody style="font-family: 'Inter', sans-serif; text-align: center;">
+                    @foreach ($purchases as $row)
+                        @php
+                            $remaining = $row->net_amount - ($row->total_paid ?? 0);
+                        @endphp
+                        <tr>
+                            <td>{{ $row->invoice_number }}</td>
+                            <td>{{ $row->supplier_name }}</td>
+                            <td>{{ \Carbon\Carbon::parse($row->invoice_date)->format('Y-m-d') }}</td>
+                            <td>{{ \Carbon\Carbon::parse($row->due_date)->format('Y-m-d') }}</td>
+                            <td>{{ number_format($row->gross_amount, 2) }}</td>
+                            <td>{{ number_format($row->vat_amount, 2) }}</td>
+                            <td>₱{{ number_format($row->net_amount, 2) }}</td>
+                            <td>₱{{ number_format($row->total_paid ?? 0, 2) }}</td>
+                            <td class="text-danger">₱{{ number_format($remaining, 2) }}</td>
+                            <td>
+                                <span class="status-badge status-{{ strtolower($row->status) }}">
+                                    {{ $row->status }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex gap-1 justify-content-center">
+                                    <button type="button" class="btn btn-sm btn-info text-white" data-bs-toggle="modal"
+                                        data-bs-target="#viewItemsModal{{ $row->purchase_id }}">
+                                        View Item
+                                    </button>
 
-
+                                    @if ($remaining > 0.01)
+                                        <button type="button" class="btn btn-sm btn-primary pay-btn"
+                                            data-id="{{ $row->purchase_id }}" data-invoice="{{ $row->invoice_number }}"
+                                            data-remaining="{{ $row->net_amount - ($row->total_paid_sum ?? 0) }}"
+                                            data-net="{{ $row->net_amount }}"> {{-- IMPORTANT --}}
+                                            Pay
+                                        </button>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
                 </tbody>
             </table>
         </div>
@@ -568,18 +606,19 @@
             <div class="modal-dialog modal-md">
                 <div class="modal-content">
                     <div class="modal-header bg-success text-white">
-                        <h5 class="modal-title" id="paymentModalLabel text-white">Record Payment</h5>
+                        <h5 class="modal-title text-white" id="paymentModalLabel">Record Payment</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                             aria-label="Close"></button>
                     </div>
 
-                    <form id="paymentForm">
+                    <form action="{{ route('storePayment') }}" method="POST">
+                        @csrf
                         <div class="modal-body">
                             <div class="p-3 mb-3 border rounded bg-light">
                                 <h6 class="border-bottom pb-2 mb-3">Invoice Details</h6>
                                 <div class="d-flex justify-content-between mb-1">
                                     <span class="text-muted small">Invoice Number:</span>
-                                    <span class="fw-bold small" id="modalInvoiceNumber"></span>
+                                    <span class="fw-bold small text-dark" id="modalInvoiceNumber"></span>
                                 </div>
                                 <div class="d-flex justify-content-between mb-1">
                                     <span class="text-muted small">Remaining Balance:</span>
@@ -588,24 +627,25 @@
                             </div>
 
                             <input type="hidden" name="purchase_id" id="modal_purchase_id">
-
+                            <input type="hidden" name="old_remaining_balance" id="old_remaining_balance">
                             <div class="mb-3">
                                 <label for="paymentDate" class="form-label small fw-bold">Payment Date</label>
-                                <input type="date" id="paymentDate" class="form-control" required>
+                                <input type="date" name="payment_date" id="paymentDate" class="form-control"
+                                    value="{{ date('Y-m-d') }}" required>
                             </div>
 
                             <div class="mb-3">
                                 <label for="amountPaid" class="form-label small fw-bold">Amount Paid</label>
                                 <div class="input-group">
                                     <span class="input-group-text">₱</span>
-                                    <input type="number" id="amountPaid" step="0.01" min="0"
-                                        class="form-control" required>
+                                    <input type="number" name="amount_paid" id="amountPaid" step="0.01"
+                                        min="0" class="form-control" required>
                                 </div>
                             </div>
 
                             <div class="mb-3">
                                 <label for="paymentMethod" class="form-label small fw-bold">Payment Method</label>
-                                <select id="paymentMethod" class="form-select" required>
+                                <select name="payment_method" id="paymentMethod" class="form-select" required>
                                     <option value="">-- Select Method --</option>
                                     <option value="Cash">Cash</option>
                                     <option value="Check">Check</option>
@@ -616,14 +656,19 @@
 
                             <div class="mb-3">
                                 <label for="referenceNumber" class="form-label small fw-bold">Reference Number</label>
-                                <input type="text" id="referenceNumber" class="form-control"
+                                <input type="text" name="reference_number" id="referenceNumber" class="form-control"
                                     placeholder="e.g. Check #, Trans ID">
                             </div>
+
+
+
                         </div>
 
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-success px-4" id="savePaymentBtn">Save Payment</button>
+                            <button type="submit" class="btn btn-success px-4">
+                                Save Payment
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -632,269 +677,130 @@
 
 
         {{-- View item --}}
-        <div class="modal fade" id="viewItemsModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-centered">
-                <div class="modal-content border-0 shadow-lg">
-                    <div class="modal-header bg-dark text-white py-3">
-                        <h5 class="modal-title d-flex align-items-center">
-                            <i class="fas fa-file-invoice me-2 text-info"></i>
-                            Invoice Detail: <span id="view_invoice_no" class="ms-2">---</span>
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                    </div>
 
-                    <div class="modal-body p-4">
-                        <div class="row mb-4 border-bottom pb-3">
-                            <div class="col-6">
-                                <small class="text-muted d-block text-uppercase fw-bold small">Supplier</small>
-                                <span id="view_supplier_name" class="fw-bold h6">---</span>
+        @foreach ($purchases as $purchase)
+            <div class="modal fade" id="viewItemsModal{{ $purchase->purchase_id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                    <div class="modal-content border-0 shadow-lg">
+                        <div class="modal-header bg-dark text-white py-3">
+                            <h5 class="modal-title d-flex align-items-center">
+                                <i class="fas fa-file-invoice me-2 text-info"></i>
+                                Invoice: <span class="ms-2">{{ $purchase->invoice_number }}</span>
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+
+                        <div class="modal-body p-4">
+                            <div class="row mb-4 border-bottom pb-3">
+                                <div class="col-6">
+                                    <small class="text-muted d-block text-uppercase fw-bold small">Supplier</small>
+                                    <span class="fw-bold h6">{{ $purchase->supplier_name }}</span>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <small class="text-muted d-block text-uppercase fw-bold small">Date Received</small>
+                                    <span>{{ $purchase->invoice_date }}</span>
+                                </div>
                             </div>
-                            <div class="col-6 text-end">
-                                <small class="text-muted d-block text-uppercase fw-bold small">Date Received</small>
-                                <span id="view_invoice_date">---</span>
+
+                            <div class="table-responsive rounded border shadow-sm">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light text-uppercase small fw-bold">
+                                        <tr>
+                                            <th>Quantity</th>
+                                            <th>UOM</th>
+                                            <th>Description</th>
+                                            <th>U. Price</th>
+                                            <th>Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {{-- Access the grouped items using the purchase ID as the key --}}
+                                        @if (isset($purchase_items[$purchase->purchase_id]))
+                                            @foreach ($purchase_items[$purchase->purchase_id] as $item)
+                                                <tr>
+                                                    <td>{{ $item->uom_quantity }}</td>
+                                                    <td>{{ $item->uom_title }}</td>
+                                                    <td>{{ $item->product_name }}</td>
+                                                    <td>₱{{ number_format($item->unit_price, 2) }}</td>
+                                                    <td class="fw-bold">₱{{ number_format($item->total_price, 2) }}</td>
+                                                </tr>
+                                            @endforeach
+                                        @else
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted">No items found for this
+                                                    invoice.</td>
+                                            </tr>
+                                        @endif
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
 
-                        <div class="table-responsive rounded border shadow-sm">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-light text-uppercase small fw-bold">
-                                    <tr>
-                                        <th style="width: 25%">Quantity</th>
-                                        <th style="width: 23%">UOM</th>
-                                        <th style="width: 23%">Description</th>
-                                        <th style="width: 23%">Exp. Date</th>
-                                        <th style="width: 23%">U. Price</th>
-                                        <th style="width: 23%">Price</th>
-                                        <th style="width: 23%">Amount</th>
-
-
-                                    </tr>
-                                </thead>
-                                <tbody id="itemRows">
-                                </tbody>
-                            </table>
+                        <div class="modal-footer bg-light p-3">
+                            <div class="me-auto">
+                                <small class="text-muted text-uppercase small d-block">Net Amount</small>
+                                <span
+                                    class="h4 fw-bold text-primary">₱{{ number_format($purchase->net_amount, 2) }}</span>
+                            </div>
+                            <button type="button" class="btn btn-secondary px-4 shadow-sm"
+                                data-bs-dismiss="modal">Close</button>
                         </div>
-                    </div>
-
-                    <div class="modal-footer bg-light p-3">
-                        <div class="me-auto">
-                            <small class="text-muted text-uppercase small d-block">Net Amount</small>
-                            <span class="h4 fw-bold text-primary">₱<span id="view_net_amount">0.00</span></span>
-                        </div>
-                        <button type="button" class="btn btn-secondary px-4 shadow-sm"
-                            data-bs-dismiss="modal">Close</button>
                     </div>
                 </div>
             </div>
-        </div>
+        @endforeach
+
 
     @endsection
 
     @section('tables')
         <script>
             $(document).ready(function() {
-                // 1. Initialize DataTable
+                // 1. Initialize DataTable once
                 var table = $('#example2').DataTable({
                     "paging": true,
                     "searching": true,
                     "ordering": true,
                     "responsive": true,
-                    "destroy": true, // Corrected: keep it as a property
-                    "ajax": {
-                        "url": "{{ route('purchase_invoice') }}",
-                        "dataSrc": "data"
-                    },
-                    "columns": [{
-                            "data": "invoice_number"
-                        },
-                        {
-                            "data": "supplier.supplier_name",
-                            "defaultContent": "N/A"
-                        },
-                        {
-                            "data": "invoice_date",
-                            "render": function(data) {
-                                return data ? data.split('T')[0] : '---';
-                            }
-                        },
-                        {
-                            "data": "due_date",
-                            "render": function(data) {
-                                return data ? data.split('T')[0] : '---';
-                            }
-                        },
-                        {
-                            "data": "gross_amount",
-                            "defaultContent": "0.00"
-                        },
-                        {
-                            "data": "vat_amount",
-                            "defaultContent": "0.00"
-                        },
-                        {
-                            "data": "net_amount",
-                            "render": function(data) {
-                                return '₱' + parseFloat(data || 0).toLocaleString(undefined, {
-                                    minimumFractionDigits: 2
-                                });
-                            }
-                        },
-                        {
-                            "data": "total_paid_sum",
-                            "render": function(data) {
-                                return '₱' + parseFloat(data || 0).toLocaleString(undefined, {
-                                    minimumFractionDigits: 2
-                                });
-                            }
-                        },
-                        {
-                            "data": null,
-                            "render": function(data, type, row) {
-                                let net = parseFloat(row.net_amount || 0);
-                                let paid = parseFloat(row.total_paid_sum || 0);
-                                let remaining = net - paid;
-                                return '<span class="text-danger">₱' + remaining.toLocaleString(
-                                    undefined, {
-                                        minimumFractionDigits: 2
-                                    }) + '</span>';
-                            }
-                        },
-                        {
-                            "data": "status"
-                        },
-                        {
-                            "data": null,
-                            "orderable": false,
-                            "render": function(data, type, row) {
-                                let net = parseFloat(row.net_amount || 0);
-                                let paid = parseFloat(row.total_paid_sum || 0);
-                                let remaining = net - paid;
-
-                                // Using a d-flex wrapper with gap for perfect alignment
-                                let html = `<div class="d-flex gap-1 justify-content-center">`;
-
-                                // View Button (Teal/Info)
-                                // View Button (Teal/Info) - Updated to trigger Modal
-                                html += `<button type="button" class="btn btn-sm btn-info text-white view-items-btn" data-id="${row.purchase_id}">
-                                    View Item
-                                </button>`;
-
-                                // Pay Button (Blue/Primary) - Only shows if there is a balance
-                                if (remaining > 0.01) {
-                                    html += `<button class="btn btn-sm btn-primary pay-btn" 
-                                    data-id="${row.purchase_id}" 
-                                    data-invoice="${row.invoice_number}" 
-                                    data-remaining="${remaining.toFixed(2)}">
-                                    Pay
-                                </button>`;
-                                }
-
-                                html += `</div>`;
-                                return html;
-                            }
-                        }
-                    ]
+                    "destroy": true
                 });
 
-                // 2. Click Handler - Fixed for dynamic elements
-                $(document).on('click', '.pay-btn', function() {
-                    // Use $(this) to get the specific button clicked
-                    var btn = $(this);
-                    var purchaseId = btn.data('id');
-                    var invoiceNum = btn.data('invoice');
-                    var remaining = btn.data('remaining');
+                // 2. Pay Button Handler (Only ONE handler for the table buttons)
+                $(document).on('click', '.pay-btn', function(e) {
+                    // Prevent action if this is the "Save" button inside the modal
+                    if ($(this).closest('.modal-footer').length > 0) return;
 
-                    // Fill Modal Fields
-                    $('#modalInvoiceNumber').text(invoiceNum);
-                    $('#modalRemainingBalance').text('₱' + parseFloat(remaining).toLocaleString(undefined, {
-                        minimumFractionDigits: 2
-                    }));
+                    let id = $(this).data('id');
+                    let invoice = $(this).data('invoice');
+                    let balance = $(this).data('remaining');
+                    let net = $(this).data('net'); // Original net value
 
-                    // Ensure these IDs match your HTML precisely
-                    $('#modal_purchase_id').val(purchaseId);
-                    $('#amountPaid').val(remaining);
+                    // Fill the modal fields
+                    $('#modal_purchase_id').val(id);
+                    $('#old_remaining_balance').val(net);
+                    $('#modalInvoiceNumber').text(invoice);
 
-                    // Show Modal
-                    if ($.fn.modal) {
-                        $('#paymentModal').modal('show');
-                    } else {
-                        $('#paymentModal').addClass('show').css('display', 'block');
-                    }
-                });
-
-                // 3. Save Payment - AJAX Fix
-                $('#savePaymentBtn').off('click').on('click', function(e) {
-                    e.preventDefault();
-
-                    let formData = {
-                        _token: "{{ csrf_token() }}",
-                        purchase_id: $('#modal_purchase_id').val(),
-                        amount_paid: $('#amountPaid').val(),
-                        payment_date: $('#paymentDate').val(),
-                        payment_method: $('#paymentMethod').val(),
-                        reference_number: $('#referenceNumber').val()
-                    };
-
-                    $.ajax({
-                        url: "/admin/storePayment",
-                        method: "POST",
-                        data: formData,
-                        success: function(res) {
-                            // 1. Try the standard way
-                            if ($.fn.modal) {
-                                $('#paymentModal').modal('hide');
-                            }
-
-                            // 2. The "Force Close" (Works even if Bootstrap is broken)
-                            $('#paymentModal').removeClass('show');
-                            $('body').removeClass('modal-open');
-                            $('.modal-backdrop').remove(); // This removes the dark grey background
-                            $('#paymentModal').hide();
-
-                            table.ajax.reload(null, false);
-                            alert('Payment recorded successfully!');
-                        },
-                        error: function(xhr) {
-                            alert('Error: ' + xhr.responseText);
-                        }
+                    // Formatting for display
+                    let formattedBalance = parseFloat(balance).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
                     });
+
+                    $('#modalRemainingBalance').text('₱' + formattedBalance);
+                    $('#amountPaid').val(parseFloat(balance).toFixed(2));
+
+                    // Open modal
+                    $('#paymentModal').modal('show');
                 });
 
-
-
-
-
-
-
-
-                $(document).on('click', '.view-items-btn', function() {
-                    // 1. Get the row data from DataTables
-                    let data = table.row($(this).parents('tr')).data();
-
-                    // 2. Fill the "Header" parts of the modal instantly
-                    $('#view_invoice_no').text(data.invoice_number);
-                    $('#view_supplier_name').text(data.supplier ? data.supplier.supplier_name : '---');
-                    $('#view_invoice_date').text(data.invoice_date ? data.invoice_date.split('T')[0] : '---');
-                    $('#view_net_amount').text(parseFloat(data.net_amount).toLocaleString(undefined, {
-                        minimumFractionDigits: 2
-                    }));
-
-
-                    // 3. Clear the table and show a "Loading" row
-                    $('#viewItemRows').html(`
-                    <tr>
-                        <td colspan="5" class="text-center py-4">
-                            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-                            <span class="ms-2">Fetching items for Invoice #${data.invoice_number}...</span>
-                        </td>
-                    </tr>
-                `);
-
-                    // 4. Trigger the Modal
-                    $('#viewItemsModal').modal('show');
+                // 3. Filter Handler
+                $('#filterSupplier').on('change', function() {
+                    table.column(1).search(this.value).draw();
                 });
             });
         </script>
+
+
 
 
     @endsection

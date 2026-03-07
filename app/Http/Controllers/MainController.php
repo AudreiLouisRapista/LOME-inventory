@@ -603,12 +603,14 @@ public function getProductsByCategory($id) {
 
         $products = DB::table('products')
         ->leftJoin('inventory', 'products.product_ID', '=', 'inventory.product_ID')
+            ->leftJoin('batches', 'products.product_ID', '=', 'batches.product_ID')
             ->where('products.category_ID', $id)
             ->select([
                 'products.product_ID', 
                 'products.product_name', 
                 'products.product_price',
                 'products.product_cost',
+                'batches.quantity as batch_quantity',
                 DB::raw('IFNULL(inventory.invt_StartingQuantity, 0) as current_stock'),
             ])
             
@@ -618,130 +620,72 @@ public function getProductsByCategory($id) {
         return response()->json($products);
 }
 
-public function store_batch_supply(Request $request)
-{
-    $validated = $request->validate([
-        'product_ID' => ['required', 'integer'],
-        'expiration_date' => ['required', 'date'],
-        'quantity' => ['required', 'integer', 'min:1'],
-        'batch_code' => ['nullable', 'string', 'max:255'],
-        'mfg_date' => ['nullable', 'date'],
-    ]);
+public function add_new_inventory(Request $request)
+        {
+            $validated = $request->validate([
+                'product_ID' => ['required', 'integer'],
+             
+                'batch_quantity' => ['required', 'integer', 'min:1'],
+             
+            ]);
 
-    $product_ID = (int) $validated['product_ID'];
-    $expirationDate = $validated['expiration_date'];
-    $incomingQty = (int) $validated['quantity'];
+            $product_ID = (int) $validated['product_ID'];
+           
+            $incomingQty = (int) $validated['batch_quantity'];
 
-    DB::beginTransaction();
-    try {
-        // Ensure product exists (we also need category_ID for inventory creation)
-        $product = DB::table('products')->where('product_ID', $product_ID)->lockForUpdate()->first();
-        if (!$product) {
-            DB::rollBack();
-            return back()->with('error', 'Product not found.');
-        }
-
-        // 1) BATCH UPSERT: same product_ID + same expiration_date
-        $existingBatch = DB::table('batches')
-            ->where('product_ID', $product_ID)
-            ->where('expiration_date', $expirationDate)
-            ->lockForUpdate()
-            ->first();
-
-        if ($existingBatch) {
-            DB::table('batches')
-                ->where('batch_ID', $existingBatch->batch_ID)
-                ->update([
-                    'quantity' => (int) $existingBatch->quantity + $incomingQty,
-                    'updated_at' => now(),
-                ]);
-        } else {
-            $batchCode = $validated['batch_code'] ?? null;
-            if (!$batchCode) {
-                $batchCode = 'B-' . $product_ID . '-' . str_replace('-', '', $expirationDate);
-            }
+            DB::beginTransaction();
 
             try {
-                DB::table('batches')->insert([
-                    'product_ID' => $product_ID,
-                    'batch_code' => $batchCode,
-                    'mfg_date' => $validated['mfg_date'] ?? null,
-                    'expiration_date' => $expirationDate,
-                    'quantity' => $incomingQty,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            } catch (\Illuminate\Database\QueryException $e) {
-                // If another request created the batch first, just increment it.
-                DB::table('batches')
-                    ->where('product_ID', $product_ID)
-                    ->where('expiration_date', $expirationDate)
-                    ->increment('quantity', $incomingQty, ['updated_at' => now()]);
+                $product = DB::table('products')->where('product_ID', $product_ID)->lockForUpdate()->first();
+                if (!$product) {
+                    DB::rollBack();
+                    return back()->with('error', 'Product not found.');
+                }
+
+                // 2) INVENTORY UPDATE
+                $inventory = DB::table('inventory')->where('product_ID', $product_ID)->lockForUpdate()->first();
+                
+              
+
+                if (!$inventory) {
+                    DB::table('inventory')->insert([
+                        'product_ID'            => $product_ID,
+                        'category_ID'           => $product->category_ID,
+                        'invt_StartingQuantity' => $incomingQty, 
+                        'invt_NewQuantity'      => 0,
+                        'invt_totalSold'        => 0,
+                        'invt_remainingStock'   => 0,
+                        'status_ID'             => 1,
+                        'created_at'            => now(),
+                        'updated_at'            => now(),
+                    ]);
+                } elseif ($incomingQty > 0){
+                    DB::table('inventory')->where('product_ID', $product_ID)->update([
+                        'invt_NewQuantity' => $incomingQty,
+                        'updated_at' => now(),
+                    ]);
+                } else {
+                    $currentSold = (int) ($inventory->invt_totalSold ?? 0);
+                    $currentNew  = (int) ($inventory->invt_NewQuantity ?? 0);
+                    
+                    $totalRemaining = ($incomingQty + $currentNew) - $currentSold;
+
+                    DB::table('inventory')
+                        ->where('product_ID', $product_ID)
+                        ->update([
+                            'invt_StartingQuantity' => $incomingQty, 
+                            'invt_remainingStock'   => $totalRemaining,
+                            'updated_at'            => now(),
+                        ]);
+                }
+
+                DB::commit();
+                return back()->with('save', 'Inventory updated successfully.');
+
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                return back()->with('errorMessage', 'Error: ' . $e->getMessage());
             }
-        }
-
-        // 2) INVENTORY UPDATE: treat incoming batch quantity as new stock arriving
-        $inventory = DB::table('inventory')->where('product_ID', $product_ID)->lockForUpdate()->first();
-
-        if (!$inventory) {
-            $starting = 0;
-            $monthlyNew = $incomingQty;
-            $sold = 0;
-            $remaining = $incomingQty;
-
-            $status_ID = 1;
-            if ($remaining <= 0) {
-                $status_ID = 3;
-                $remaining = 0;
-            } elseif ($remaining <= 5) {
-                $status_ID = 2;
-            }
-
-            DB::table('inventory')->insert([
-                'product_ID' => $product_ID,
-                'category_ID' => $product->category_ID,
-                'invt_StartingQuantity' => $starting,
-                'invt_NewQuantity' => $monthlyNew,
-                'invt_totalSold' => $sold,
-                'invt_remainingStock' => $remaining,
-                'status_ID' => $status_ID,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        } else {
-            $currentStarting = (int) ($inventory->invt_StartingQuantity ?? 0);
-            $currentMonthlyNew = (int) ($inventory->invt_NewQuantity ?? 0);
-            $currentSold = (int) ($inventory->invt_totalSold ?? 0);
-
-            $updatedMonthlyNew = $currentMonthlyNew + $incomingQty;
-            $totalRemaining = ($currentStarting + $updatedMonthlyNew) - $currentSold;
-
-            $status_ID = 1;
-            if ($totalRemaining <= 0) {
-                $status_ID = 3;
-                $totalRemaining = 0;
-            } elseif ($totalRemaining <= 5) {
-                $status_ID = 2;
-            }
-
-            DB::table('inventory')
-                ->where('inventory_ID', $inventory->inventory_ID)
-                ->update([
-                    'invt_NewQuantity' => $updatedMonthlyNew,
-                    'invt_remainingStock' => $totalRemaining,
-                    'status_ID' => $status_ID,
-                    'updated_at' => now(),
-                ]);
-        }
-
-        DB::commit();
-
-        $this->logActivity('added', 'Added batch supply for product ID ' . $product_ID . ' exp ' . $expirationDate . ' qty ' . $incomingQty);
-        return back()->with('save', 'Batch supply saved and inventory updated.');
-    } catch (\Throwable $e) {
-        DB::rollBack();
-        return back()->with('error', 'System error: ' . $e->getMessage());
-    }
 }
 
 public function inventory_rollover(Request $request) {
@@ -789,83 +733,89 @@ public function inventory_rollover(Request $request) {
 
 public function purchase_invoice(Request $request)
 {
-    // 1. Fetch data using Eloquent (latest first)
-    $query = Purchase::with('supplier')->withSum('payments as total_paid_sum', 'amount_paid')->latest();
+    // 1. Fetch Purchases with Supplier info
+    $query = DB::table('purchases')
+        ->join('suppliers', 'purchases.supplier_id', '=', 'suppliers.supplier_id')
+        ->select([
+            'purchases.*',
+            'suppliers.supplier_name'
+        ]);
 
-    // 2. Apply your existing filters
+    // Apply filter if selected
     if ($request->supplier_id) {
-        $query->where('supplier_id', $request->supplier_id);
-    }
-    
-    $purchases_data = $query->get();
-
-    // 2. AJAX Response
-    if ($request->ajax()) {
-        return response()->json(['data' => $purchases_data]);
+        $query->where('purchases.supplier_id', $request->supplier_id);
     }
 
-    // 3. Normal Load Variables (Ensure lowercase names!)
+    $purchases = $query->latest('purchases.created_at')->get();
+
+    // 2. Fetch all Items and group them by invoice_id for the modals
+    $purchase_items = DB::table('purchase_items')
+        ->join('products', 'purchase_items.product_id', '=', 'products.product_ID')
+        ->join('uom', 'purchase_items.uom_ID', '=', 'uom.uom_ID')
+        ->select([
+            'purchase_items.*',
+            'products.product_name',
+            'uom.uom_title'
+        ])
+        ->get()
+        ->groupBy('purchase_id'); // Ensure this matches your FK column
+
+    // 3. Dropdown data
     $suppliers = DB::table('suppliers')->orderBy('supplier_name', 'ASC')->get();
     $products  = DB::table('products')->orderBy('product_name', 'ASC')->get();
     $uoms      = DB::table('uom')->get();
-    $purchases = $purchases_data;
 
-    return view('purchase_invoice', compact('suppliers', 'purchases', 'products', 'uoms'));
+    return view('purchase_invoice', compact('suppliers', 'purchases', 'products', 'uoms', 'purchase_items'));
 }
+
+
 public function storePayment(Request $request) 
 {
-    // 1. Validate the incoming AJAX data
-    $request->validate([
-        'purchase_id'     => 'required|exists:Purchases,purchase_id',
-        'amount_paid'     => 'required|numeric|min:0.01',
-        'payment_date'    => 'required|date',
-        'payment_method'  => 'required',
-        'reference_number'=> 'nullable|string'
-    ]);
+    // $request->validate([
+    //     'purchase_id' => 'required',
+    //     'amount_paid' => 'required|numeric|min:0',
+    //     'payment_date' => 'required|date',
+    //     'payment_method' => 'required'
+    // ]);
 
-    // 2. Fetch the Purchase Invoice to calculate the current balance
-    $invoice = Purchase::findOrFail($request->purchase_id);
-    
-    // 3. Calculate 'old_remaining_balance'
-    // This is (Total Net Amount) minus (Sum of all previous payments)
-    $totalPaidSoFar = $invoice->payments()->sum('amount_paid');
-    $oldBalance = $invoice->net_amount - $totalPaidSoFar;
+    // Use a transaction to ensure both tables update or neither does
+    DB::transaction(function () use ($request) {
+        // 1. Log payment
+        DB::table('payments')->insert([
+            'purchase_id' => $request->purchase_id,
+            'amount_paid' => $request->amount_paid,
+            'payment_date' => $request->payment_date,
+            'payment_method' => $request->payment_method,
+            'old_remaining_balance'=> $request->old_remaining_balance,
+            'reference_number' => $request->reference_number,
+            'created_at' => now()
+        ]);
 
-    // 4. Save the payment with the missing field
-    $payment = Payment::create([
-        'purchase_id'           => $request->purchase_id,
-        'amount_paid'           => $request->amount_paid,
-        'payment_date'          => $request->payment_date,
-        'payment_method'        => $request->payment_method,
-        'reference_number'      => $request->reference_number,
-        'old_remaining_balance' => $oldBalance, // This satisfies the SQL requirement
-    ]);
+        // 2. Update purchase
+        $p = DB::table('purchases')->where('purchase_id', $request->purchase_id)->first();
+        $totalPaid = ($p->total_paid_sum ?? 0) + $request->amount_paid;
+        $status = ($totalPaid >= $p->net_amount) ? 'Paid' : 'Partial';
 
-    // 5. Optional: Update the Invoice Status if fully paid
-    $newBalance = $oldBalance - $request->amount_paid;
-    if ($newBalance <= 0) {
-        $invoice->update(['status' => 'paid']);
-    } elseif ($newBalance < $invoice->net_amount) {
-        $invoice->update(['status' => 'partial']);
-    }
+        DB::table('purchases')->where('purchase_id', $request->purchase_id)->update([
+            'total_paid' => $totalPaid,
+            'status' => $status
+        ]);
+    });
 
-    return response()->json([
-        'status' => 'success',
-        'message' => 'Payment of ₱' . number_format($request->amount_paid, 2) . ' recorded.'
-    ]);
+    return redirect()->back()->with('save', 'Payment recorded!');
 }
 
 public function saveInvoiceAndItem(Request $request)
 {   
     // dd($request->all());
-//     // Validate the incoming data
-//    $request->validate([
-//     'supplier_id' => 'required',
-//     'invoice_number' => 'required',
-//     'product_name.*' => 'required',
-//     'quantity.*' => 'required|numeric|min:1', // Add this
-//     'unit_price.*' => 'required|numeric',    // Add this
-// ]);
+        //     // Validate the incoming data
+        //    $request->validate([
+        //     'supplier_id' => 'required',
+        //     'invoice_number' => 'required',
+        //     'product_name.*' => 'required',
+        //     'quantity.*' => 'required|numeric|min:1', // Add this
+        //     'unit_price.*' => 'required|numeric',    // Add this
+        // ]);
 
     DB::beginTransaction();
 
@@ -881,25 +831,29 @@ public function saveInvoiceAndItem(Request $request)
         'due_date'      => $request->due_date,
         'invoice_date' => $request->invoice_date,
         'created_at'     => now(),
+        'updated_at'        => now(),
     ]);
 
-    foreach ($request->product_name as $key => $name) {
-        $product = DB::table('products')->where('product_name', $name)->first();
 
-        if (!$product) {
-            $productId = DB::table('products')->insertGetId([
-                'product_name' => $name,
-                'uom_id'       => $request->uom[$key],
-                'created_at'   => now(),
-            ]);
-        } else {
-           
-            $productId = $product->product_ID; 
-        }
 
-        DB::table('purchase_items')->insert([
+        foreach ($request->product_name as $key => $name) {
+            $product = DB::table('products')->where('product_name', $name)->first();
+
+            if (!$product) {
+                $productId = DB::table('products')->insertGetId([
+                    'product_name' => $name,
+                    'uom_id'       => $request->uom[$key],
+                    'created_at'   => now(),
+                ]);
+            } else {
+            
+                $productId = $product->product_ID; 
+            }
+
+      $purchaseItemID = DB::table('purchase_items')->insertGetId([
             'purchase_id'        => $invoiceId,
             'product_id'        => $productId,
+            'uom_quantity'  => $request->quantity[$key],
             'uom_ID'            => $request->uom[$key],
             'quantity_per_uom' => $request->quantity_per_unit[$key],
             'unit_tie'          => $request->tie_number[$key],
@@ -909,6 +863,18 @@ public function saveInvoiceAndItem(Request $request)
             'updated_at'        => now(),
         ]);
     }
+
+
+     $batchId = DB::table('batches')->insert([
+        'purchase_item_id' => $purchaseItemID,
+        'product_id' => $productId,
+        'batch_code' => $request->batch_number,
+        'mfg_date' => $request->mfg_date,
+        'expiration_date' => $request->exp_date,
+        'quantity' => $request->quantity_per_unit[$key] * ($request-> tie_number[$key]),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
 
     DB::commit();
     // Use the session key 'save' to match your 'with' call

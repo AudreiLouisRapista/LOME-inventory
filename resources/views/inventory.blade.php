@@ -276,7 +276,7 @@
 
 
                             <div class="modal fade" id="addInventoryModal" tabindex="-1"
-                                aria-labelledby="addScheduleModalLabel" aria-hidden="true">
+                                aria-labelledby="addInventoryModal" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered modal-lg">
                                     <div class="modal-content border-0"
                                         style="border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
@@ -293,7 +293,7 @@
                                         <div class="modal-body px-4 pb-4">
                                             @include('layout.partials.alerts')
 
-                                            <form method="POST" action="{{ route('batches.supply') }}"
+                                            <form method="POST" action="{{ route('add_new_inventory') }}"
                                                 enctype="multipart/form-data">
                                                 @csrf
 
@@ -374,13 +374,11 @@
                                                         </div>
                                                         <div class="col-md-4">
                                                             <label class="form-label fw-semibold"
-                                                                style="color: #475569;">Add new Quantity</label>
-                                                            <input id="product_StartingQuantity_add" type="number"
-                                                                name="quantity"
-                                                                class="form-control bg-light js-product-qty"
-                                                                placeholder="0" style="border-radius: 10px; height: 45px;"
-                                                                value="" required>
+                                                                style="color: #475569;">Available Quantity</label>
+                                                            <input type="number" name="batch_quantity"
+                                                                class="js-product-qty form-control" readonly>
                                                         </div>
+
                                                     </div>
 
                                                 </div>
@@ -399,6 +397,7 @@
                                 </div>
                             </div>
                         </div>
+                        <!-- /.card-header -->
 
 
                         <!-- /.card-header -->
@@ -558,7 +557,7 @@
 @endsection
 
 @section('tables')
-
+    `
     <script>
         $(document).ready(function() {
             // ==========================================
@@ -716,7 +715,7 @@
             });
 
             // ==========================================
-            // 4. DYNAMIC DROPDOWNS (Filtered Products)
+            // 4. DYNAMIC DROPDOWNS (Filtered Products with Batch Qty)
             // ==========================================
             function populateProductsIntoSelect(productSelect, data, isFilter) {
                 var defaultText = isFilter ? ' - All Products - ' : '--Select Product--';
@@ -725,8 +724,14 @@
                 productSelect.empty().append('<option value="' + defaultValue + '">' + defaultText + '</option>');
 
                 $.each(data, function(key, value) {
+                    // We added data-qty here to capture the Batch Quantity
                     productSelect.append(
-                        `<option value="${value.product_ID}" data-cost="${value.product_cost}" data-price="${value.product_price}">${value.product_name}</option>`
+                        `<option value="${value.product_ID}" 
+                     data-cost="${value.product_cost}" 
+                     data-price="${value.product_price}" 
+                     data-qty="${value.batch_quantity}">
+                ${value.product_name}
+            </option>`
                     );
                 });
             }
@@ -738,12 +743,12 @@
                 var productSelect = isFilter ? $('#tableProductFilter') : $(this).closest('form').find(
                     '.js-product-select');
 
-                // reset dependent fields for modal forms
+                // Reset dependent fields
                 if (!isFilter) {
                     var form = $(this).closest('form');
                     form.find('.js-product-cost').val('');
                     form.find('.js-product-price').val('');
-                    form.find('.js-product-qty').val('');
+                    form.find('.js-product-qty').val(''); // Clear quantity too
                 }
 
                 productSelect.empty().append('<option value="">Loading...</option>');
@@ -757,16 +762,12 @@
                         },
                         error: function() {
                             productSelect.empty().append(
-                                '<option value="">Failed to load products</option>'
-                            );
+                                '<option value="">Failed to load products</option>');
                         }
                     });
                 } else {
-                    if (isFilter) {
-                        productSelect.empty().append('<option value="all"> - All Products - </option>');
-                    } else {
-                        productSelect.empty().append('<option value="">Select Product</option>');
-                    }
+                    productSelect.empty().append('<option value="' + (isFilter ? 'all' : '') + '">' + (
+                        isFilter ? ' - All Products - ' : 'Select Product') + '</option>');
                 }
             });
 
@@ -782,10 +783,14 @@
                 var cost = selected.data('cost');
                 var price = selected.data('price');
 
+                var batchQty = selected.data('qty'); // Get quantity from the new data attribute
+
                 form.find('.js-product-cost').val(cost === undefined ? '' : cost);
                 form.find('.js-product-price').val(price === undefined ? '' : price);
-            });
 
+                // This is the specific part you wanted: Auto-filling the quantity from the batch
+                form.find('.js-product-qty').val(batchQty === undefined ? '' : batchQty);
+            });
 
             // ==========================================
             // 6. POS SALE IMPORT (AJAX File Upload)
@@ -889,64 +894,167 @@
 
 
 
+        /* Container & Background */
+        .table-container {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 20px !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            border: 1px solid #edf2f7;
+        }
 
+        /* Professional Header Styling */
+        #example2 thead th {
+            background-color: #f1f5f9;
+            color: #475569;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+            padding: 15px;
+            border: none;
+        }
+
+        /* Body Styling */
+        #example2 tbody td {
+            padding: 14px;
+            vertical-align: middle;
+            color: #1e293b;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.85rem;
+        }
+
+        /* Custom Input Group Styling */
+        .input-group-text {
+            border-right: none;
+            color: #94a3b8;
+        }
+
+        .form-select {
+            border-left: none;
+            font-size: 0.9rem;
+            color: #475569;
+            cursor: pointer;
+        }
+
+        .form-select:focus {
+            box-shadow: none;
+            border-color: #dee2e6;
+        }
+
+        /* Status Badge Logic (To be used in your JS/Blade) */
+        /* Status Badge Styling */
         .status-in-stock,
         .status-low-stock,
         .status-out-of-stock {
-            display: inline-block;
-            white-space: nowrap;
-            min-width: 100px;
-            text-align: center;
-            padding: 5px 10px;
-            font-weight: 500;
+            padding: 4px 12px;
             border-radius: 50px;
-
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
         }
 
         .status-in-stock {
-            background-color: #a5ffb6;
-            color: #234e52;
-            border: 1px solid #02c702;
-            border-radius: 55px;
-            font-size: 0.9rem;
-
+            background-color: #dcfce7;
+            color: #15803d;
         }
 
         .status-low-stock {
-            background-color: #ffedca;
-            color: #a14022;
-            border: 1px solid #ffbc3f;
-            border-radius: 55px;
-            font-size: 0.9rem;
+            background-color: #fef9c3;
+            color: #854d0e;
         }
 
         .status-out-of-stock {
-            background-color: #ffdada;
-            color: #a41919;
-            border: 1px solid #ff1515;
-            border-radius: 55px;
-            font-size: 0.9rem;
+            background-color: #fee2e2;
+            color: #b91c1c;
         }
 
-        /* Add this to your <style> */
-        .table-container {
-            width: 100%;
-            overflow-x: auto;
-            /* Enables horizontal scroll */
-            -webkit-overflow-scrolling: touch;
-            /* Smooth scrolling on iOS */
-            margin-bottom: 1rem;
+        /* Action Buttons Styling */
+        .action-btn-container {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 800px;
-            /* Forces the table to maintain width so it scrolls instead of squishing */
-        }
-
-        td {
+        .btn-table-action {
+            width: 32px;
+            height: 32px;
+            display: flex;
             align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            background-color: white;
+            transition: all 0.2s;
+        }
+
+        .btn-view-style {
+            color: #2563eb;
+        }
+
+        .btn-view-style:hover {
+            background-color: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+
+        .btn-delete-style {
+            color: #dc2626;
+        }
+
+        .btn-delete-style:hover {
+            background-color: #dc2626;
+            color: white;
+            border-color: #dc2626;
+        }
+
+        /* Action Button Grouping */
+        .action-grp {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+
+        .btn-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+        }
+
+        /* View Button - Blue Theme */
+        .btn-view {
+            color: #3b82f6;
+        }
+
+        .btn-view:hover {
+            background: #eff6ff;
+            border-color: #3b82f6;
+        }
+
+        /* Edit Button - Amber Theme */
+        .btn-edit {
+            color: #f59e0b;
+        }
+
+        .btn-edit:hover {
+            background: #fffbeb;
+            border-color: #f59e0b;
+        }
+
+        /* Delete Button - Red Theme */
+        .btn-delete {
+            color: #ef4444;
+        }
+
+        .btn-delete:hover {
+            background: #fef2f2;
+            border-color: #ef4444;
         }
 
         /* Custom Styling to hide the default text but keep functionality */

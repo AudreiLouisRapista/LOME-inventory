@@ -8,7 +8,7 @@
                 title: "Access Denied",
                 text: "{{ session('errorMessage') }}",
                 confirmButtonColor: "#4e73df", // Matches your primary blue
-                timer: 5000,
+                // timer: 5000,
                 timerProgressBar: true
             });
         });
