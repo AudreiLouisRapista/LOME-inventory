@@ -288,9 +288,11 @@ public function view_products(Request $request) {
             ->make(true);
     }
   
-     $categories = DB::table('category')->orderBy('category_name', 'ASC')->get();      
+     $categories = DB::table('category')->orderBy('category_name', 'ASC')->get();
+    $products = DB::table('products')->orderBy('product_name', 'ASC')->get();
+     
 
-    return view('products', compact('categories'));
+    return view('products', compact('categories', 'products'));
 }
 
 
@@ -299,37 +301,29 @@ public function view_products(Request $request) {
 
 public function save_product(Request $request)
 {
- //   dd($request->all(), $request->file());
-    // 1. Capture Input Data
-    $product_name = $request->input('product_name');
-    $category = $request->input('category_ID');
-    $product_expired = $request->input('product_exp');
-    $product_price = $request->input('product_price');
-    $product_cost = $request->input('product_cost');
-    
-
-     
-
-    // 2. Check if Product already exists
-    $check_exist = DB::table('products')->where('product_name', $product_name)->exists();
-    if ($check_exist) {
-        return back()->with('duplicate', 'Product already exists.');
-    }
-
-  
-    // 4. Save to Database
-    DB::table('products')->insert([
-        'product_name'  => $product_name,
-        'category_ID'      => $category,
-        'product_exp'     => $product_expired,
-        'product_price'   => $product_price,
-        'product_cost'    => $product_cost,
-       
-       
+ // 1. Validate the input
+    $request->validate([
+        'product_name'  => 'required|string',
+        'category_ID'   => 'required|integer',
+        'product_cost'  => 'required|numeric',
+        'product_price' => 'required|numeric',
     ]);
 
+    // 2. Link the data. 
+    // This finds the product by name and updates the category and prices.
+    // If the name doesn't exist, it creates a new row.
+    DB::table('products')->updateOrInsert(
+        ['product_name' => $request->product_name], // Search by name
+        [
+            'category_ID'   => $request->category_ID,
+            'product_cost'  => $request->product_cost,
+            'product_price' => $request->product_price,
+            'created_at'    => now(),
+            'updated_at'    => now()
+        ]
+    );
     // 5. Create Activity Log
-    $this->logActivity('added', 'Added Product for Name: ' . $product_name);
+    $this->logActivity('added', 'Added Product for Name: ' . $request->product_name);
     // 6. Success Feedback
     session()->flash('save', 'Product added successfully!');
     return redirect()->back();
@@ -579,7 +573,7 @@ public function import_pos_sales(Request $request)
     $fileName = time() . '_' . $file->getClientOriginalName();
     $filePath = $file->storeAs('pos_import', $fileName, 'public');
 
-    // !!! CRITICAL: You must use insertGetId so the DB actually saves the row !!!
+   
     $importLogID = DB::table('import_logs')->insertGetId([
         'FileName'    => $fileName,
         'FilePath'    => $filePath,
@@ -766,6 +760,16 @@ public function purchase_invoice(Request $request)
     return view('purchase_invoice', compact('suppliers', 'purchases', 'products', 'uoms', 'purchase_items'));
 }
 
+public function getPaymentHistory($id)
+{
+    // Fetch payments related to this purchase
+    $payments = DB::table('payments') // Or whatever your payment table is called
+        ->where('purchase_id', $id)
+        ->orderBy('payment_date', 'desc')
+        ->get();
+
+    return response()->json($payments);
+}
 
 public function storePayment(Request $request) 
 {
@@ -840,8 +844,9 @@ public function saveInvoiceAndItem(Request $request)
             if (!$product) {
                 $productId = DB::table('products')->insertGetId([
                     'product_name' => $name,
-                    'uom_id'       => $request->uom[$key],
+                    // 'uom_ID'       => $request->uom[$key],
                     'created_at'   => now(),
+                    'updated_at'   => now(),
                 ]);
             } else {
             

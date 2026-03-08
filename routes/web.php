@@ -58,11 +58,12 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     Route::get('/purchase_invoice', [MainController::class, 'purchase_invoice'])->name('purchase_invoice');
     Route::get('/add_invoice', [MainController::class, 'add_invoice'])->name('add_invoice');
     Route::get('/import_history', [MainController::class, 'import_history'])->name('import_history');
+   Route::get('/getProductsByCategory/{id}', [MainController::class, 'getProductsByCategory'])->name('getProductsByCategory');
+    Route::get('/getPaymentHistory/{id}', [MainController::class, 'getPaymentHistory'])->name('getPaymentHistory');
    
 
 
     
-
     Route::post('/save_product', [MainController::class, 'save_product'])->name('save_product');
     Route::get('/admin/add-product', [MainController::class, 'show_add_product_form'])->name('product.create');
     Route::post('/save_inventory', [MainController::class, 'save_inventory'])->name('save_inventory');
@@ -84,7 +85,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     Route::post('/saveInvoiceAndItem', [MainController::class, 'saveInvoiceAndItem'])->name('saveInvoiceAndItem');
     Route::post('/save_invoice', [MainController::class, 'save_invoice'])->name('save_invoice');
     Route::post('/add_new_inventory', [MainController::class, 'add_new_inventory'])->name('add_new_inventory');
-    Route::get('/get-products-by-category/{id}', [MainController::class, 'getProductsByCategory'])->name('get-products-by-category');
+    
    // Add {id} to the URL
     Route::post('/admin-profile/{id}', [MainController::class, 'adminProfile'])->name('adminProfile');
 });

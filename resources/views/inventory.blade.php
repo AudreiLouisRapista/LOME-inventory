@@ -137,11 +137,7 @@
                             </div>
 
                             <div class="d-flex gap-2">
-                                <button type="button" class="btn-inventory" data-bs-toggle="modal"
-                                    data-bs-target="#newProductModal">
-                                    <i class="bi bi-plus-lg"></i>
-                                    New Product
-                                </button>
+
 
                                 <button type="button" class="btn-inventory" data-bs-toggle="modal"
                                     data-bs-target="#addInventoryModal">
@@ -151,128 +147,7 @@
                             </div>
 
                             <!-- Modal -->
-                            <div class="modal fade" id="newProductModal" tabindex="-1"
-                                aria-labelledby="addScheduleModalLabel" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered modal-lg">
-                                    <div class="modal-content border-0"
-                                        style="border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
 
-                                        <div class="modal-header bg-dark text-white py-3">
-                                            <h5 class="modal-title fw-bold" id="addTeacherModalLabel">
-                                                <i class="fas fa-box-open me-2"></i> Add new Product
-                                            </h5>
-                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                                                aria-label="Close"></button>
-                                        </div>
-
-
-                                        <div class="modal-body px-4 pb-4">
-                                            @include('layout.partials.alerts')
-
-                                            <form method="POST" action="{{ route('save_inventory') }}"
-                                                enctype="multipart/form-data">
-                                                @csrf
-
-                                                <div class="mb-4">
-                                                    <label class="text-uppercase text-muted fw-bold mb-3"
-                                                        style="font-size: 11px; letter-spacing: 1px;">Basic
-                                                        Information</label>
-                                                    <hr class="mt-0 mb-4" style="opacity: 0.1;">
-                                                    <div class="row g-3">
-                                                        <div class="col-md-6">
-                                                            <label class="form-label fw-semibold"
-                                                                style="color: #475569;">Category</label>
-                                                            <div class="input-group">
-                                                                <span class="input-group-text bg-light border-end-0"
-                                                                    style="border-radius: 10px 0 0 10px;">
-                                                                    <i class="bi bi-tag text-muted"></i>
-                                                                </span>
-                                                                <select id="category_ID_new" name="category_ID"
-                                                                    class="form-select bg-light border-start-0 js-category-select"
-                                                                    style="border-radius: 0 10px 10px 0; height: 45px;"
-                                                                    required>
-                                                                    <option value="">Select Category</option>
-                                                                    @foreach ($categories as $cat)
-                                                                        <option value="{{ $cat->category_ID }}">
-                                                                            {{ $cat->category_name }}</option>
-                                                                    @endforeach
-                                                                </select>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <label class="form-label fw-semibold"
-                                                                style="color: #475569;">Product</label>
-                                                            <div class="input-group">
-                                                                <span class="input-group-text bg-light border-end-0"
-                                                                    style="border-radius: 10px 0 0 10px;">
-                                                                    <i class="bi bi-tag text-muted"></i>
-                                                                </span>
-                                                                <select id="product_ID_new" name="product_ID"
-                                                                    class="form-select bg-light border-start-0 js-product-select"
-                                                                    style="border-radius: 0 10px 10px 0; height: 45px;"
-                                                                    required>
-                                                                    <option value="">Select Product</option>
-
-                                                                </select>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div class="mb-4">
-                                                    <label class="text-uppercase text-muted fw-bold mb-3"
-                                                        style="font-size: 11px; letter-spacing: 1px;">Stock
-                                                        Management</label>
-                                                    <hr class="mt-0 mb-4" style="opacity: 0.1;">
-
-                                                    <div class="row g-3">
-
-                                                        <div class="col-md-4">
-                                                            <label class="form-label fw-semibold">Cost Price</label>
-                                                            <div class="input-group">
-                                                                <span class="input-group-text">$</span>
-                                                                <input id="product_cost_new" type="number"
-                                                                    name="product_cost"
-                                                                    class="form-control js-product-cost" step="0.01"
-                                                                    placeholder="0.00" value="" required>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-md-4">
-                                                            <label class="form-label fw-semibold">Selling Price</label>
-                                                            <div class="input-group">
-                                                                <span class="input-group-text">$</span>
-                                                                <input id="product_price_new" type="number"
-                                                                    name="product_price"
-                                                                    class="form-control js-product-price" step="0.01"
-                                                                    placeholder="0.00" value="" required>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-md-4">
-                                                            <label class="form-label fw-semibold"
-                                                                style="color: #475569;">Quantity</label>
-                                                            <input id="product_StartingQuantity_new" type="number"
-                                                                name="product_StartingQuantity"
-                                                                class="form-control bg-light js-product-qty"
-                                                                placeholder="0" style="border-radius: 10px; height: 45px;"
-                                                                value="" required>
-                                                        </div>
-                                                    </div>
-
-                                                </div>
-
-                                                <div class="d-flex justify-content-end gap-2 mt-5">
-                                                    <button type="button" class="btn btn-light px-4 fw-semibold"
-                                                        data-bs-dismiss="modal"
-                                                        style="border-radius: 10px; color: #64748b;">Cancel</button>
-                                                    <button type="submit" class="btn btn-primary px-5 fw-semibold"
-                                                        style="border-radius: 10px; background: #007bff; border: none;">Save
-                                                        Inventory</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
 
 
                             <div class="modal fade" id="addInventoryModal" tabindex="-1"
@@ -285,8 +160,8 @@
                                             <h5 class="modal-title fw-bold" id="addTeacherModalLabel">
                                                 <i class="fas fa-box-open me-2"></i> Inventory
                                             </h5>
-                                            <button type="button" class="btn-close btn-close-white"
-                                                data-bs-dismiss="modal" aria-label="Close"></button>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
                                         </div>
 
 
@@ -619,11 +494,13 @@
                         data: 'status_ID',
                         name: 'inventory.status_ID',
                         render: function(data) {
-                            if (data == 1) return '<span class="status-in-stock">In Stock</span>';
-                            if (data == 2) return '<span class="status-low-stock">Low Stock</span>';
+                            if (data == 1)
+                                return '<span class="status-badge status-in-stock">In Stock</span>';
+                            if (data == 2)
+                                return '<span class="status-badge status-low-stock">Low Stock</span>';
                             if (data == 3)
-                                return '<span class="status-out-of-stock">Out of Stock</span>';
-                            return '<span class="badge bg-secondary">Unknown</span>';
+                                return '<span class="status-badge status-out-of-stock">Out of Stock</span>';
+                            return '<span class="status-badge bg-secondary">Unknown</span>';
                         }
                     },
                     {
@@ -745,17 +622,19 @@
 
                 // Reset dependent fields
                 if (!isFilter) {
+
                     var form = $(this).closest('form');
                     form.find('.js-product-cost').val('');
                     form.find('.js-product-price').val('');
                     form.find('.js-product-qty').val(''); // Clear quantity too
+
                 }
 
                 productSelect.empty().append('<option value="">Loading...</option>');
 
                 if (categoryId && categoryId !== 'all') {
                     $.ajax({
-                        url: "/admin/get-products-by-category/" + categoryId,
+                        url: "/admin/getProductsByCategory/" + categoryId,
                         type: 'GET',
                         success: function(data) {
                             populateProductsIntoSelect(productSelect, data, isFilter);
@@ -766,6 +645,9 @@
                         }
                     });
                 } else {
+
+                    $('#tableProductFilter').val('all');
+                    table.draw();
                     productSelect.empty().append('<option value="' + (isFilter ? 'all' : '') + '">' + (
                         isFilter ? ' - All Products - ' : 'Select Product') + '</option>');
                 }
@@ -943,31 +825,52 @@
         }
 
         /* Status Badge Logic (To be used in your JS/Blade) */
-        /* Status Badge Styling */
-        .status-in-stock,
-        .status-low-stock,
-        .status-out-of-stock {
-            padding: 4px 12px;
-            border-radius: 50px;
-            font-size: 12px;
-            font-weight: 600;
-            display: inline-block;
+        .status-badge {
+            padding: 3px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 200;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .status-badge::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
         }
 
         .status-in-stock {
-            background-color: #dcfce7;
-            color: #15803d;
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-in-stock::before {
+            background: #22c55e;
         }
 
         .status-low-stock {
-            background-color: #fef9c3;
-            color: #854d0e;
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-low-stock::before {
+            background: #f59e0b;
         }
 
         .status-out-of-stock {
-            background-color: #fee2e2;
-            color: #b91c1c;
+            background: #fee2e2;
+            color: #991b1b;
         }
+
+        .status-out-of-stock::before {
+            background: #ef4444;
+        }
+
 
         /* Action Buttons Styling */
         .action-btn-container {

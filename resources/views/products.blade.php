@@ -45,11 +45,10 @@
                                             <form method="POST" action="{{ route('save_product') }}"
                                                 enctype="multipart/form-data">
                                                 @csrf
-
                                                 <div class="mb-4">
-
-                                                    <p class="text-muted small fw-bold text-uppercase mb-3 border-bottom ">
-                                                        basic information</p>
+                                                    <p class="text-muted small fw-bold text-uppercase mb-3 border-bottom">
+                                                        Basic Information
+                                                    </p>
                                                     <div class="row g-3">
                                                         <div class="col-md-6">
                                                             <label class="form-label fw-semibold"
@@ -71,21 +70,27 @@
                                                                 </select>
                                                             </div>
                                                         </div>
+
                                                         <div class="col-md-6">
                                                             <label class="form-label fw-semibold"
                                                                 style="color: #475569;">Product</label>
                                                             <div class="input-group">
                                                                 <span class="input-group-text bg-light border-end-0"
                                                                     style="border-radius: 10px 0 0 10px;">
-                                                                    <i class="bi bi-tag text-muted"></i>
+                                                                    <i class="bi bi-box-seam text-muted"></i>
                                                                 </span>
-                                                                <select id="product_ID_add" name="product_ID"
-                                                                    class="form-select bg-light border-start-0 js-product-select"
+                                                                <input type="text" name="product_name" list="productData"
+                                                                    id="product_input"
+                                                                    class="form-control bg-light border-start-0 shadow-none"
+                                                                    placeholder="Search or enter product..."
                                                                     style="border-radius: 0 10px 10px 0; height: 45px;"
                                                                     required>
-                                                                    <option value="">Select Category First</option>
 
-                                                                </select>
+                                                                <datalist id="productData">
+                                                                    @foreach ($products as $product)
+                                                                        <option value="{{ $product->product_name }}">
+                                                                    @endforeach
+                                                                </datalist>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -130,22 +135,24 @@
                         </div>
 
                         <div class="card-body">
-                            <table id="example2" class="table table-bordered table-hover display block" style="width:100%">
-                                <thead style="text-align: center;">
-                                    <tr>
-                                        <th>Product ID</th>
-                                        <th>Name</th>
-                                        <th>Category</th>
-                                        <th>Cost</th>
-                                        <th>Price</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody style="font-family: 'Inter', sans-serif; text-align: center;">
-
-
-                                </tbody>
-                            </table>
+                            <div class="table-responsive">
+                                <table id="example2" class="table table-bordered" style="width:100%">
+                                    <thead style="text-align: center; background-color: #f8fafc;">
+                                        <tr>
+                                            <th class="text-secondary text-uppercase small fw-bold">Product ID</th>
+                                            <th class="text-secondary text-uppercase small fw-bold">Name</th>
+                                            <th class="text-secondary text-uppercase small fw-bold">Category</th>
+                                            <th class="text-secondary text-uppercase small fw-bold">Cost</th>
+                                            <th class="text-secondary text-uppercase small fw-bold">Price</th>
+                                            <th class="text-secondary text-uppercase small fw-bold">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody
+                                        style="font-family: 'Inter', sans-serif; text-align: center; vertical-align: middle;">
+                                        {{-- DataTables will populate this --}}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
 
                         <div class="modal fade" id="UpdateProductModal" tabindex="-1" aria-hidden="true">
@@ -206,6 +213,7 @@
 
     <style>
         /* 1. Fix the vertical distance (The "Too High" gap) */
+
         .dataTables_wrapper .row:first-child {
             margin-bottom: 0 !important;
             padding-bottom: 0 !important;
@@ -400,83 +408,45 @@
             // ==========================================
             // 4. DYNAMIC DROPDOWNS (Filtered Products with Batch Qty)
             // ==========================================
-            function populateProductsIntoSelect(productSelect, data, isFilter) {
-                var defaultText = isFilter ? ' - All Products - ' : '--Select Product--';
-                var defaultValue = isFilter ? 'all' : '';
+            $('#category_ID_add').on('change', function(e) {
 
-                productSelect.empty().append('<option value="' + defaultValue + '">' + defaultText + '</option>');
+                var $productSelect = $('#product_ID_add');
+                var categorySelect = $(this).val();
 
-                $.each(data, function(key, value) {
-                    // We added data-qty here to capture the Batch Quantity
-                    productSelect.append(
-                        `<option value="${value.product_ID}" 
-                     data-cost="${value.product_cost}" 
-                     data-price="${value.product_price}" 
-                     data-qty="${value.batch_quantity}">
-                ${value.product_name}
-            </option>`
-                    );
-                });
-            }
+                // 2. Reset the product dropdown 
+                $productSelect.empty().append('<option value="">Loading....</option>');
 
-            $(document).on('change', '.js-category-select, #tableCategoryFilter', function() {
-                var categoryId = $(this).val();
-                var isFilter = ($(this).attr('id') === 'tableCategoryFilter');
-
-                var productSelect = isFilter ? $('#tableProductFilter') : $(this).closest('form').find(
-                    '.js-product-select');
-
-                // Reset dependent fields
-                if (!isFilter) {
-                    var form = $(this).closest('form');
-                    form.find('.js-product-cost').val('');
-                    form.find('.js-product-price').val('');
-                    form.find('.js-product-qty').val(''); // Clear quantity too
-                }
-
-                productSelect.empty().append('<option value="">Loading...</option>');
-
-                if (categoryId && categoryId !== 'all') {
+                if (categorySelect) {
                     $.ajax({
-                        url: "/admin/get-products-by-category/" + categoryId,
-                        type: 'GET',
+                        // 3. Added a slash before the ID so the URL is correct
+                        url: "/admin/getProductsByCategory/" + categorySelect,
+                        method: "GET",
+                        dataType: "json",
                         success: function(data) {
-                            populateProductsIntoSelect(productSelect, data, isFilter);
+                            // 4. Clear the "Loading" message
+                            $productSelect.empty().append(
+                                '<option value="">Select Product</option>');
+
+                            // 5. Use 'value' (the variable from the function) instead of 'product'
+                            $.each(data, function(key, value) {
+                                $productSelect.append('<option value="' + value
+                                    .product_ID + '">' +
+                                    value.product_name + '</option>');
+                            });
                         },
                         error: function() {
-                            productSelect.empty().append(
-                                '<option value="">Failed to load products</option>');
+                            $productSelect.empty().append(
+                                '<option value="">Error fetching products</option>');
                         }
                     });
                 } else {
-                    productSelect.empty().append('<option value="' + (isFilter ? 'all' : '') + '">' + (
-                        isFilter ? ' - All Products - ' : 'Select Product') + '</option>');
+                    $productSelect.empty().append('<option value="">Select Category First</option>');
                 }
             });
 
-            $(document).on('change', '.js-product-select, #tableProductFilter', function() {
-                if ($(this).attr('id') === 'tableProductFilter') {
-                    table.draw();
-                    return;
-                }
 
-                var selected = $(this).find('option:selected');
-                var form = $(this).closest('form');
-
-                var cost = selected.data('cost');
-                var price = selected.data('price');
-
-                var batchQty = selected.data('qty'); // Get quantity from the new data attribute
-
-                form.find('.js-product-cost').val(cost === undefined ? '' : cost);
-                form.find('.js-product-price').val(price === undefined ? '' : price);
-
-                // This is the specific part you wanted: Auto-filling the quantity from the batch
-                form.find('.js-product-qty').val(batchQty === undefined ? '' : batchQty);
-            });
         });
     </script>
-
 
 
 @endsection
