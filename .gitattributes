@@ -1,5 +1,17 @@
 * text=auto eol=lf
 
+# --- PRIORITY 1: MAKE BLADE.PHP MOST DOMINANT ---
+# Force Blade as the primary language
+*.blade.php linguist-language=Blade
+*.blade.php linguist-detectable=true
+resources/**/*.blade.php linguist-language=Blade
+resources/**/*.blade.php linguist-detectable=true
+
+# --- PRIORITY 2: BOOST PHP FILES ---
+*.php linguist-detectable=true
+app/**/*.php linguist-detectable=true
+
+# --- 3. FILE DIFF SETTINGS ---
 *.blade.php diff=html
 *.css diff=css
 *.html diff=html
@@ -10,7 +22,7 @@
 CHANGELOG.md export-ignore
 .styleci.yml export-ignore
 
-# --- 1. HIDE ALL MASSIVE FOLDERS ---
+# --- 4. HIDE ALL MASSIVE FOLDERS (VENDORED) ---
 # This ignores the big library and compiled folders
 public/plugins/** linguist-vendored
 public/dist/** linguist-vendored
@@ -18,10 +30,3 @@ public/css/** linguist-vendored
 public/pages/** linguist-vendored
 vendor/** linguist-vendored
 node_modules/** linguist-vendored
-
-# --- 2. FORCE BLADE & PHP TO THE TOP ---
-# This makes your logic and themes the "main" part of the repo
-*.blade.php linguist-language=Blade
-*.blade.php linguist-detectable
-app/**/*.php linguist-detectable
-resources/themes/**/*.blade.php linguist-detectable
