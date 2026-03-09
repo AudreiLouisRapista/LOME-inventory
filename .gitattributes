@@ -1,32 +1,45 @@
 * text=auto eol=lf
 
-# --- PRIORITY 1: MAKE BLADE.PHP MOST DOMINANT ---
-# Force Blade as the primary language
+# --- PRIORITY 1: BLADE.PHP MOST DOMINANT ---
 *.blade.php linguist-language=Blade
 *.blade.php linguist-detectable=true
+*.blade.php diff=html
 resources/**/*.blade.php linguist-language=Blade
 resources/**/*.blade.php linguist-detectable=true
 
-# --- PRIORITY 2: BOOST PHP FILES ---
+# --- PRIORITY 2: PHP SECOND ---
 *.php linguist-detectable=true
 app/**/*.php linguist-detectable=true
-
-# --- 3. FILE DIFF SETTINGS ---
-*.blade.php diff=html
-*.css diff=css
-*.html diff=html
-*.md diff=markdown
 *.php diff=php
 
+# --- PRIORITY 3: HTML THIRD ---
+*.html linguist-detectable=true
+resources/**/*.html linguist-detectable=true
+*.html diff=html
+
+# --- HIDE CSS AND JS (TOO DOMINANT) ---
+public/css/** linguist-vendored
+public/js/** linguist-vendored
+resources/css/** linguist-vendored
+resources/js/** linguist-vendored
+public/build/** linguist-vendored
+*.css linguist-vendored
+*.js linguist-vendored
+*.jsx linguist-vendored
+*.ts linguist-vendored
+*.tsx linguist-vendored
+public/**/*.js linguist-vendored
+resources/**/*.js linguist-vendored
+
+# --- REDUCE JS IMPACT ---
+node_modules/** linguist-vendored
+public/plugins/** linguist-vendored
+public/dist/** linguist-vendored
+public/pages/** linguist-vendored
+vendor/** linguist-vendored
+
+# --- OTHER SETTINGS ---
+*.md diff=markdown
 /.github export-ignore
 CHANGELOG.md export-ignore
 .styleci.yml export-ignore
-
-# --- 4. HIDE ALL MASSIVE FOLDERS (VENDORED) ---
-# This ignores the big library and compiled folders
-public/plugins/** linguist-vendored
-public/dist/** linguist-vendored
-public/css/** linguist-vendored
-public/pages/** linguist-vendored
-vendor/** linguist-vendored
-node_modules/** linguist-vendored
