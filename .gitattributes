@@ -19,6 +19,7 @@ public/css/calendar.css linguist-detectable=true
 public/plugins/** linguist-vendored
 public/dist/** linguist-vendored
 public/build/** linguist-vendored
+public/pages/** linguist-vendored
 vendor/** linguist-vendored
 node_modules/** linguist-vendored
 
