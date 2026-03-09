@@ -368,6 +368,14 @@
                     </a>
                 </li>
 
+                <li class="nav-item">
+                    <a href="{{ route('stockMovement') }}"
+                        class="nav-link {{ Route::is('stockMovement') ? 'active' : '' }}"
+                        style="display:flex; align-items:center; gap:10px; color:{{ Route::is('stockMovement') ? '#fff' : '#333' }}; background:{{ Route::is('stockMovement') ? '#ff5757' : 'transparent' }};">
+                        <i class="fas fa-exchange-alt"></i> Stock Ledger
+                    </a>
+                </li>
+
             </ul>
         </nav>
     </div>
