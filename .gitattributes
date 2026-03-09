@@ -11,7 +11,8 @@ app/**/*.php linguist-detectable=true
 # --- 2. THE SUPPORT: HTML & CSS ---
 # We allow your custom styles but limit their impact
 public/css/pages/*.css linguist-detectable=true
-public/css/*.css linguist-detectable=true
+public/css/admin_dp.css linguist-detectable=true
+public/css/calendar.css linguist-detectable=true
 
 # --- 3. THE "HTML KILLER" (VENDORED) ---
 # This hides the 86.7% HTML bloat from your stats
