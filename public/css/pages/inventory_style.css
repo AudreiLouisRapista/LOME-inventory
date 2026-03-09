@@ -1,0 +1,270 @@
+.btn-close-period {
+    border-radius: 50px;
+    padding: 5px 15px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.btn-close-period:hover {
+    background-color: #c82333;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px rgba(200, 35, 51, 0.3);
+}
+
+/* Container & Background */
+.table-container {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+    border: 1px solid #edf2f7;
+}
+
+/* Professional Header Styling */
+#example2 thead th {
+    background-color: #f1f5f9;
+    color: #475569;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    padding: 15px;
+    border: none;
+}
+
+/* Body Styling */
+#example2 tbody td {
+    padding: 14px;
+    vertical-align: middle;
+    color: #1e293b;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.85rem;
+}
+
+/* Custom Input Group Styling */
+.input-group-text {
+    border-right: none;
+    color: #94a3b8;
+}
+
+.form-select {
+    border-left: none;
+    font-size: 0.9rem;
+    color: #475569;
+    cursor: pointer;
+}
+
+.form-select:focus {
+    box-shadow: none;
+    border-color: #dee2e6;
+}
+
+/* Status Badge Logic (To be used in your JS/Blade) */
+.status-badge {
+    padding: 3px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 200;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.status-badge::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.status-in-stock {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-in-stock::before {
+    background: #22c55e;
+}
+
+.status-low-stock {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-low-stock::before {
+    background: #f59e0b;
+}
+
+.status-out-of-stock {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-out-of-stock::before {
+    background: #ef4444;
+}
+
+/* Action Buttons Styling */
+.action-btn-container {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+}
+
+.btn-table-action {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background-color: white;
+    transition: all 0.2s;
+}
+
+.btn-view-style {
+    color: #2563eb;
+}
+
+.btn-view-style:hover {
+    background-color: #2563eb;
+    color: white;
+    border-color: #2563eb;
+}
+
+.btn-delete-style {
+    color: #dc2626;
+}
+
+.btn-delete-style:hover {
+    background-color: #dc2626;
+    color: white;
+    border-color: #dc2626;
+}
+
+/* Action Button Grouping */
+.action-grp {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+}
+
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+}
+
+/* View Button - Blue Theme */
+.btn-view {
+    color: #3b82f6;
+}
+
+.btn-view:hover {
+    background: #eff6ff;
+    border-color: #3b82f6;
+}
+
+/* Edit Button - Amber Theme */
+.btn-edit {
+    color: #f59e0b;
+}
+
+.btn-edit:hover {
+    background: #fffbeb;
+    border-color: #f59e0b;
+}
+
+/* Delete Button - Red Theme */
+.btn-delete {
+    color: #ef4444;
+}
+
+.btn-delete:hover {
+    background: #fef2f2;
+    border-color: #ef4444;
+}
+
+/* Custom Styling to hide the default text but keep functionality */
+.custom-file-upload {
+    position: relative;
+    display: center;
+    width: 100%;
+}
+
+/* Professional Import Styling */
+.import-wrapper {
+    flex-grow: 1;
+    max-width: 500px;
+}
+
+.pos-input-group {
+    border-radius: 50px !important;
+    border: 1px solid #e0e0e0;
+    background: #fdfdfd;
+    overflow: hidden;
+}
+
+.pos-input-group input[type=file]::file-selector-button {
+    display: none;
+    /* Hides annoying browser button */
+}
+
+/* Inventory Button Styling */
+.btn-inventory {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 10px 24px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(76, 175, 80, 0.2);
+    white-space: nowrap;
+}
+
+.btn-inventory:hover {
+    background-color: #3d8b40;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px rgba(76, 175, 80, 0.3);
+    color: white;
+}
+
+/* Custom 5-column grid for the summary cards */
+@media (min-width: 992px) {
+    .col-5-custom {
+        flex: 0 0 auto;
+        width: 20%;
+        /* 100% divided by 5 cards */
+    }
+}
+
+.dash-stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 20px;
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    height: 155px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s ease;
+}
+
+.dash-stat-card:hover {
+    transform: translateY(-5px);
+}

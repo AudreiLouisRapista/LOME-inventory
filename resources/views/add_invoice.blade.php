@@ -225,32 +225,7 @@
         </div>
     </div>
 
-
-    <style>
-        /* Container for better targeting */
-        .mb-5 .form-control {
-            transition: all 0.3s ease-in-out;
-            border: 1px solid transparent;
-            /* Prevents layout jump on hover */
-        }
-
-        /* Hover State */
-        .mb-5 .form-control:hover {
-            background-color: #ffffff !important;
-            border-color: #dee2e6;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
-            transform: translateY(-1px);
-        }
-
-        /* Focus State (Optional but recommended for accessibility) */
-        .mb-5 .form-control:focus {
-            background-color: #ffffff !important;
-            border-color: #dc3545;
-            /* Matches your bg-danger badge color */
-            box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.1) !important;
-        }
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('css/add_invoice.css') }}">
 @endsection
 
 @section('scripts src')
