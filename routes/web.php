@@ -60,6 +60,8 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     Route::get('/import_history', [MainController::class, 'import_history'])->name('import_history');
    Route::get('/getProductsByCategory/{id}', [MainController::class, 'getProductsByCategory'])->name('getProductsByCategory');
     Route::get('/getPaymentHistory/{id}', [MainController::class, 'getPaymentHistory'])->name('getPaymentHistory');
+    Route::get('/stockMovement', [MainController::class, 'stockMovement'])->name('stockMovement');
+
    
 
 

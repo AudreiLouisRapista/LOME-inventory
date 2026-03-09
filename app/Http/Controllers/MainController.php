@@ -89,7 +89,7 @@ public function auth_user(Request $request) {
 private function logActivity($action, $description)
 {
     ActivityLog::create([
-        'admin_id' => Session::get('id'), // or Auth::id() if using Auth
+        'admin_id' => Session::get('user_id'), // or Auth::id() if using Auth
         'action' => $action,
         'description' => $description,
     ]);
@@ -822,6 +822,10 @@ public function saveInvoiceAndItem(Request $request)
     DB::beginTransaction();
 
    try {
+
+   
+    
+
     // 1. Save the Main Invoice
     $invoiceId = DB::table('purchases')->insertGetId([
         'supplier_id'    => $request->supplier_id,
@@ -866,7 +870,7 @@ public function saveInvoiceAndItem(Request $request)
             'updated_at'        => now(),
         ]);
 
-         $batchId = DB::table('batches')->insert([
+         $batchId = DB::table('batches')->insertGetId([
         'purchase_item_id' => $purchaseItemID,
         'product_id' => $productId,
         'batch_code' => $request->batch_number,
@@ -876,6 +880,17 @@ public function saveInvoiceAndItem(Request $request)
         'created_at' => now(),
         'updated_at' => now(),
     ]);
+
+        $stockMovement = DB::table('stock_movements')->insert([
+            'product_ID' => $productId,
+            'purchase_item_id' => $purchaseItemID,
+            'purchase_id' => $invoiceId,
+            'batch_ID' => $batchId,
+            'MovementType' => 'IN',
+            'quantity' => $request->quantity[$key],
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 
     DB::commit();
@@ -919,7 +934,40 @@ public function add_invoice(Request $request)
  return view('add_invoice', compact('suppliers', 'purchases', 'products', 'uoms'));
 }
 
+public function stockMovement(Request $request)
+{
+    // 1. Fetch all movements with their related product and category data
+    // We order by ID desc so the newest "Activity" is at the top
+    $movements = DB::table('stock_movements')
+        ->join('products', 'stock_movements.product_ID', '=', 'products.product_ID')
+        ->join('purchases', 'stock_movements.purchase_id', '=', 'purchases.purchase_id')
+        ->join('batches', 'stock_movements.batch_ID', '=', 'batches.batch_ID')
+        ->join('purchase_items', 'stock_movements.purchase_item_id', '=', 'purchase_items.purchase_item_id')
+        ->select(
+            'stock_movements.*', 
+            'products.product_name', 
+            'purchases.invoice_number',
+            'batches.quantity as batch_quantity',
 
+            
+        )
+        ->orderBy('stock_movements.created_at', 'desc')
+        ->get();
+
+    // 2. Calculate Quick Stats for the Top Cards (Last 30 days)
+    $recentIn = DB::table('stock_movements')
+        ->where('MovementType', 'IN')
+        ->where('created_at', '>=', now()->subDays(30))
+        ->sum('quantity');
+
+    $recentOut = DB::table('stock_movements')
+        ->where('MovementType', 'OUT')
+        ->where('created_at', '>=', now()->subDays(30))
+        ->sum('quantity');
+
+    // 3. Pass everything to the view
+    return view('stockMovement', compact('movements', 'recentIn', 'recentOut'));
+}
 
 
         // LOG OUT
