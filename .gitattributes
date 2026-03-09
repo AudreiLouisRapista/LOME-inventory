@@ -1,34 +1,33 @@
 * text=auto eol=lf
 
-# --- PRIORITY 1: BLADE ---
-# We use 'linguist-weight' to force Blade to the very top
+# --- PRIORITY 1: BLADE (THE KING) ---
 *.blade.php linguist-language=Blade
 *.blade.php linguist-detectable=true
 resources/**/*.blade.php linguist-detectable=true
 *.blade.php diff=html
 
 # --- PRIORITY 2: PHP (CORE LOGIC) ---
-# This ensures your Controllers and Models are #2
 app/**/*.php linguist-detectable=true
 *.php linguist-detectable=true
 *.php diff=php
 
-# --- PRIORITY 3: HTML/CSS (STYLING) ---
-# We vendor the big folders but keep YOUR specific files detectable
+# --- PRIORITY 3: HTML & CSS (CUSTOM STYLING) ---
+# We allow your specific files to be seen but hide the "bloat"
+*.html linguist-detectable=true
 public/css/*.css linguist-detectable=true
 resources/css/*.css linguist-detectable=true
-*.html linguist-detectable=true
 
-# --- HIDE THE NOISE (VENDORED) ---
-# This is the most important part to drop that 51.9% CSS
-
+# --- HIDE THE HEAVY NOISE (VENDORED) ---
+# This removes the massive 51.9% CSS and 11.9% JS plugins
+public/plugins/** linguist-vendored
 public/dist/** linguist-vendored
 public/pages/** linguist-vendored
 public/build/** linguist-vendored
 vendor/** linguist-vendored
 node_modules/** linguist-vendored
 
-# --- DO NOT COUNT THESE AT ALL ---
+# --- SILENCE JAVASCRIPT ---
+# This ensures JS doesn't jump ahead of your PHP/Blade
 *.js linguist-vendored
 *.jsx linguist-vendored
 *.ts linguist-vendored
