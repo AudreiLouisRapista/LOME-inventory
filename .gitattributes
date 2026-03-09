@@ -10,21 +10,22 @@
 CHANGELOG.md export-ignore
 .styleci.yml export-ignore
 
-# --- IGNORE THIRD-PARTY LIBRARIES ---
-# This removes the massive JS/CSS you didn't write
+# --- 1. HIDE ALL MASSIVE FOLDERS ---
+# This ignores the big library and compiled folders
 public/plugins/** linguist-vendored
 public/dist/** linguist-vendored
+public/css/** linguist-vendored
+public/pages/** linguist-vendored
 vendor/** linguist-vendored
 node_modules/** linguist-vendored
 
-# --- KEEP CUSTOM FRONTEND ---
-# We do NOT vendor public/css or public/pages so they stay in the stats
-# This keeps your HTML (31.2%) and CSS (51.9%) visible
-public/css/*.css linguist-detectable
-public/pages/*.html linguist-detectable
-
-# --- BOOST PHP & BLADE ---
-# This ensures these small, clean files are counted heavily
+# --- 2. FORCE BLADE & PHP TO THE TOP ---
+# This tells GitHub these are your "main" languages
 *.blade.php linguist-language=Blade
 *.blade.php linguist-detectable
 app/**/*.php linguist-detectable
+
+# --- 3. SHOW ONLY YOUR CUSTOM FRONTEND ---
+# This keeps your specific work visible without the "bloat"
+resources/css/app.css linguist-detectable
+resources/css/dashboard.css linguist-detectable
