@@ -20,12 +20,8 @@ vendor/** linguist-vendored
 node_modules/** linguist-vendored
 
 # --- 2. FORCE BLADE & PHP TO THE TOP ---
-# This tells GitHub these are your "main" languages
+# This makes your logic and themes the "main" part of the repo
 *.blade.php linguist-language=Blade
 *.blade.php linguist-detectable
 app/**/*.php linguist-detectable
-
-# --- 3. SHOW ONLY YOUR CUSTOM FRONTEND ---
-# This keeps your specific work visible without the "bloat"
-resources/css/app.css linguist-detectable
-resources/css/dashboard.css linguist-detectable
+resources/themes/**/*.blade.php linguist-detectable
