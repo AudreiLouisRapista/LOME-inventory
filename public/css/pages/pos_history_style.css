@@ -1,0 +1,33 @@
+.extra-small {
+    font-size: 0.75rem;
+}
+
+.bg-success-subtle {
+    background-color: #e8f5e9;
+}
+
+.bg-danger-subtle {
+    background-color: #ffebee;
+}
+
+.table thead th {
+    letter-spacing: 0.5px;
+    border-top: none;
+}
+
+.card {
+    border-radius: 12px;
+}
+
+.input-group-text {
+    border-radius: 8px 0 0 8px !important;
+}
+
+.form-control {
+    border-radius: 0 8px 8px 0 !important;
+}
+
+.badge {
+    padding: 0.5em 0.8em;
+    font-weight: 500;
+}
