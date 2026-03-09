@@ -1,37 +1,29 @@
 * text=auto eol=lf
 
-# --- PRIORITY 1: BLADE (THE KING) ---
+# --- PRIORITY 1 & 2: BLADE AND PHP ---
+# We force these to be the most "detectable"
 *.blade.php linguist-language=Blade
 *.blade.php linguist-detectable=true
-resources/**/*.blade.php linguist-detectable=true
-*.blade.php diff=html
-
-# --- PRIORITY 2: PHP (CORE LOGIC) ---
 app/**/*.php linguist-detectable=true
 *.php linguist-detectable=true
-*.php diff=php
 
-# --- PRIORITY 3: HTML & CSS (CUSTOM STYLING) ---
-# We allow your specific files to be seen but hide the "bloat"
+# --- PRIORITY 3: SMALL PERCENT CSS & JS ---
+# We allow these extensions generally...
+*.css linguist-detectable=true
+*.js linguist-detectable=true
 *.html linguist-detectable=true
-public/css/*.css linguist-detectable=true
-resources/css/*.css linguist-detectable=true
 
-# --- HIDE THE HEAVY NOISE (VENDORED) ---
-# This removes the massive 51.9% CSS and 11.9% JS plugins
+# --- THE SECRET: HIDE THE HEAVY LIBRARIES ---
+# This is what stops CSS from hitting 92%. It hides the "Big" files.
 public/plugins/** linguist-vendored
 public/dist/** linguist-vendored
-public/pages/** linguist-vendored
 public/build/** linguist-vendored
 vendor/** linguist-vendored
 node_modules/** linguist-vendored
 
-# --- SILENCE JAVASCRIPT ---
-# This ensures JS doesn't jump ahead of your PHP/Blade
-*.js linguist-vendored
-*.jsx linguist-vendored
-*.ts linguist-vendored
-*.tsx linguist-vendored
+# --- DO NOT COUNT THESE SPECIFIC FOLDERS ---
+# Keeps the "HTML" percentage from getting too high
+public/pages/** linguist-vendored
 
 # --- OTHER SETTINGS ---
 *.md diff=markdown
