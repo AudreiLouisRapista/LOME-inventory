@@ -15,8 +15,7 @@ app/**/*.php linguist-detectable=true
 
 # --- PRIORITY 3: HTML/CSS (STYLING) ---
 # We vendor the big folders but keep YOUR specific files detectable
-public/css/*.css linguist-detectable=true
-resources/css/*.css linguist-detectable=true
+*.css linguist-detectable=true
 *.html linguist-detectable=true
 
 # --- HIDE THE NOISE (VENDORED) ---
