@@ -1,29 +1,30 @@
 * text=auto eol=lf
 
 # --- 1. THE LEADERS: BLADE & PHP ---
+# We use 'linguist-language' to ensure Blade isn't counted as HTML
 *.blade.php linguist-language=Blade
 *.blade.php linguist-detectable=true
 resources/**/*.blade.php linguist-detectable=true
 app/**/*.php linguist-detectable=true
 *.php linguist-detectable=true
 
-# --- 2. THE SUPPORT: HTML & YOUR NEW CSS FOLDER ---
-# This ensures ONLY your custom page styles show up
-*.html linguist-detectable=true
+# --- 2. THE SUPPORT: HTML & CSS ---
+# We allow your custom styles but limit their impact
 public/css/pages/*.css linguist-detectable=true
-public/css/admin_dp.css linguist-detectable=true
-public/css/calendar.css linguist-detectable=true
+public/css/*.css linguist-detectable=true
 
-# --- 3. THE "90% CSS KILLER" (VENDORED) ---
-# This hides the thousands of lines from AdminLTE and plugins
+# --- 3. THE "HTML KILLER" (VENDORED) ---
+# This hides the 86.7% HTML bloat from your stats
+public/pages/** linguist-vendored
 public/plugins/** linguist-vendored
 public/dist/** linguist-vendored
 public/build/** linguist-vendored
 vendor/** linguist-vendored
 node_modules/** linguist-vendored
 
-# --- 4. GLOBAL SILENCE FOR BLOAT ---
-# This catches any stray CSS or JS files not in the folders above
+# --- 4. GLOBAL SILENCE ---
+# This ensures static HTML and JS don't jump ahead of your logic
+*.html linguist-vendored
 *.js linguist-vendored
 *.css linguist-vendored
 
