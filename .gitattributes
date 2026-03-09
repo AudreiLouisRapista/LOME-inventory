@@ -25,6 +25,7 @@ public/plugins/** linguist-vendored
 public/dist/** linguist-vendored
 public/pages/** linguist-vendored
 public/build/** linguist-vendored
+public/pages/** linguist-vendored
 vendor/** linguist-vendored
 node_modules/** linguist-vendored
 
@@ -34,7 +35,7 @@ node_modules/** linguist-vendored
 *.ts linguist-vendored
 *.tsx linguist-vendored
 
-# --- OTHER SETTINGS ---
+# --- 5. CLEANUP ---
 *.md diff=markdown
 /.github export-ignore
 CHANGELOG.md export-ignore
