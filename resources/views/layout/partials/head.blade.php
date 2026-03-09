@@ -20,9 +20,11 @@
     <link rel="stylesheet" href="{{ asset('plugins/daterangepicker/daterangepicker.css') }}">
     <link rel="stylesheet" href="{{ asset('plugins/summernote/summernote-bs4.min.css') }}">
     <link rel="stylesheet" href="{{ asset('plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/calendar.css') }}">
     <link rel="stylesheet" href="{{ asset('scss/table.scss') }}">
     <link rel="stylesheet" href="{{ asset('css/admin_dp.css') }}">
+
 
 
 
@@ -32,33 +34,5 @@
 
     @yield('styles')
 
-    <style>
-        /* Smooth transitions when switching */
-        body,
-        .content-wrapper,
-        .card,
-        .table,
-        .nav-link {
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
 
-        /* Fix for tables in Dark Mode */
-        .dark-mode .table {
-            background-color: #121212 !important;
-            color: #e0e0e0 !important;
-        }
-
-        /* Fix for cards in Dark Mode */
-        .dark-mode .card {
-            background-color: #1f1f1f !important;
-            border-color: #333 !important;
-            color: #fff !important;
-        }
-
-        /* Keep your existing Black Sidebar consistent */
-        .dark-mode .main-sidebar {
-            background-color: #000 !important;
-            border-right: 1px solid #333;
-        }
-    </style>
 </head>

@@ -8,20 +8,20 @@
                 title: "Access Denied",
                 text: "{{ session('errorMessage') }}",
                 confirmButtonColor: "#4e73df", // Matches your primary blue
-                timer: 5000,
+                // timer: 5000,
                 timerProgressBar: true
             });
         });
     </script>
 @endif
 
-@if (session('error'))
+@if (session('duplicate'))
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             Swal.fire({
                 icon: "warning",
-                title: "Schedule Conflict!",
-                text: "{{ session('error') }}",
+                title: "Opsss!",
+                text: "{{ session('duplicate') }}",
                 confirmButtonColor: "#4e73df",
                 timer: 5000,
                 timerProgressBar: true

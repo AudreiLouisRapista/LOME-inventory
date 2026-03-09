@@ -26,10 +26,19 @@ class RoleMiddleware
         // it's safer to re-verify or keep it fresh.
         // We also add a header to prevent sensitive admin pages from being cached.
         
+      // 3. Security Layer: Prevent "Session Fixation"
         $response = $next($request);
 
-        return $response->header('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate')
-                        ->header('Pragma', 'no-cache')
-                        ->header('Expires', 'Sat, 01 Jan 1990 00:00:00 GMT');
+        // Only add headers if the response type supports the header() method
+        // This prevents crashes during File Downloads/Excel Exports
+        if (method_exists($response, 'header')) {
+            return $response->header('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate')
+                            ->header('Pragma', 'no-cache')
+                            ->header('Expires', 'Sat, 01 Jan 1990 00:00:00 GMT');
+        }
+
+        return $response;
     }
 }
+
+?>

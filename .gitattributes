@@ -9,3 +9,14 @@
 /.github export-ignore
 CHANGELOG.md export-ignore
 .styleci.yml export-ignore
+
+# --- MINIMIZE JS STATISTICS ---
+# This tells GitHub to ignore these folders in the language bar
+public/plugins/** linguist-vendored
+public/dist/** linguist-vendored
+public/build/** linguist-vendored
+vendor/** linguist-vendored
+node_modules/** linguist-vendored
+
+# Force GitHub to count Blade files toward your "Blade" or "HTML" stats
+*.blade.php linguist-detectable

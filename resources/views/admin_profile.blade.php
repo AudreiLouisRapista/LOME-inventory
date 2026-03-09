@@ -122,7 +122,7 @@
 
                                                     @foreach ($admins as $admin)
                                                         <form method="POST"
-                                                            action="{{ route('adminProfile', ['id' => $admin->id]) }}"
+                                                            action="{{ route('adminProfile', ['id' => $admin->urs_id]) }}"
                                                             enctype="multipart/form-data">
 
                                                             @csrf
@@ -189,32 +189,7 @@
 
 
 
-                                                                <div class="row">
-                                                                    <div class="col-md-6 form-group mb-3">
-                                                                        <label
-                                                                            class="small font-weight-bold text-muted text-uppercase">Phone</label>
-                                                                        <input type="number" name="phone"
-                                                                            value="{{ $admin->phone }}"
-                                                                            class="form-control form-control-lg border-0 bg-light"
-                                                                            style="border-radius: 12px; font-size: 0.95rem;"
-                                                                            required>
-                                                                    </div>
-                                                                    <div class="col-md-6 form-group mb-3">
-                                                                        <label
-                                                                            class="small font-weight-bold text-muted text-uppercase">Gender</label>
-                                                                        <select name="gender"
-                                                                            class="form-control form-control-lg border-0 bg-light text-capitalize"
-                                                                            style="border-radius: 12px; font-size: 0.95rem;"
-                                                                            required>
-                                                                            <option value="male"
-                                                                                {{ $admin->gender == 'male' ? 'selected' : '' }}>
-                                                                                Male</option>
-                                                                            <option value="female"
-                                                                                {{ $admin->gender == 'female' ? 'selected' : '' }}>
-                                                                                Female</option>
-                                                                        </select>
-                                                                    </div>
-                                                                </div>
+
 
                                                             </div>
 
@@ -260,18 +235,7 @@
                                                     Address</label>
                                                 <p class="text-dark font-weight-600 mb-0">{{ $admin->email }}</p>
                                             </div>
-                                            <div class="col-sm-6 mb-4">
-                                                <label
-                                                    class="text-muted small font-weight-bold text-uppercase mb-1 d-block">Phone
-                                                    Number</label>
-                                                <p class="text-dark font-weight-600 mb-0">{{ $admin->phone }}</p>
-                                            </div>
-                                            <div class="col-sm-6 mb-4">
-                                                <label
-                                                    class="text-muted small font-weight-bold text-uppercase mb-1 d-block">Gender</label>
-                                                <p class="text-dark font-weight-600 mb-0 text-capitalize">
-                                                    {{ $admin->gender }}</p>
-                                            </div>
+
                                         </div>
                                     @endforeach
                                 </div>

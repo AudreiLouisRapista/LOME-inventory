@@ -1,18 +1,25 @@
 <?php
-
 namespace App\Http\Controllers;
-
+use Exception;
+use DateTime;
+use App\Models\Purchase;  
+use App\Models\Supplier;  
+use App\Models\Payment;   
+use App\Models\ActivityLog;
+use App\Imports\POSsaleImport;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
+use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB; // For direct database queries
 use Illuminate\Validation\Rule;
-use App\Models\ActivityLog;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Session; // For session usage
-use Exception;
-use DateTime;
 use Illuminate\Support\Facades\File;
+
+
 class MainController extends Controller
 {
     /**
@@ -92,20 +99,19 @@ private function logActivity($action, $description)
 {
     $logs = ActivityLog::latest()->take(10)->get();
 
-    $admins = DB::table('admin')->get();
+    $admins = DB::table('users')->get();
 
     return view('admin_profile', compact('admins','logs'));
 }
 
  public function adminProfile(Request $request, $id) { 
     // 1. Get the current admin record to find the old image path
-    $admin = DB::table('admin')->where('id', $id)->first();
+    $admin = DB::table('users')->where('urs_id', $id)->first();
     
     $updateData = [
         'email'  => $request->email,
         'name'   => $request->name,
-        'gender' => $request->gender,
-        'phone'  => $request->phone,
+        
     ];
 
     if ($request->filled('password')) {
@@ -135,7 +141,7 @@ private function logActivity($action, $description)
     }
 
     // 3. Update Database
-    DB::table('admin')->where('id', $id)->update($updateData);
+    DB::table('users')->where('urs_id', $id)->update($updateData);
 
     session(['name' => $request->name]);
     $this->logActivity('updated', 'Updated Admin Profile: ' . $request->name);
@@ -144,1122 +150,781 @@ private function logActivity($action, $description)
     return redirect()->back();
 }
 
-public function Update_teacherProfile(Request $request, $id) {
-    // 1. Fetch current teacher data
-    $teacher = DB::table('teacher')->where('teachers_id', $id)->first();
-
-    if (!$teacher) {
-        return redirect()->back()->with('errorMessage', 'Teacher not found.');
-    }
-
-    // 2. Prepare update data
-    $updateData = [
-        'email'  => $request->email,
-        'name'   => $request->name,
-        'gender' => $request->gender,
-        'phone'  => $request->phone,
-    ];
-
-    if ($request->filled('password')) {
-        $updateData['password'] = Hash::make($request->password);
-    }
-
-    // 3. Handle Image Upload
-    if ($request->hasFile('profile_image')) {
-        $image = $request->file('profile_image');
-        $filename = time() . '_' . $image->getClientOriginalName();
-        
-        // Save to public/images
-        $image->move(public_path('images'), $filename);
-        $new_path = 'images/' . $filename;
-
-        // Delete old file if it's not the default avatar
-        if ($teacher->profile && $teacher->profile !== 'dist/img/avatar.png') {
-            $old_file_path = public_path($teacher->profile);
-            if (File::exists($old_file_path)) {
-                File::delete($old_file_path);
-            }
-        }
-
-        $updateData['profile'] = $new_path;
-        
-        // Update session immediately for UI refresh
-        session(['profile' => $new_path]);
-    }
-
-    // 4. Update Database
-    DB::table('teacher')->where('teachers_id', $id)->update($updateData);
-
-    // 5. Update session name & Log activity
-    session(['name' => $request->name]);
-    session()->save(); // Force session to save changes
-
-    $logMessage = 'Updated Teacher Profile: ' . $request->name;
-    if ($request->filled('password')) {
-        $logMessage .= ' (Password was also changed)';
-    }
-
-    $this->logActivity('updated', $logMessage);
-
-    return redirect()->back()->with('save', 'Information updated successfully.');
-}
-
-
-
-public function TeacherUI(Request $request) {
-    // 1. Get the logged-in teacher's ID from the session
-    $teacherId = session('id'); 
-    
-    if (!$teacherId) {
-        return redirect()->route('login')->with('error', 'Session expired.');
-    }
-
-    // 2. Data for the dropdown
-    $school_years_map = DB::table('school_year')->pluck('schoolyear_name', 'schoolyear_id');
-    $selected_year_id = $request->get('schoolyear_id');
-
-    // 3. Fetch specific teacher profile info
-    $teachers = DB::table('teacher')
-        ->where('teachers_id', $teacherId)
-        ->select(
-            'teachers_id', 
-            'password as teacher_password',
-            'email as teacher_email', 
-            'name as teacher_name', 
-            'phone as teacher_phone', 
-            'gender as teacher_gender', 
-            'profile as teacher_profile'
-        )
-        ->get();
-
-    // 4. Fetch the specific teacher's schedule/loads
-    $query = DB::table('schedules')
-        ->join('subject', 'schedules.subject_id', '=', 'subject.subject_id')
-        ->join('grade_level', 'schedules.grade_id', '=', 'grade_level.grade_id')
-        ->join('section', 'schedules.section_id', '=', 'section.section_id')
-        ->where('schedules.teachers_id', $teacherId) // Only this teacher
-        ->select(
-            'schedules.*', 
-            'schedules.create_at',
-            'subject.subject_name as sub_name',
-            'grade_level.grade_title as grade_name',
-            'section.section_name as sec_name'
-        );
-
-    // Filter by year if selected
-    if ($selected_year_id) {
-        $query->where('schedules.schoolyear_id', $selected_year_id);
-    }
-
-    $teacher_ui = $query->get();
-
-    return view('TeacherUI', compact('teachers', 'teacher_ui', 'school_years_map', 'selected_year_id'));
-}
 
 
 
 
 
 
-    /**s
-     * Show the dashboard view.
-     */
+
+
+
    public function dashboard()
 {
     // dd(session()->all());
     $logs = ActivityLog::latest()->take(10)->get();
-    // Count data
-    $totalWorkers = DB::table('users')->where('role_id','2')->count();
-    $view_schedule = DB::table('schedules')->count();
-    // $view_subject = DB::table('subject')->count();
-
-    // Count subjects per grade level
-    $grade1Count = DB::table('schedules')->where('grade_id', '7')->count();
-    $grade2Count = DB::table('schedules')->where('grade_id', '8')->count();
-    $grade3Count = DB::table('schedules')->where('grade_id', '9')->count();
-    $grade4Count = DB::table('schedules')->where('grade_id', '10')->count();
-    $grade5Count = DB::table('schedules')->where('grade_id', '11')->count();
-    $grade6Count = DB::table('schedules')->where('grade_id', '12')->count();
-
-  //  $schoolYears = DB::table('school_year')->orderBy('schoolyear_name', 'desc')->get();
-
-
-
+   
             $logs = ActivityLog::whereIn('action', ['added','updated','deleted'])
                    ->latest()
                    ->take(10)
                    ->get();
 
+    $totalProducts = DB::table('inventory')->count();  
+    $totalQuantity = DB::table('inventory')->sum('invt_remainingStock');  
+    $totalSold = DB::table('inventory')->sum('invt_totalSold');
+    $instockProducts = DB::table('inventory')->where('status_ID', 1)->count();
+    $lowStockProducts = DB::table('inventory')->where('status_ID', 2)->count();
+    $outOfStock = DB::table('inventory')->where('status_ID', 3)->count();    
     
+   $totalStockPossible = $totalQuantity + $totalSold;
+    $quantityPercent = ($totalStockPossible > 0) 
+    ? round(($totalQuantity / $totalStockPossible) * 100, 2) 
+    : 0;
 
-    return view('dashboard', compact(
-        'totalWorkers',
-        'grade1Count',
-        'grade2Count',
-        'grade3Count',
-        'grade4Count',
-        'grade5Count',
-        'grade6Count',
-       
-        'logs',
-        'view_schedule',
-        // 'schoolYears'
-        
-    ));
+    return view('dashboard', compact('logs', 'totalProducts', 'totalQuantity',
+     'totalSold', 'instockProducts', 'lowStockProducts', 'outOfStock', 'quantityPercent' ,));
     
 }
 
 
 
-public function save_section(Request $request){
-
-
-       // 1. Validate input
-    // $request->validate([
-    //     'subject_code' => 'required|string|max:255',
-    //     'subject_name' => 'required|string|max:255',
-    //     'subject_gradelevel' => 'required|string|max:255',
-    //     // 'subject_status' => 'required|exists:teacher,teachers_id',
-    // ]);
 
 
 
-    // 2. Save the new subject
-   $save_section = DB::table('section')->insert([
-        'section_name' => $request->section_name,
-        'grade_id' => $request->grade_id,
-        'section_capacity' => $request-> section_capacity,
-        'section_strand' => $request-> section_strand,
-
-    ]);
 
 
- session()->flash('save', 'Section ADDED successfully.');
-    return redirect()->back();
 
-}
-
-public function view_section() {
-
-
-       $view_section = DB::table('section')
-            ->leftJoin('grade_level', 'grade_level.grade_id', '=', 'section.grade_id')
-             ->select(
-            'section.section_id',
-            'section.section_name',
-            'section.section_capacity',
-            'grade_level.grade_title',
-            'section.grade_id',
-            'section.section_strand'
+public function pos_history() 
+{
+    // 1. Fetch logs and count how many records are in POSImportData for each log
+    // We join with 'users' to get the actual name of the Admin
+    $logs = DB::table('import_logs')
+        ->leftJoin('users', 'import_logs.UploadedBy', '=', 'users.urs_id')
+        ->select(
+            'import_logs.*', 
+            'users.name', // Assuming your column name is urs_username
+            DB::raw('(SELECT COUNT(*) FROM POSImportData WHERE POSImportData.import_logs_ID = import_logs.Import_logs_ID) as row_count')
         )
+        ->orderBy('import_logs.Uploaded_At', 'desc')
+        ->paginate(10); // Matches your pagination design in the Blade
+
+    // 2. Calculate Stats for the top cards
+    $totalImports = DB::table('import_logs')->count();
+    $successImports = DB::table('import_logs')->where('Status', 'Success')->count();
+
+    return view('pos_history', compact('logs', 'totalImports', 'successImports'));
+}
+
+public function import_history() {
+      $logs = DB::table('import_logs')
+            ->orderBy('Uploaded_At', 'desc')
             ->get();
-
-
-
-
-
- return view('section', compact('view_section'));
-
-
+        return view('pos_history', compact('logs'));
 }
 
-public function update_section(Request $request) {
-    $section_id = $request->section_id;
+    // Locate the file in storage and initiate a download for the Admin
+public function download_import($id) {
+    // Note: Ensure the column name matches your Navicat (Import_logs_ID vs posImport_ID)
+    $log = DB::table('import_logs')->where('Import_logs_ID', $id)->first();
 
-
-    DB::table('section')
-        ->where('section_id', $section_id)
-        ->update([
-
-            'section_name'    => $request->section_name,
-            'section_capacity'     => $request->section_capacity,
-            'grade_id'   => $request->grade_id,  
-            'section_strand'     => $request->section_strand,
-            
-        ]);
-
-         $this->logActivity(
-        'updated',
-        'Updated Section ID ' . $section_id . ': ' . $request->section_name
-    );
-    session()->flash('save', 'Section updated successfully.');
-    return redirect()->back();
-}
-
-
-
-
-
-
-    // SUBJECTS
-
-public function save_subjects(Request $request){
-
-
-       // 1. Validate input
-    // $request->validate([
-    //     'subject_code' => 'required|string|max:255',
-    //     'subject_name' => 'required|string|max:255',
-    //     'subject_gradelevel' => 'required|string|max:255',
-    //     // 'subject_status' => 'required|exists:teacher,teachers_id',
-    // ]);
-
-
-
-    // 2. Save the new subject
-   $save_subjects = DB::table('subject')->insert([
-        'subject_name' => $request->sub_name,
-        'grade_id' => $request->grade_id,
-        'subject_status' => $request->t_status,
-        'sub_strand' => $request->sub_strand ?? 'N/A',
-        'sub_yearlevel' => $request->sub_yearlevel,
-
-    ]);
-
-    $this->logActivity(
-    'added',
-    'Added subject: ' . $request->sub_name . ' for Grade ' . $request->grade_id
-);
-
-    return redirect()->back()->with('success', 'Subject added and teacher status updated!');
-
-
+    if ($log && Storage::disk('public')->exists($log->FilePath)) {
+        return Storage::disk('public')->download($log->FilePath, $log->FileName);
     }
 
-     public function view_subject() {
+    return back()->with('error', 'File not found.');
+}
 
 
-       $view_subject = DB::table('subject')
-            ->leftJoin('status', 'status.status_id', '=', 'subject.subject_status')
-            ->leftJoin('grade_level', 'grade_level.grade_id', '=', 'subject.grade_id')
-             ->select(
-            'subject.subject_name',
-            'subject.sub_strand',
-            'subject.sub_yearlevel',
-            'grade_level.grade_title',
-            'status.status_name'
-        )
-            ->get();
+public function product_report() {
+    // $pos_sales = DB::table('pos_sales')
+    //     ->join('products', 'pos_sales.product_ID', '=', 'products.product_ID')
+    //     ->join('category', 'products.category_ID', '=', 'category.category_ID')
+    //     ->select(
+    //         'pos_sales.*',
+    //         'products.product_name',
+    //         'category.category_name'
+    //     )
+    //     ->orderBy('pos_sales.sale_date', 'desc')
+    //     ->get();
 
+    return view('product_report');
+}
 
+public function inventory_report() {
+   
 
-
-
-    return view('subject', compact('view_subject'));
-
-
+    return view('inventory_report');
 }
 
 
 
 
 
-
-
-
-
-
-    
-
-
-
-
-
-public function deact_teacher(Request $request) {
-    $teacherId = $request->teachers_id;
-    $scheduleId = $request->schedule_id; // The specific row to clear
-    $teacher_name = $request->name;
-
-    // 1. UNASSIGN: Clear the teacher from this specific schedule row
-    DB::table('schedules')
-        ->where('schedule_id', $scheduleId)
-        ->update(['teachers_id' => 0]); // Set to 0 to unassign
-
-    // 2. CHECK REMAINING: Count how many schedules this teacher still has
-    $remainingSchedules = DB::table('schedules')
-        ->where('teachers_id', $teacherId)
-        ->count();
-
-    // 3. UPDATE STATUS: If 0 left, update teacher status to 0
-    if ($remainingSchedules == 0) {
-        DB::table('teacher')
-            ->where('teachers_id', $teacherId)
-            ->update(['t_status' => 0]);
-
-        $this->logActivity('updated', 'Unassigned ' . $teacher_name . '. No schedules left, status updated to Inactive.');
-        session()->flash('warning', 'Unassigned successfully. Teacher now has 0 schedules and is hidden.');
-    } else {
-        // They still have other classes, so keep t_status at 1
-        $this->logActivity('updated', 'Unassigned ' . $teacher_name . ' from one schedule. ' . $remainingSchedules . ' left.');
-        session()->flash('success', 'Schedule removed. Teacher still has ' . $remainingSchedules . ' classes.');
+public function view_products(Request $request) {
+ if ($request->ajax()) {
+        $data = DB::table('products')
+            ->join('category', 'products.category_ID', '=', 'category.category_ID')
+            ->select([
+                'products.product_ID', 
+                'products.product_name', 
+                'products.product_price',
+                'products.product_cost',
+                'products.category_ID',
+                'category.category_name as name'
+            ]);
+             return DataTables::of($data)
+            ->addColumn('action', function($row){
+                // We write the HTML for the button here
+                return '<button class="btn btn-sm btn-outline-success edit-btn" 
+                        data-id="'.$row->product_ID.'" 
+                        data-name="'.$row->product_name.'" 
+                        data-category="'.$row->name.'"
+                        data-category-ID="'.$row->category_ID.'"
+                        data-cost="'.$row->product_cost.'"
+                        data-price="'.$row->product_price.'">
+                      <i class="bi bi-pen"></i></button>';
+            })
+            ->rawColumns(['action']) // Tells Yajra to render HTML, not just text
+            ->make(true);
     }
+  
+     $categories = DB::table('category')->orderBy('category_name', 'ASC')->get();
+    $products = DB::table('products')->orderBy('product_name', 'ASC')->get();
+     
 
-    return redirect()->back();
-}
-
-
-public function update_teacher(Request $request) {
-    $teachers_id = $request->teachers_id;
-
-    // 1. Start with the basic data everyone has
-    $updateData = [
-        'email'         => $request->email,
-        'name'          => $request->name,
-        'teacher_major' => $request->major,  
-        'gender'        => $request->gender,
-        'age'           => $request->age,
-        'phone'         => $request->phone,
-    ];
-
-    // 2. Only add password to the update list if a new one was typed
-    // This prevents overwriting the existing password with an empty string or a double-hash
-    if ($request->filled('password')) {
-        $updateData['password'] = Hash::make($request->password);
-    }
-
-    // 3. Perform the update using the merged array
-    DB::table('teacher')
-        ->where('teachers_id', $teachers_id)
-        ->update($updateData);
-
-    // 4. Log the activity with the teacher's name
-    $this->logActivity(
-        'updated',
-        'Updated teacher info for: ' . $request->name . ' (ID: ' . $teachers_id . ')'
-    );
-
-    session()->flash('save', 'Teacher updated successfully.');
-    return redirect()->back();
+    return view('products', compact('categories', 'products'));
 }
 
 
 
 
-
-
-
-    public function view_products() {
-    // Get all records from 'teacher' table
-
-
-
-    $view_products = DB::table('products')
-        ->join('categories', 'products.category_id', '=', 'categories.category_id')
-        ->select('products.*', 'categories.name as name')
-        ->get();
-    // 2. Fetch all categories so your dropdown doesn't throw "Undefined variable"
-    $categories = DB::table('categories')->orderBy('name', 'ASC')->get();
-           
-
-    return view('products', compact('view_products', 'categories'));
-}
 
 public function save_product(Request $request)
 {
-//   dd($request->all(), $request->file());
-    // 1. Capture Input Data
-    $product_name = $request->input('product_name');
-    $category = $request->input('category_id');
-    $product_unit = $request->input('product_unit');
-    $product_unit_type = $request->input('product_unit_type');
-    $product_qts = $request->input('product_qts');
-
-    
-
-    // 2. Check if Product already exists
-    $check_exist = DB::table('products')->where('product_name', $product_name)->exists();
-    if ($check_exist) {
-        return redirect()->back()->with('errorMessage', 'Product already exists');
-    }
-
-  
-    // 4. Save to Database
-    DB::table('products')->insert([
-        'product_name'  => $product_name,
-        'category_id'      => $category,
-        'product_unit'     => $product_unit,
-        'product_qts' => $product_qts,
-        'product_unit_type' => $product_unit_type,
-        
-       
+ // 1. Validate the input
+    $request->validate([
+        'product_name'  => 'required|string',
+        'category_ID'   => 'required|integer',
+        'product_cost'  => 'required|numeric',
+        'product_price' => 'required|numeric',
     ]);
 
+    // 2. Link the data. 
+    // This finds the product by name and updates the category and prices.
+    // If the name doesn't exist, it creates a new row.
+    DB::table('products')->updateOrInsert(
+        ['product_name' => $request->product_name], // Search by name
+        [
+            'category_ID'   => $request->category_ID,
+            'product_cost'  => $request->product_cost,
+            'product_price' => $request->product_price,
+            'created_at'    => now(),
+            'updated_at'    => now()
+        ]
+    );
     // 5. Create Activity Log
-    $this->logActivity('added', 'Added Product for Name: ' . $product_name);
+    $this->logActivity('added', 'Added Product for Name: ' . $request->product_name);
     // 6. Success Feedback
     session()->flash('save', 'Product added successfully!');
     return redirect()->back();
 }
 
+public function update_product(Request $request) {
 
 
-
-
-
-        // SAVE SUBJECTS
-
-
-public function save_schedule(Request $request){
-    // ... (Your request variable setup is here) ...
-    $teacher_id = $request->teachers_id; 
-    $subject_id = $request->subject_id;
-    $section_id = $request->section_id;
-    $newday = $request->days;
-    $dayString = implode('-', $newday);
-    $start = $request->sub_Stime;
-    $end = $request->sub_Etime;
-    $schoolyear_name = $request->schoolyear_id; 
-
-    // Time validation and parsing
-    try {
-        $startTime = DateTime::createFromFormat('H:i', $start);
-        $endTime = DateTime::createFromFormat('H:i', $end);
-        if (!$startTime || !$endTime) {
-            throw new Exception('Invalid format');
-        }
-    } catch (Exception $e) {
-        return back()->with('error', 'Invalid time format. Please use HH:MM (24-hour).');
-    }
-    
-    // Check if start is before end
-    if ($startTime >= $endTime) {
-        return back()->with('error', 'Start time must be before end time.');
-    }
-
-    // Step 1: Get the grade from the subject (Needed for Step 3)
-    $grade_id = DB::table('subject')
-        ->where('subject_id', $subject_id)
-        ->value('grade_id');
-    if (!$grade_id) {
-        return back()->with('error', 'Subject not found. Please check your selection.');
-    }
-
-
-    // ----------------------------------------------------------------------
-    // 💥 REORDERED CONFLICT CHECKS START HERE 💥
-    // ----------------------------------------------------------------------
-
-
-    // Step 2: HIGHEST PRIORITY - Check for an EXACT duplicate schedule (Same time, section, day)
-    $duplicate = DB::table('schedules')
-        ->where('section_id', $section_id)
-        ->where('sub_date', $dayString)
-        ->where('sub_Stime', $start) // Exact match on start time
-        ->where('sub_Etime', $end)   // Exact match on end time
-        ->exists();
-    if ($duplicate) {
-        // NEED EDIT THE NAME 
-        return back()->with('error', 'Conflict! This exact schedule (Time, Section, and Days) already exists.');
-    }
-
-
-    // Step 3: Check for conflicts within the SAME SECTION (Time Overlap)
-    // This is the correct logic for preventing students from being double-booked.
-    $existingSectionSchedules = DB::table('schedules')
-        ->where('section_id', $section_id) // Filter by the specific section
-        ->get();
-        
-    foreach ($existingSectionSchedules as $sched) {
-        $existingDay = explode('-', $sched->sub_date);
-        $dayConflict = array_intersect($newday, $existingDay);
-        
-        if (!empty($dayConflict)) {
-            try {
-                // Robust Time Parsing (H:i:s is common in DB, H:i is from input)
-                $existingStartTime = DateTime::createFromFormat('H:i:s', $sched->sub_Stime)
-                                     ?: DateTime::createFromFormat('H:i', $sched->sub_Stime);
-                $existingEndTime = DateTime::createFromFormat('H:i:s', $sched->sub_Etime)
-                                   ?: DateTime::createFromFormat('H:i', $sched->sub_Etime);
-
-                if (!$existingStartTime || !$existingEndTime) {
-                    continue; // Skip invalid existing times
-                }
-            } catch (Exception $e) {
-                continue; 
-            }
-            
-            // Check for overlap: new start < existing end AND new end > existing start
-            if ($startTime < $existingEndTime && $endTime > $existingStartTime) {
-                return back()->with(
-                    'error',
-                    'Conflict! Section ' . $section_id . ' is already booked on ' . implode(', ', $dayConflict) . ' at this time.'
-                );
-            }
-        }
-    }
-    
-
-    // Step 4: Check for teacher conflicts (Time Overlap, only if assigned)
-    if ($teacher_id && $teacher_id != "0") {
-        $teacherSchedules = DB::table('schedules')
-            ->where('teachers_id', $teacher_id)
-            ->get();
-            
-        foreach ($teacherSchedules as $sched) {
-            $existingDay = explode('-', $sched->sub_date);
-            $dayConflict = array_intersect($newday, $existingDay);
-            
-            if (!empty($dayConflict)) {
-                try {
-                    // Robust Time Parsing
-                    $existingStartTime = DateTime::createFromFormat('H:i:s', $sched->sub_Stime)
-                                         ?: DateTime::createFromFormat('H:i', $sched->sub_Stime);
-                    $existingEndTime = DateTime::createFromFormat('H:i:s', $sched->sub_Etime)
-                                       ?: DateTime::createFromFormat('H:i', $sched->sub_Etime);
-                                       
-                    if (!$existingStartTime || !$existingEndTime) {
-                        continue; 
-                    }
-                } catch (Exception $e) {
-                    continue; 
-                }
-                
-                if ($startTime < $existingEndTime && $endTime > $existingStartTime) {
-                    return back()->with(
-                        'error',
-                        'Conflict! Teacher is busy on ' . implode(', ', $dayConflict) . ' at this time.'
-                    );
-                }
-            }
-        }
-    }
-    
-    // ----------------------------------------------------------------------
-    // 💥 CONFLICT CHECKS END HERE 💥
-    // ----------------------------------------------------------------------
-
-    // Step 5: Set status and save
-    $sched_status = ($teacher_id && $teacher_id != "0") ? 1 : 0;
-    
-    // Handle school year (Remaining code unchanged)
-    $existingYear = DB::table('school_year')
-        // ... (rest of your school year logic) ...
-        ->first();
-    if (!$existingYear) {
-        $schoolyear_ID = DB::table('school_year')->insertGetId([
-            'schoolyear_name' => $schoolyear_name
-        ]);
-    } else {
-        $schoolyear_ID = $existingYear->schoolyear_ID;
-    }
-    
-    // Try to insert
- try {
-    // 1. Check if a teacher is being assigned (avoid '0' or null)
-    if ($teacher_id && $teacher_id != "0") {
-        $scheduleCount = DB::table('schedules')
-            ->where('teachers_id', $teacher_id)
-            ->count();
-
-        // 2. Maximum Limit Check
-        if ($scheduleCount >= 5) {
-            return back()->with('error', 'Limit Reached: This instructor already has 5 maximum schedules assigned.');
-        }
-    }
-
-    // 3. Insert the Schedule
-    DB::table('schedules')->insert([
-        'subject_id'    => $subject_id,
-        'section_id'    => $section_id,
-        'grade_id'      => $grade_id,
-        'teachers_id'   => $teacher_id ?: 0,
-        'sub_date'      => $dayString,
-        'sub_Stime'     => $start,
-        'sub_Etime'     => $end,
-        'schoolyear_id' => $schoolyear_ID,
-        'sched_status'  => $sched_status,
-    ]);
-
-    // 4. Update Teacher Status ONLY if assigned
-    if ($teacher_id && $teacher_id != "0") {
-        DB::table('teacher')
-            ->where('teachers_id', $teacher_id)
-            ->update(['t_status' => 1]);
-    }
-
-    } catch (\Exception $e) {
-        return back()->with('error', 'Failed to save schedule: ' . $e->getMessage());
-    }
-
-    // --- Success Logic (Outside the Try Block) ---
-
-    // Fetch names for the activity log
-
-
-    $subject = DB::table('subject')->where('subject_id', $subject_id)->first();
-    $subject_name = $subject ? $subject->subject_name : 'unassigned';
-
-    $teacher_data = DB::table('teacher')->where('teachers_id', $teacher_id)->first();
-    $teacher_name = $teacher_data ? $teacher_data->name : 'Unassigned';
-
-    $this->logActivity(
-        'added',
-        'Added schedule for teacher name ' . $teacher_name . ', subject name ' . $subject_name
-    );
-
-    session()->flash('save', 'Schedule saved successfully!');
-    return redirect()->back();
-}
-
-  
-
-
-public function update_schedule(Request $request) {
-    $request->validate([
-        'schedule_id'   => 'required',
-        'subject_id'    => 'required|integer',
-        'teachers_id'   => 'required|integer', // The NEW teacher ID
-        'section_id'    => 'required|integer',
-        'schoolyear_id' => 'required|integer',
-        'days'          => 'required|array',
-        'sub_Stime'     => 'required',
-        'sub_Etime'     => 'required',
-    ]);
-
-    $schedule_id = $request->schedule_id;
-    $new_teacher_id = $request->teachers_id;
-
-    // 1. Get the OLD teacher ID before we perform the update
-    $old_schedule = DB::table('schedules')->where('schedule_id', $schedule_id)->first();
-    
-    if (!$old_schedule) {
-        return redirect()->back()->with('error', 'Schedule not found.');
-    }
-
-    $old_teacher_id = $old_schedule->teachers_id;
-
-    // 2. Perform the update on the schedule
-    $days = implode('-', $request->days);
-    DB::table('schedules')
-        ->where('schedule_id', $schedule_id)
+      
+    DB::table('products')
+        ->where('product_ID', $request->product_ID)
         ->update([
-            'subject_id'    => $request->subject_id,
-            'teachers_id'   => $new_teacher_id,
-            'section_id'    => $request->section_id,
-            'sub_date'      => $days,
-            'sub_Stime'     => $request->sub_Stime,
-            'sub_Etime'     => $request->sub_Etime,
-            'schoolyear_id' => $request->schoolyear_id,
-        ]);
-
-    // 3. Set the NEW teacher to 'Assigned' (1)
-    DB::table('teacher')
-        ->where('teachers_id', $new_teacher_id)
-        ->update(['t_status' => 1]);
-
-    // 4. Update the OLD teacher's status if the teacher was changed
-    // We only need to check this if the ID actually changed
-    if ($old_teacher_id && $old_teacher_id != $new_teacher_id) {
-        
-        // Count how many schedules the OLD teacher still has
-        $remaining_count = DB::table('schedules')
-            ->where('teachers_id', $old_teacher_id)
-            ->count();
-
-        // If they have no more schedules, set status to Unassigned (0)
-        if ($remaining_count === 0) {
-            DB::table('teacher')
-                ->where('teachers_id', $old_teacher_id)
-                ->update(['t_status' => 0]);
-        }
-    }
-
-    // 5. Activity Logging
-    $new_teacher = DB::table('teacher')->where('teachers_id', $new_teacher_id)->first();
-    $teacher_name = $new_teacher ? ($new_teacher->name) : 'Unknown';
-
-    $this->logActivity(
-        'updated',
-        'Updated schedule ID ' . $schedule_id . '. Assigned to: ' . $teacher_name
-    );
-
-    session()->flash('save', 'Schedule updated successfully!');
-    return redirect()->back();
-}
-
-public function delete_schedule(Request $request) {
-    $teacher_id = $request->teachers_id;
-    $schedule_id = $request->schedule_id;
-
-    // 1. Delete the schedule
-    DB::table('schedules')->where('schedule_id', $schedule_id)->delete();
-
-    // 2. Only proceed if there was a teacher assigned
-    if ($teacher_id && $teacher_id != "0") {
-        
-        // Count remaining schedules for this teacher
-        $remainingSchedules = DB::table('schedules')
-            ->where('teachers_id', $teacher_id)
-            ->count();
-
-        // 3. Status Condition
-        if ($remainingSchedules == 0) {
-            // No more classes? Deactivate (hide from active list)
-            DB::table('teacher')
-                ->where('teachers_id', $teacher_id)
-                ->update(['t_status' => 0]);
-                
-            session()->flash('deletschedule', 'Schedule deleted. Teacher has 0 classes left and is now unassigned.');
-        } else {
-            // Still has classes? Keep them active
-            session()->flash('save', 'Schedule deleted. Teacher still has ' . $remainingSchedules . ' classes.');
-        }
-    } else {
-        session()->flash('save', 'Schedule deleted successfully.');
-    }
-
-    return redirect()->back();
-}
-
-   
-
-
-// public function set_system_schoolyear(Request $request)
-// {
-//     $selectedSchoolYear = $request->input('filter_schoolyear_name'); // string like "2025-2026"
-
-//     if ($selectedSchoolYear) {
-//         session(['system_schoolyear' => $selectedSchoolYear]);
-//     }
-
-//     return redirect()->back(); // redirect to dashboard or current page
-// }
-
-
-
-
-
-
-
-    public function updateTeacherStatus($teachers_id) {
-
-        $count = DB::table('schedules')
-        ->where('teachers_id', $teachers_id)
-        ->count();
-
-        DB::table('teacher')
-        ->where('teachers_id', $teachers_id)
-        ->update([
-            't_status' => ($count > 0) ? 1 : 0 // 1 = Assigned, 0 = Unassigned
-        ]);
-
-    }
-
-
-public function teacher_loads(Request $request)
-{
-    // 1. Get the selected school year from the request
-    $selected_year_id = $request->get('schoolyear_id'); 
-    // dd($selected_year_id);
-    // Fetch available school years for the dropdown
-    $school_years_map = DB::table('school_year')->pluck('schoolyear_name', 'schoolyear_id');
-    
-    // Initialize empty collection and array
-    $teachers = collect(); 
-    $teacher_loads = [];   
-
-    // 2. Logic: Show ALL teachers ONLY if a year is selected
-    if ($selected_year_id) {
-    
-    // Fetch only the sections that have schedules in the selected year.
-    $teachers = DB::table('teacher')
-        // CORRECTED JOIN: Match section.section_id with schedules.section_id
-        ->join('schedules', 'teacher.teachers_id', '=', 'schedules.teachers_id') 
-        ->where('schedules.schoolyear_id', $selected_year_id)
-        ->distinct() // Ensure each teacher only appears once
-        ->select('teacher.*') // Select all columns from the section table
-        ->get();
-        
-        // 3. Fetch specific schedules for each teacher for the chosen year
-        foreach ($teachers as $teacher) {
-            $teacher_loads[$teacher->teachers_id] = DB::table('schedules')
-                ->join('subject', 'schedules.subject_id', '=', 'subject.subject_id')
-                ->join('grade_level', 'schedules.grade_id', '=', 'grade_level.grade_id')
-                ->join('section', 'schedules.section_id', '=', 'section.section_id')
-                ->select(
-                    'schedules.*', 
-                    'subject.subject_name as sub_name',
-                    'grade_level.grade_title as grade_name',
-                    'section.section_name as sec_name',
-                ) 
-                ->where('schedules.teachers_id', $teacher->teachers_id)
-                ->where('schedules.schoolyear_id', $selected_year_id) // Filter loads by chosen year
-                ->get();
-        }
-    }
-    
-    return view('teacher_loadView', compact('teachers', 'teacher_loads', 'school_years_map', 'selected_year_id'));
-}
-
-
-public function section_loads(Request $request)
-{
-    // 1. Get the selected school year from the request
-    $selected_year_id = $request->get('schoolyear_id'); 
-    // dd($selected_year_id);
-    // Fetch available school years for the dropdown
-    $school_years_map = DB::table('school_year')->pluck('schoolyear_name', 'schoolyear_id');
-    
-    // Initialize empty collection and array
-    $sections = collect(); 
-    $section_loads = [];   
-
-    // 2. Logic: Show ALL teachers ONLY if a year is selected
-    if ($selected_year_id) {
-    
-    // Fetch only the sections that have schedules in the selected year.
-    $sections = DB::table('section')
-        // CORRECTED JOIN: Match section.section_id with schedules.section_id
-        ->join('schedules', 'section.section_id', '=', 'schedules.section_id') 
-        ->where('schedules.schoolyear_id', $selected_year_id)
-        ->distinct() // Ensure each teacher only appears once
-        ->select('section.*') // Select all columns from the section table
-        ->get();
-        
-        // 3. Fetch specific schedules for each teacher for the chosen year
-        foreach ($sections as $section) {
-            $section_loads[$section->section_id] = DB::table('section')
-                ->join('schedules', 'section.section_id', '=', 'schedules.section_id') 
-                ->join('subject', 'schedules.subject_id', '=', 'subject.subject_id')
-                ->join('grade_level', 'schedules.grade_id', '=', 'grade_level.grade_id')
-                ->select(
-                    'schedules.*', 
-                    'subject.subject_name as sub_name',
-                    'grade_level.grade_title as grade_name',
-                ) 
-                ->where('schedules.section_id', $section->section_id)
-                ->where('schedules.schoolyear_id', $selected_year_id) // Filter loads by chosen year
-                ->get();
-        }
-    }
-    
-    return view('section_loadView', compact('sections', 'section_loads', 'school_years_map', 'selected_year_id'));
-}
-
-
-
-
-
-public function print_section_load($id, $year)
-{
-    $section = DB::table('section')->where('section_id', $id)->first();
-    $schoolyear = DB::table('school_year')->where('schoolyear_id', $year)->first();
-
-    $loads = DB::table('schedules')
-        ->join('subject', 'schedules.subject_id', '=', 'subject.subject_id')
-        ->join('teacher', 'schedules.teachers_id', '=', 'teacher.teachers_id')
-        ->join('grade_level', 'schedules.grade_id', '=', 'grade_level.grade_id')
-        ->where('schedules.section_id', $id)
-        ->where('schedules.schoolyear_id', $year)
-        ->select(
-            'schedules.*', 
-            'subject.subject_name', 
-            'teacher.name as teacher_name', 
-            'grade_level.grade_title'
-        )
-        ->orderBy('schedules.sub_Stime', 'asc')
-        ->get();
-
-    $pdf = Pdf::loadView('pdf.section_load_print', compact('section', 'loads', 'schoolyear'));
-    
-    // Set paper to A4 Portrait
-    return $pdf->setPaper('a4', 'portrait')->stream('Section_'.$section->section_name.'.pdf');
-}
-
-public function print_teacher_load($id, $year)
-{
-    // Fetch Teacher and School Year
-    $teacher = DB::table('teacher')->where('teachers_id', $id)->first();
-    $schoolyear = DB::table('school_year')->where('schoolyear_id', $year)->first();
-
-    // Fetch the schedules and JOIN the section table to get names
-    $loads = DB::table('schedules')
-        ->join('subject', 'schedules.subject_id', '=', 'subject.subject_id')
-        ->join('section', 'schedules.section_id', '=', 'section.section_id')
-        ->join('grade_level', 'schedules.grade_id', '=', 'grade_level.grade_id')
-        ->where('schedules.teachers_id', $id)
-        ->where('schedules.schoolyear_id', $year)
-        ->select(
-            'subject.subject_name',
-            'section.section_name', // This is what you need for the table
-            'grade_level.grade_title',
-            'schedules.sub_date',
-            'schedules.sub_Stime',
-            'schedules.sub_Etime'
-        )
-        ->get();
-
-    // Pass ONLY teacher, loads, and schoolyear to the view
-    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.teacher_load_print', compact('teacher', 'loads', 'schoolyear'));
-    
-    return $pdf->setPaper('a4', 'portrait')->stream('Teacher_Load_'.$teacher->name.'.pdf');
-}
-
-   
-        // VIEW SCHEDULES
-
-public function view_schedule() {
-    // 1. Fetch existing schedules for the table
-    $view_schedule = DB::table('schedules')
-        ->leftJoin('teacher', 'schedules.teachers_id', '=', 'teacher.teachers_id')
-        ->leftJoin('grade_level', 'schedules.grade_id', '=', 'grade_level.grade_id')
-        ->leftJoin('subject', 'schedules.subject_id', '=', 'subject.subject_id')
-        ->leftJoin('status', 'status.status_id', '=', 'schedules.sched_status')
-        ->leftJoin('section', 'schedules.section_id', '=', 'section.section_id')
-        ->leftJoin('school_year', 'schedules.schoolyear_id', '=', 'school_year.schoolyear_ID')
-        ->select(
-            'schedules.*',
-            'teacher.name as teacher_name',
-            'grade_level.grade_title as grade_name',
-            'subject.subject_name as sub_name',
-            'section.section_name as sec_name',
-            'status.status_name',
-            'school_year.schoolyear_name'
-        )
-        ->get();
-
-    // 2. Fetch Subjects JOINED with Grade Level for the Dropdown
-    $subject = DB::table('subject')
-        ->join('grade_level', 'subject.grade_id', '=', 'grade_level.grade_id')
-        ->select('subject.subject_id', 'subject.subject_name', 'grade_level.grade_title as grade_name')
-        ->get();
-
-         $section = DB::table('section')
-        ->join('grade_level', 'section.grade_id', '=', 'grade_level.grade_id')
-        ->select('section.section_id', 'section.section_name', 'grade_level.grade_title as grade_name')
-        ->get();
-
-    // 3. Fetch other dropdown data
-    $teachers = DB::table('teacher')
-        ->whereRaw('(SELECT COUNT(*) FROM schedules WHERE schedules.teachers_id = teacher.teachers_id) < 5')
-        ->get();
-
-    $grade = DB::table('grade_level')->get();
-    $school_year = DB::table('school_year')->get();
-
-    return view('schedule', compact('view_schedule', 'subject', 'teachers', 'section', 'school_year', 'grade'));
-}
-
-
-
-
-
-
-
-
-
-public function update_subject(Request $request) {
-
-    $update_subject = DB::table('schedules')
-        ->where('teacher-id', $request->teacher_id)
-        ->where('sub_id', '!=', $request->sub_id)
-        ->count();
-
-
-        if($update_subject >= 5) {
-            return redirect()->back()->with('error', 'This teacher is already assigned to another subject.');
-        }
-
-    DB::table('schedules')
-        ->where('sub_id', $request->sub_id)
-        ->update([
-            'sub_code' => $request->sub_code,
-            'sub_name' => $request->sub_name,
-            'teachers_id' => $request->teachers_id,
-            'sub_date' => $request->sub_date,
-            'sub_Stime' => $request->sub_Stime,
-            'sub_Etime' => $request->sub_Etime,
+            'product_ID' => $request->product_ID,
+            'product_name' => $request->product_name,
+            'category_ID' => $request->category_ID,
+            'product_price' => $request->price,
+            'product_cost' => $request->cost,
+      
         ]);
         $this->logActivity(
     'updated',
-    'Updated subject ID ' . $request->sub_id . ' to ' . $request->sub_name
-);
-    return redirect()->back()->with('success', 'Subject updated successfully.');
+    'Updated product ID ' . $request->product_ID . ' to ' . $request->product_name
+ );
+   return response()->json(['success' => 'Product updated successfully.']);
 
 }
 
 
 
-        // TEACHERS
+public function save_inventory(Request $request){
+    $inventory_ID = $request->inventory_ID;
+    $product_ID = $request->product_ID; 
+    $category_ID = $request->category_ID;
+    $StartingQuantity = $request->product_StartingQuantity;
+   
+  
 
+    // Step 2: HIGHEST PRIORITY - Check for an EXACT duplicate schedule (Same time, section, day)
+    $duplicate = DB::table('inventory')
+        ->where('category_ID', $category_ID)
+        ->where('product_ID', $product_ID)
+        ->where('invt_StartingQuantity', $StartingQuantity)
+        ->exists();
+    if ($duplicate) {
+        // NEED EDIT THE NAME 
+        return back()->with('error', 'Product with the same category already exists.');
+    }
 
-     public function teachers() {
-        $teachers = DB::table('teacher')->get();
-        return view('schedule', compact('schedule', 'teachers'));
-
-     }
-
-     public function subject() {
-        $subject = DB::table('subject')->get();
-        return view('schedule', compact('schedule', 'subject'));
-
-     }
-
-
-
-
-        // TEACHERS STATUS
-
-     public function teacher_status() {
-        $teacher_status = DB::table('teacher')
-            ->join('status', 'status.status_id', '=', 'teacher.t_status')
-             ->select(
-            'teacher.name',
-            'teacher.lastname',
-            'teacher.age',
-            'teacher.phone',
-            'status.status_name'
-        )
-            // ->where('t_status', 1) // Assuming 1 indicates 'active' status
-            ->get();
-
-        return view('teachers', compact('teacher_status'));
+    $status_ID = 1; // Assuming new inventory is always "In Stock"
+    if($StartingQuantity <= 5){
+        $status_ID = 2; // "Low Stock"
+    } elseif($StartingQuantity == 0){
+        $status_ID = 3; // "Out of Stock"
+    } elseif($StartingQuantity > 5){
+        $status_ID = 1; // "In Stock"
     }
 
 
+    DB::table('inventory')
+    ->insert([
+        'product_ID' => $product_ID,
+        'category_ID' => $category_ID,
+        'invt_StartingQuantity' => $StartingQuantity,
+        'status_ID' => $status_ID
+    ]);
+
+  
+
+  
+    $products = DB::table('products')->where('product_ID', $product_ID)->first();
+    $categories = DB::table('category')->where('category_ID', $category_ID)->first();
+   
+
+    $this->logActivity(
+        'added',
+        'Added inventory for product ID ' . $product_ID . ', category name ' . $categories->category_name
+    );
+  
+    session()->flash('save', 'Inventory saved successfully!');
+    return redirect()->back();
+}
 
 
 
+   
+        // VIEW INVENTORY
+
+public function view_inventory(Request $request) {
+    // 1. Handle DataTable AJAX (Refresh only the table)
+    if ($request->ajax() && !$request->has('get_chart')) {
+        $data = DB::table('inventory')
+            ->Join('products', 'inventory.product_ID', '=', 'products.product_ID')
+            ->Join('category', 'products.category_ID', '=', 'category.category_ID');
+                                // FILTERS:
+                    if ($request->category_id_table && $request->category_id_table != 'all') {
+                        $data->where('category.category_ID', $request->category_id_table);
+                    }
+
+                    if ($request->product_id_table && $request->product_id_table != 'all') {
+                        $data->where('products.product_ID', $request->product_id_table);
+                    }
+            $data->select([
+                'inventory.inventory_ID',
+                'products.product_name as product_name', 
+                'category.category_name as name',
+                'products.product_price',
+                'products.product_cost',
+                'inventory.invt_NewQuantity',
+                'inventory.invt_StartingQuantity',
+                'inventory.invt_remainingStock',
+                'inventory.invt_totalSold',
+                'inventory.status_ID',
+                'inventory.product_ID',
+                'inventory.category_ID',
+
+
+            ]);
+        return DataTables::of($data)
+            ->addColumn('action', function($row){
+                return '<button class="btn btn-sm btn-outline-success edit-btn" 
+                        data-inventory-id="'.$row->inventory_ID.'"
+                        data-product-id="'.$row->product_ID.'"
+                        data-product-name="'.$row->product_name.'"
+                        data-category="'.$row->name.'"
+                        data-category-ID="'.$row->category_ID.'"
+                        data-cost="'.$row->product_cost.'"
+                        data-price="'.$row->product_price.'"
+                        data-update_NewQuantity="'.$row->invt_NewQuantity.'"
+                        data-update_remainingstock="'.$row->invt_remainingStock. '">
+                        <i class="bi bi-pen"></i></button>';
+            })
+            ->rawColumns(['action'])
+            ->make(true);
+    }
+
+
+    // Handle Chart AJAX ONLY (Refresh only the chart)
+    if ($request->ajax() && $request->has('get_chart')) {
+        $query = DB::table('inventory')
+            ->join('products', 'inventory.product_ID', '=', 'products.product_ID')
+            ->select('products.product_name as name', 'inventory.invt_totalSold as sold', 'inventory.invt_remainingStock as remaining')
+            ->where('inventory.invt_totalSold', '>', 0);
+
+        if ($request->category_id != 'all') {
+            $query->where('products.category_ID', $request->category_id);
+        }
+
+        return response()->json($query->orderBy('sold', 'desc')->limit(12)->get());
+    }
+
+    // 3. NORMAL PAGE LOAD (Initial data)
+    $categories = DB::table('category')->orderBy('category_name', 'ASC')->get(); 
+    $products = DB::table('products')->orderBy('product_name', 'ASC')->get(); 
+    $selectedCategory = $request->query('category_id', 'all');
+
+ 
+
+    // Summary Stats for Cards
+    $totalProducts = DB::table('inventory')->count();  
+    $totalQuantity = DB::table('inventory')->sum('invt_remainingStock');  
+    $totalSold = DB::table('inventory')->sum('invt_totalSold');
+    $instockProducts = DB::table('inventory')->where('status_ID', 1)->count();
+    $lowStockProducts = DB::table('inventory')->where('status_ID', 2)->count();
+    $outOfStock = DB::table('inventory')->where('status_ID', 3)->count();    
+
+    return view('inventory', compact(
+        'categories', 
+        'totalProducts', 
+        'instockProducts', 
+        'lowStockProducts', 
+        'outOfStock', 
+        'totalQuantity', 
+        'selectedCategory',
+        'products',
+        'totalSold'
         
-   public function save_student(Request $request){
+    ));
+}
+  
+    
+public function update_inventory(Request $request) {
+    // 1. Get the current record from the database
+    $inventory = DB::table('inventory')
+        ->where('inventory_ID', $request->inventory_ID)
+        ->first();
+
+    if (!$inventory) {
+        return response()->json(['error' => 'Record not found'], 404);
+    }
+
+    // 2. Treat the input as "New Stock Arriving Today"
+    $incomingStock = (int)$request->update_NewQuantity; 
+
+    // 3. Update the monthly "New Quantity" counter
+    // We add today's arrival to whatever was already added this month
+    $updatedMonthlyNew = $inventory->invt_NewQuantity + $incomingStock;
+
+    // 4. THE CORE FORMULA:
+    // (Starting Stock from Rollover + Total New Stock this month) - Total Sold this month
+    $totalRemaining = ($inventory->invt_StartingQuantity + $updatedMonthlyNew) - $inventory->invt_totalSold;
+
+    // 5. Determine Status based on the result
+    $status_ID = 1; // In Stock
+    if ($totalRemaining <= 0) {
+        $status_ID = 3; // Out of Stock
+        $totalRemaining = 0; 
+    } elseif ($totalRemaining <= 5) {
+        $status_ID = 2; // Low Stock
+    }
+
+    // 6. Update the Database
+    $affected = DB::table('inventory')
+        ->where('inventory_ID', $request->inventory_ID)
+        ->update([
+            'invt_NewQuantity'    => $updatedMonthlyNew,
+            'invt_remainingStock' => $totalRemaining,
+            'status_ID'           => $status_ID,
+            'updated_at'          => now(),
+        ]);
+
+    return response()->json([
+        'success' => 'Stock added! Formula applied: (Starting + New) - Sold',
+        'debug' => [
+            'new_starting' => $inventory->invt_StartingQuantity,
+            'monthly_additions' => $updatedMonthlyNew,
+            'total_sold' => $inventory->invt_totalSold,
+            'final_remaining' => $totalRemaining
+        ]
+    ]);
+}
+
+  
+public function import_pos_sales(Request $request) 
+{
+    $request->validate(['pos_import'], [
+        'pos_import' => 'required|mimes:xls,xlsx,csv']);
+
+    $file = $request->file('pos_import');
+    $fileHash = md5_file($file->getRealPath());
+
+    // Check for duplicates
+    $exists = DB::table('import_logs')->where('FileHash', $fileHash)->exists();
+    if ($exists) {
+        return response()->json(['error' => 'This file has already been imported.'], 422);
+    }
+
+    $fileName = time() . '_' . $file->getClientOriginalName();
+    $filePath = $file->storeAs('pos_import', $fileName, 'public');
+
+   
+    $importLogID = DB::table('import_logs')->insertGetId([
+        'FileName'    => $fileName,
+        'FilePath'    => $filePath,
+        'FileHash'    => $fileHash,
+        'Status'      => 'Success', // Ensure this matches your Varchar/Enum
+        'UploadedBy'  => session('urs_id') ?? 1, // Fallback to 1 for testing
+        'Uploaded_At' => now()
+    ]);
+
+    // Now pass that ID to the Import class
+    Excel::import(new POSsaleImport($importLogID), storage_path('app/public/' . $filePath));
+
+    return response()->json(['success' => 'Import completed and inventory updated!']);
+}
 
 
 
+public function getProductsByCategory($id) {
 
+        $products = DB::table('products')
+        ->leftJoin('inventory', 'products.product_ID', '=', 'inventory.product_ID')
+            ->leftJoin('batches', 'products.product_ID', '=', 'batches.product_ID')
+            ->where('products.category_ID', $id)
+            ->select([
+                'products.product_ID', 
+                'products.product_name', 
+                'products.product_price',
+                'products.product_cost',
+                'batches.quantity as batch_quantity',
+                DB::raw('IFNULL(inventory.invt_StartingQuantity, 0) as current_stock'),
+            ])
+            
+            ->get();
 
-    // 2. Save the new subject
-   $save_student = DB::table('students')->insert([
-        'student_firstname' => $request->student_firstname,
-        'student_lastname' => $request-> student_lastname,
+            
+        return response()->json($products);
+}
 
+public function add_new_inventory(Request $request)
+        {
+            $validated = $request->validate([
+                'product_ID' => ['required', 'integer'],
+             
+                'batch_quantity' => ['required', 'integer', 'min:1'],
+             
+            ]);
+
+            $product_ID = (int) $validated['product_ID'];
+           
+            $incomingQty = (int) $validated['batch_quantity'];
+
+            DB::beginTransaction();
+
+            try {
+                $product = DB::table('products')->where('product_ID', $product_ID)->lockForUpdate()->first();
+                if (!$product) {
+                    DB::rollBack();
+                    return back()->with('error', 'Product not found.');
+                }
+
+                // 2) INVENTORY UPDATE
+                $inventory = DB::table('inventory')->where('product_ID', $product_ID)->lockForUpdate()->first();
+                
+              
+
+                if (!$inventory) {
+                    DB::table('inventory')->insert([
+                        'product_ID'            => $product_ID,
+                        'category_ID'           => $product->category_ID,
+                        'invt_StartingQuantity' => $incomingQty, 
+                        'invt_NewQuantity'      => 0,
+                        'invt_totalSold'        => 0,
+                        'invt_remainingStock'   => 0,
+                        'status_ID'             => 1,
+                        'created_at'            => now(),
+                        'updated_at'            => now(),
+                    ]);
+                } elseif ($incomingQty > 0){
+                    DB::table('inventory')->where('product_ID', $product_ID)->update([
+                        'invt_NewQuantity' => $incomingQty,
+                        'updated_at' => now(),
+                    ]);
+                } else {
+                    $currentSold = (int) ($inventory->invt_totalSold ?? 0);
+                    $currentNew  = (int) ($inventory->invt_NewQuantity ?? 0);
+                    
+                    $totalRemaining = ($incomingQty + $currentNew) - $currentSold;
+
+                    DB::table('inventory')
+                        ->where('product_ID', $product_ID)
+                        ->update([
+                            'invt_StartingQuantity' => $incomingQty, 
+                            'invt_remainingStock'   => $totalRemaining,
+                            'updated_at'            => now(),
+                        ]);
+                }
+
+                DB::commit();
+                return back()->with('save', 'Inventory updated successfully.');
+
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                return back()->with('errorMessage', 'Error: ' . $e->getMessage());
+            }
+}
+
+public function inventory_rollover(Request $request) {
+    if (session('user_role') !== 'admin') {
+        return response()->json(['error' => 'Permission denied.'], 403);
+    }
+
+    DB::beginTransaction();
+    try {
+        $items = DB::table('inventory')->get();
+        $timestamp = now();
+
+        foreach ($items as $item) {
+            // 1. ARCHIVE: Save current data to history table
+            DB::table('inventory_history')->insert([
+                'product_ID'    => $item->product_ID,
+                'starting_qty'  => $item->invt_StartingQuantity ?? 0,
+                'added_qty'     => $item->invt_NewQuantity ?? 0,
+                'sold_qty'      => $item->invt_totalSold ?? 0,
+                'closing_stock' => $item->invt_remainingStock ?? 0,
+                'snapshot_date' => $timestamp,
+                'created_at'    => $timestamp,
+            ]);
+
+            // 2. RESET: Update the main inventory table for the new month
+            DB::table('inventory')
+                ->where('inventory_ID', $item->inventory_ID)
+                ->update([
+                    'invt_StartingQuantity' => $item->invt_remainingStock ?? 0,
+                    'invt_NewQuantity'      => 0,
+                    'invt_totalSold'        => 0,
+                    'invt_remainingStock'   => 0,
+                    'updated_at'            => $timestamp
+                ]);
+        }
+
+        DB::commit();
+        return response()->json(['success' => 'Month closed! History saved and balances reset.']);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json(['error' => 'System error: ' . $e->getMessage()], 500);
+    }
+}
+
+public function purchase_invoice(Request $request)
+{
+    // 1. Fetch Purchases with Supplier info
+    $query = DB::table('purchases')
+        ->join('suppliers', 'purchases.supplier_id', '=', 'suppliers.supplier_id')
+        ->select([
+            'purchases.*',
+            'suppliers.supplier_name'
+        ]);
+
+    // Apply filter if selected
+    if ($request->supplier_id) {
+        $query->where('purchases.supplier_id', $request->supplier_id);
+    }
+
+    $purchases = $query->latest('purchases.created_at')->get();
+
+    // 2. Fetch all Items and group them by invoice_id for the modals
+    $purchase_items = DB::table('purchase_items')
+        ->join('products', 'purchase_items.product_id', '=', 'products.product_ID')
+        ->join('uom', 'purchase_items.uom_ID', '=', 'uom.uom_ID')
+        ->select([
+            'purchase_items.*',
+            'products.product_name',
+            'uom.uom_title'
+        ])
+        ->get()
+        ->groupBy('purchase_id'); // Ensure this matches your FK column
+
+    // 3. Dropdown data
+    $suppliers = DB::table('suppliers')->orderBy('supplier_name', 'ASC')->get();
+    $products  = DB::table('products')->orderBy('product_name', 'ASC')->get();
+    $uoms      = DB::table('uom')->get();
+
+    return view('purchase_invoice', compact('suppliers', 'purchases', 'products', 'uoms', 'purchase_items'));
+}
+
+public function getPaymentHistory($id)
+{
+    // Fetch payments related to this purchase
+    $payments = DB::table('payments') // Or whatever your payment table is called
+        ->where('purchase_id', $id)
+        ->orderBy('payment_date', 'desc')
+        ->get();
+
+    return response()->json($payments);
+}
+
+public function storePayment(Request $request) 
+{
+    // $request->validate([
+    //     'purchase_id' => 'required',
+    //     'amount_paid' => 'required|numeric|min:0',
+    //     'payment_date' => 'required|date',
+    //     'payment_method' => 'required'
+    // ]);
+
+    // Use a transaction to ensure both tables update or neither does
+    DB::transaction(function () use ($request) {
+        // 1. Log payment
+        DB::table('payments')->insert([
+            'purchase_id' => $request->purchase_id,
+            'amount_paid' => $request->amount_paid,
+            'payment_date' => $request->payment_date,
+            'payment_method' => $request->payment_method,
+            'old_remaining_balance'=> $request->old_remaining_balance,
+            'reference_number' => $request->reference_number,
+            'created_at' => now()
+        ]);
+
+        // 2. Update purchase
+        $p = DB::table('purchases')->where('purchase_id', $request->purchase_id)->first();
+        $totalPaid = ($p->total_paid_sum ?? 0) + $request->amount_paid;
+        $status = ($totalPaid >= $p->net_amount) ? 'Paid' : 'Partial';
+
+        DB::table('purchases')->where('purchase_id', $request->purchase_id)->update([
+            'total_paid' => $totalPaid,
+            'status' => $status
+        ]);
+    });
+
+    return redirect()->back()->with('save', 'Payment recorded!');
+}
+
+public function saveInvoiceAndItem(Request $request)
+{   
+    // dd($request->all());
+        //     // Validate the incoming data
+        //    $request->validate([
+        //     'supplier_id' => 'required',
+        //     'invoice_number' => 'required',
+        //     'product_name.*' => 'required',
+        //     'quantity.*' => 'required|numeric|min:1', // Add this
+        //     'unit_price.*' => 'required|numeric',    // Add this
+        // ]);
+
+    DB::beginTransaction();
+
+   try {
+    // 1. Save the Main Invoice
+    $invoiceId = DB::table('purchases')->insertGetId([
+        'supplier_id'    => $request->supplier_id,
+        'invoice_number'     => $request->invoice_number,
+        'invoice_date'   => $request->invoice_date,
+        'gross_amount'    => $request->gross_total_raw,
+        'vat_amount'     => $request->vat_amount_raw,
+        'net_amount'    => $request->grand_total_raw,
+        'due_date'      => $request->due_date,
+        'invoice_date' => $request->invoice_date,
+        'created_at'     => now(),
+        'updated_at'        => now(),
     ]);
 
 
 
-    return redirect()->back()->with('success', 'Student added successfully!');
+        foreach ($request->product_name as $key => $name) {
+            $product = DB::table('products')->where('product_name', $name)->first();
 
+            if (!$product) {
+                $productId = DB::table('products')->insertGetId([
+                    'product_name' => $name,
+                    // 'uom_ID'       => $request->uom[$key],
+                    'created_at'   => now(),
+                    'updated_at'   => now(),
+                ]);
+            } else {
+            
+                $productId = $product->product_ID; 
+            }
 
+      $purchaseItemID = DB::table('purchase_items')->insertGetId([
+            'purchase_id'        => $invoiceId,
+            'product_id'        => $productId,
+            'uom_quantity'  => $request->quantity[$key],
+            'uom_ID'            => $request->uom[$key],
+            'quantity_per_uom' => $request->quantity_per_unit[$key],
+            'unit_tie'          => $request->tie_number[$key],
+            'unit_price'        => $request->unit_price[$key],
+            'total_price'       => $request->quantity[$key] * ($request->quantity_per_unit[$key] * $request->tie_number[$key] * $request->unit_price[$key]),
+            'created_at'        => now(),
+            'updated_at'        => now(),
+        ]);
+
+         $batchId = DB::table('batches')->insert([
+        'purchase_item_id' => $purchaseItemID,
+        'product_id' => $productId,
+        'batch_code' => $request->batch_number,
+        'mfg_date' => $request->mfg_date,
+        'expiration_date' => $request->exp_date,
+        'quantity' => $request->quantity_per_unit[$key] * ($request-> tie_number[$key]),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
     }
 
-     public function view_student() {
+    DB::commit();
+    // Use the session key 'save' to match your 'with' call
+    return redirect()->route('add_invoice')->with('save', 'Invoice saved successfully!');
 
-
-       $view_student = DB::table('students') ->get();
-
-
-
-
-
-    return view('student', compact('view_student'));
-
-
+    } catch (\Exception $e) {
+        DB::rollback();
+        // Return with the error message so you can see what went wrong
+        return back()->with('errorMessage', 'Error: ' . $e->getMessage());
+    }
 }
 
-   
+
+
+
+
+public function add_invoice(Request $request)
+{
+    //  1. Fetch data using Eloquent (latest first)
+    $query = Purchase::with('supplier')->withSum('payments as total_paid_sum', 'amount_paid')->latest();
+
+    // 2. Apply your existing filters
+    if ($request->supplier_id) {
+        $query->where('supplier_id', $request->supplier_id);
+    }
+    
+    $purchases_data = $query->get();
+
+    // 2. AJAX Response
+    if ($request->ajax()) {
+        return response()->json(['data' => $purchases_data]);
+    }
+
+    // 3. Normal Load Variables (Ensure lowercase names!)
+    $suppliers = DB::table('suppliers')->orderBy('supplier_name', 'ASC')->get();
+    $products  = DB::table('products')->orderBy('product_name', 'ASC')->get();
+    $uoms      = DB::table('uom')->get();
+    $purchases = $purchases_data;
+
+ return view('add_invoice', compact('suppliers', 'purchases', 'products', 'uoms'));
+}
+
+
+
 
         // LOG OUT
 
-    public function logout(Request $request)
+public function logout(Request $request)
 {
     // 1. Tell Laravel's Auth system to log the current user out.
     Auth::logout();
