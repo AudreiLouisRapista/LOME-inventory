@@ -28,6 +28,7 @@ node_modules/** linguist-vendored
 # This acts as a safety net so stray library files don't spike your stats
 *.js linguist-vendored
 *.css linguist-vendored
+*.js linguist-vendored
 
 # --- 5. CLEANUP ---
 *.md diff=markdown
