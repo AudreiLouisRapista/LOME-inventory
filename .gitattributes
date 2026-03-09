@@ -1,6 +1,6 @@
 * text=auto eol=lf
 
-# --- PRIORITY 1: BLADE (THE KING) ---
+# --- PRIORITY 1: BLADE ---
 # We use 'linguist-weight' to force Blade to the very top
 *.blade.php linguist-language=Blade
 *.blade.php linguist-detectable=true
@@ -21,7 +21,7 @@ resources/css/*.css linguist-detectable=true
 
 # --- HIDE THE NOISE (VENDORED) ---
 # This is the most important part to drop that 51.9% CSS
-public/plugins/** linguist-vendored
+
 public/dist/** linguist-vendored
 public/pages/** linguist-vendored
 public/build/** linguist-vendored
