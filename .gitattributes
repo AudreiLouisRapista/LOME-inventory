@@ -33,4 +33,4 @@ node_modules/** linguist-vendored
 *.md diff=markdown
 /.github export-ignore
 CHANGELOG.md export-ignore
-.styleci.yml export-ignore
+.styleci.yml export-ignore  
