@@ -225,7 +225,7 @@
         </div>
     </div>
 
-    <link rel="stylesheet" href="{{ asset('css/add_invoice.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/pages/add_invoice.css') }}">
 @endsection
 
 @section('scripts src')
