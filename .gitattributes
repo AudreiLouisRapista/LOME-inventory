@@ -1,31 +1,31 @@
 * text=auto eol=lf
 
-# --- 1. THE LEADERS: BLADE & PHP ---
-# We use 'linguist-language' to ensure Blade isn't counted as HTML
+# --- 1. THE KINGS: BLADE & PHP (Target: 90% combined) ---
 *.blade.php linguist-language=Blade
 *.blade.php linguist-detectable=true
 resources/**/*.blade.php linguist-detectable=true
 app/**/*.php linguist-detectable=true
 *.php linguist-detectable=true
 
-# --- 2. THE SUPPORT: HTML & CSS ---
-# We allow your custom styles but limit their impact
+# --- 2. THE SUPPORT: HTML & CSS (Target: 5-8% combined) ---
+# We allow these to be seen, but ONLY in your custom folders
 public/css/pages/*.css linguist-detectable=true
 public/css/*.css linguist-detectable=true
+*.html linguist-detectable=true
 
-# --- 3. THE "HTML KILLER" (VENDORED) ---
-# This hides the 86.7% HTML bloat from your stats
-public/pages/** linguist-vendored
+# --- 3. THE BLOAT KILLER (VENDORED) ---
+# This hides the 90.9% CSS spike from your plugins
 public/plugins/** linguist-vendored
 public/dist/** linguist-vendored
 public/build/** linguist-vendored
+public/pages/** linguist-vendored
 vendor/** linguist-vendored
 node_modules/** linguist-vendored
 
-# --- 4. GLOBAL SILENCE ---
-# This ensures static HTML and JS don't jump ahead of your logic
-*.html linguist-vendored
+# --- 4. PREVENT OVERLAP ---
+# This stops GitHub from counting stray CSS/JS in the root
 *.js linguist-vendored
+# We mark global CSS as vendored so ONLY your 'public/css' folder is counted
 *.css linguist-vendored
 
 # --- 5. CLEANUP ---
