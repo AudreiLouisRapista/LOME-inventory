@@ -1,31 +1,37 @@
 * text=auto eol=lf
 
-# --- PRIORITY 1 & 2: BLADE AND PHP ---
-# We force these to be the most "detectable"
+# --- 1. THE TOP TWO: BLADE & PHP ---
+# We force these to be the most "detectable" and prioritized
 *.blade.php linguist-language=Blade
 *.blade.php linguist-detectable=true
+resources/**/*.blade.php linguist-detectable=true
 app/**/*.php linguist-detectable=true
 *.php linguist-detectable=true
 
-# --- PRIORITY 3: SMALL PERCENT CSS & JS ---
-# We allow these extensions generally...
+# --- 2. THE SUPPORT: SMALL % CSS & JS ---
+# We allow these but we MUST hide the library versions below
 *.css linguist-detectable=true
 *.js linguist-detectable=true
 *.html linguist-detectable=true
 
-# --- THE SECRET: HIDE THE HEAVY LIBRARIES ---
-# This is what stops CSS from hitting 92%. It hides the "Big" files.
+# --- 3. THE CURE FOR 92% CSS (VENDORED) ---
+# This hides the thousands of lines of code you didn't write
+# This is what will drop CSS from 92% down to a small slice
 public/plugins/** linguist-vendored
 public/dist/** linguist-vendored
 public/build/** linguist-vendored
+public/pages/** linguist-vendored
 vendor/** linguist-vendored
 node_modules/** linguist-vendored
 
-# --- DO NOT COUNT THESE SPECIFIC FOLDERS ---
-# Keeps the "HTML" percentage from getting too high
-public/pages/** linguist-vendored
+# --- 4. PREVENT FOLDER OVERLAP ---
+# Explicitly hide any CSS/JS inside the plugin folders
+public/plugins/**/*.css linguist-vendored
+public/plugins/**/*.js linguist-vendored
+public/dist/**/*.css linguist-vendored
+public/dist/**/*.js linguist-vendored
 
-# --- OTHER SETTINGS ---
+# --- 5. CLEANUP ---
 *.md diff=markdown
 /.github export-ignore
 CHANGELOG.md export-ignore
