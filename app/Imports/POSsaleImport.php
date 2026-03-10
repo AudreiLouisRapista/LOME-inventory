@@ -43,7 +43,7 @@ class POSsaleImport implements ToCollection
                 'import_logs_ID' => $this->importLogID, 
                 'product_ID'     => $product->product_ID,
                 'QuantitySold'   => $qtySoldNow,
-                'TotalSales'     => $salesValue
+                'TotalSalesPerQty'     => $salesValue
             ]);
 
             // Update Inventory logic

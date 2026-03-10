@@ -53,7 +53,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     Route::get('/pos_history', [MainController::class, 'pos_history'])->name('pos_history');
     Route::get('/product_report', [MainController::class, 'product_report'])->name('product_report');
     Route::get('/inventory_report', [MainController::class, 'inventory_report'])->name('inventory_report');
-    Route::get('/download-import/{id}', [MainController::class, 'download_import'])->name('download_import');
+    Route::get('/download-import/{id}', [MainController::class, 'download_importedFile'])->name('download_importedFile');
     Route::get('/updateTeacherStatus', [MainController::class, 'updateTeacherStatus'])->name('updateTeacherStatus');
     Route::get('/purchase_invoice', [MainController::class, 'purchase_invoice'])->name('purchase_invoice');
     Route::get('/add_invoice', [MainController::class, 'add_invoice'])->name('add_invoice');

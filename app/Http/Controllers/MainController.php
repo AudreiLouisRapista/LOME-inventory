@@ -181,8 +181,23 @@ private function logActivity($action, $description)
     ? round(($totalQuantity / $totalStockPossible) * 100, 2) 
     : 0;
 
+     $totalSales = DB::table('posimportdata')
+    ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
+    ->select('products.product_name', DB::raw('SUM(posimportdata.TotalSalesPerQty) as TotalSalesPerQty'))
+    ->groupBy('products.product_name')
+    ->orderBy('TotalSalesPerQty', 'desc')
+    ->limit(10)
+    ->get();
+
+    $labels = $totalSales->pluck('product_name');
+    $values  = $totalSales->pluck('TotalSalesPerQty');
+    $totalSum = number_format($totalSales->sum('TotalSalesPerQty')) . 'k';
+    $totalAverages = number_format($totalSales->sum('TotalSalesPerQty') / 1000, 1) . 'k';
+    
+
     return view('dashboard', compact('logs', 'totalProducts', 'totalQuantity',
-     'totalSold', 'instockProducts', 'lowStockProducts', 'outOfStock', 'quantityPercent' ,));
+     'totalSold', 'instockProducts', 'lowStockProducts', 'outOfStock', 'quantityPercent' ,
+      'totalSales', 'totalStockPossible', 'totalSum', 'labels', 'values', 'totalAverages'));
     
 }
 
@@ -223,7 +238,7 @@ public function import_history() {
 }
 
     // Locate the file in storage and initiate a download for the Admin
-public function download_import($id) {
+public function download_importedFile($id) {
     // Note: Ensure the column name matches your Navicat (Import_logs_ID vs posImport_ID)
     $log = DB::table('import_logs')->where('Import_logs_ID', $id)->first();
 
@@ -583,8 +598,16 @@ public function import_pos_sales(Request $request)
         'Uploaded_At' => now()
     ]);
 
+
+
     // Now pass that ID to the Import class
     Excel::import(new POSsaleImport($importLogID), storage_path('app/public/' . $filePath));
+
+
+   
+
+    
+    
 
     return response()->json(['success' => 'Import completed and inventory updated!']);
 }

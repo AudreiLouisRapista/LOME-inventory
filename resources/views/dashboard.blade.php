@@ -124,7 +124,66 @@
                     </button>
                 </div>
             </div>
+
+            <div class="py-4 bg-dashboard ">
+
+                <div class="col-xl-12 ">
+
+                    <div class="card main-card border-0 shadow-lg rounded-5 overflow-hidden">
+                        <div class="card-body p-4">
+
+                            <div class="row align-items-center mb-5">
+                                <div class="col-md-7">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="icon-gradient me-3">
+                                            <i class="bi bi-bar-chart-line-fill text-white"></i>
+                                        </div>
+                                        <h2 class="fw-bold text-navy mb-0">Sales Amount by Product</h2>
+                                    </div>
+                                    <p class="text-muted ms-5 ps-2">Performance analysis across top 10 products</p>
+                                </div>
+
+                                <div class="col-md-5 d-flex justify-content-end gap-3">
+                                    <div class="stat-badge shadow-sm">
+                                        <span class="label">Total Sales</span>
+                                        <span class="value text-purple">{{ $totalSum }}</span>
+                                    </div>
+                                    <div class="stat-badge shadow-sm border-success-subtle">
+                                        <span class="label text-success">Average</span>
+                                        <span class="value text-success">{{ $totalAverages }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="chart-container" style="position: relative; height:400px; width:100%">
+                                <canvas id="posSalesChart"></canvas>
+                            </div>
+
+                            <div
+                                class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top border-light">
+                                <div class="d-flex align-items-center">
+                                    <div class="legend-dot me-2"></div>
+                                    <span class="text-muted fw-semibold small">Sales Amount</span>
+                                </div>
+
+                                <div class="top-seller-pill px-4 py-2">
+                                    <span class="text-purple-dark fw-bold">
+                                        Top Seller:
+                                        <span class="text-navy">Keyboard ($62k)</span>
+                                    </span>
+                                </div>
+                            </div>
+
+
+                        </div>
+
+                    </div>
+                </div>
+            </div>
         </div>
+    </div>
+    </div>
+    </div>
     </div>
 
     <div class="modal fade" id="crit7Modal" tabindex="-1">
@@ -171,6 +230,11 @@
             </div>
         </div>
     </div>
+
+
+
+
+
 @endsection
 
 @section('scripts src')
@@ -274,6 +338,88 @@
                         y: {
                             grid: {
                                 borderDash: [5, 5]
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Sales Amount by Product (The Wave Chart)
+            new Chart(document.getElementById('posSalesChart'), {
+                type: 'line',
+                data: {
+                    // Corrected: Removed the { } around the Blade directive
+                    labels: {!! json_encode($labels) !!},
+
+                    datasets: [{
+                        label: 'Sales Amount',
+                        // Corrected: Removed the { } around the Blade directive
+                        data: {!! json_encode($values) !!},
+
+                        borderColor: '#8a3ffc',
+                        borderWidth: 4,
+                        fill: true,
+                        backgroundColor: function(context) {
+                            const chart = context.chart;
+                            const {
+                                ctx,
+                                chartArea
+                            } = chart;
+                            if (!chartArea) return null;
+                            const gradient = ctx.createLinearGradient(0, chartArea.top, 0,
+                                chartArea.bottom);
+                            gradient.addColorStop(0, 'rgba(138, 63, 252, 0.2)');
+                            gradient.addColorStop(1, 'rgba(138, 63, 252, 0)');
+                            return gradient;
+                        },
+                        tension: 0.45,
+                        pointRadius: 6,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#8a3ffc',
+                        pointBorderWidth: 3,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                borderDash: [5, 5],
+                                color: '#e2e8f0',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#64748b',
+                                callback: function(value) {
+                                    // Only add 'k' if the number is actually in thousands
+                                    if (value >= 1000) {
+                                        return '₱' + (value / 1000) + 'k';
+                                    }
+                                    return '₱' + value;
+                                },
+                                font: {
+                                    family: 'Plus Jakarta Sans'
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#64748b',
+                                font: {
+                                    family: 'Plus Jakarta Sans',
+                                    weight: '600'
+                                }
                             }
                         }
                     }
