@@ -125,14 +125,12 @@
                 </div>
             </div>
 
-            <div class="py-4 bg-dashboard ">
-
-                <div class="col-xl-12 ">
-
+            <div class="py-4 bg-dashboard">
+                <div class="col-xl-12">
                     <div class="card main-card border-0 shadow-lg rounded-5 overflow-hidden">
                         <div class="card-body p-4">
 
-                            <div class="row align-items-center mb-5">
+                            <div class="row align-items-center mb-4">
                                 <div class="col-md-7">
                                     <div class="d-flex align-items-center mb-2">
                                         <div class="icon-gradient me-3">
@@ -140,47 +138,64 @@
                                         </div>
                                         <h2 class="fw-bold text-navy mb-0">Sales Amount by Product</h2>
                                     </div>
-                                    <p class="text-muted ms-5 ps-2">Performance analysis across top 10 products</p>
+                                    <p class="text-muted ms-5 ps-2 mb-0">Performance analysis across top 10 products</p>
                                 </div>
 
-                                <div class="col-md-5 d-flex justify-content-end gap-3">
+                                <div class="col-md-5 d-flex justify-content-end align-items-center gap-3">
                                     <div class="stat-badge shadow-sm">
                                         <span class="label">Total Sales</span>
-                                        <span class="value text-purple">{{ $totalSum }}</span>
+                                        <span id="totalSumBadge" class="value text-purple">{{ $totalSum }}</span>
                                     </div>
                                     <div class="stat-badge shadow-sm border-success-subtle">
                                         <span class="label text-success">Average</span>
-                                        <span class="value text-success">{{ $totalAverages }}</span>
+                                        <span id="totalAvgBadge" class="value text-success">{{ $totalAverages }}</span>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <select id="dateFilter" name="date_filter"
+                                            class="form-select form-select-sm border-0 shadow-sm bg-light">
+                                            <option value="all">All Records</option>
+                                            @foreach ($availableDates as $d)
+                                                <option value="{{ $d->date }}"
+                                                    {{ $filter == $d->date ? 'selected' : '' }}>
+                                                    {{ \Carbon\Carbon::parse($d->date)->format('M d, Y') }}
+                                                </option>
+                                            @endforeach
+                                        </select>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="chart-container" style="position: relative; height:400px; width:100%">
+                            <div class="chart-container mb-4" style="position: relative; height:400px; width:100%">
                                 <canvas id="posSalesChart"></canvas>
                             </div>
 
-                            <div
-                                class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top border-light">
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top border-light">
                                 <div class="d-flex align-items-center">
-                                    <div class="legend-dot me-2"></div>
+                                    <div class="legend-dot me-2"
+                                        style="width: 10px; height: 10px; border-radius: 50%; background-color: #8a3ffc;">
+                                    </div>
                                     <span class="text-muted fw-semibold small">Sales Amount</span>
                                 </div>
 
-                                <div class="top-seller-pill px-4 py-2">
-                                    <span class="text-purple-dark fw-bold">
+                                <div class="top-seller-pill px-4 py-2" style="background: #f3f0ff; border-radius: 50px;">
+                                    <span class="text-purple-dark fw-bold small">
                                         Top Seller:
-                                        <span class="text-navy">Keyboard ($62k)</span>
+                                        <span id="topSellerName"
+                                            class="text-navy">{{ $bestSeller->product_name ?? 'No Sales' }}</span>
+                                        <span id="topSellerValue" class="text-muted ms-1">
+                                            ({{ $bestSeller ? '₱' . number_format($bestSeller->TotalSalesPerQty / 1000, 1) . 'k' : '₱0k' }})
+                                        </span>
                                     </span>
                                 </div>
                             </div>
 
-
                         </div>
-
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+    </div>
     </div>
     </div>
     </div>
@@ -345,17 +360,13 @@
             });
 
             // Sales Amount by Product (The Wave Chart)
-            new Chart(document.getElementById('posSalesChart'), {
+            const posSalesChart = new Chart(document.getElementById('posSalesChart'), {
                 type: 'line',
                 data: {
-                    // Corrected: Removed the { } around the Blade directive
                     labels: {!! json_encode($labels) !!},
-
                     datasets: [{
                         label: 'Sales Amount',
-                        // Corrected: Removed the { } around the Blade directive
                         data: {!! json_encode($values) !!},
-
                         borderColor: '#8a3ffc',
                         borderWidth: 4,
                         fill: true,
@@ -376,8 +387,7 @@
                         pointRadius: 6,
                         pointBackgroundColor: '#fff',
                         pointBorderColor: '#8a3ffc',
-                        pointBorderWidth: 3,
-                        pointHoverRadius: 8
+                        pointBorderWidth: 3
                     }]
                 },
                 options: {
@@ -397,34 +407,72 @@
                                 drawBorder: false
                             },
                             ticks: {
-                                color: '#64748b',
-                                callback: function(value) {
-                                    // Only add 'k' if the number is actually in thousands
-                                    if (value >= 1000) {
-                                        return '₱' + (value / 1000) + 'k';
-                                    }
-                                    return '₱' + value;
-                                },
+                                callback: (value) => '₱' + (value >= 1000 ? (value / 1000) + 'k' : value),
                                 font: {
-                                    family: 'Plus Jakarta Sans'
+                                    family: 'Plus Jakarta Sans',
+                                    size: 12
                                 }
                             }
+
                         },
                         x: {
                             grid: {
                                 display: false
                             },
                             ticks: {
-                                color: '#64748b',
                                 font: {
-                                    family: 'Plus Jakarta Sans',
-                                    weight: '600'
+                                    family: "'Plus Jakarta Sans', sans-serif",
+                                    size: 10
                                 }
                             }
                         }
+
                     }
                 }
             });
+
+            // 2. The AJAX Filter Logic
+            const dateFilter = document.getElementById('dateFilter');
+
+            if (dateFilter) {
+                dateFilter.addEventListener('change', function() {
+                    let filterValue = this.value;
+
+                    // Trigger the AJAX request to your DashboardController
+                    fetch(`{{ route('admin.dashboard') }}?created_at=${filterValue}`, {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest' // Tells Laravel it's an AJAX call
+                            }
+                        })
+                        .then(response => {
+                            if (!response.ok) throw new Error('Network response was not ok');
+                            return response.json();
+                        })
+                        .then(data => {
+                            // UPDATE THE CHART WITHOUT RELOADING
+                            posSalesChart.data.labels = data.labels;
+                            posSalesChart.data.datasets[0].data = data.values;
+                            // Inside your AJAX .then() block
+                            document.getElementById('totalSumDisplay').innerText = data
+                                .totalSum;
+                            document.getElementById('avgSalesDisplay').innerText = data
+                                .totalAverages;
+                            document.getElementById('bestSellerDisplay').innerText = data
+                                .bestSeller;
+
+
+                            // Animate the "Wave" change
+                            posSalesChart.update();
+
+                            // Optional: Update total sum if you have an element with this ID
+                            if (data.totalSum && document.getElementById('totalSumBadge')) {
+                                document.getElementById('totalSumBadge').innerText = data
+                                    .totalSum;
+                            }
+                        })
+                        .catch(error => console.error('Error fetching filtered data:', error));
+                });
+            }
         });
     </script>
 @endsection

@@ -159,9 +159,19 @@ private function logActivity($action, $description)
 
 
 
-   public function dashboard()
+   public function dashboard(Request $request)
 {
     // dd(session()->all());
+
+    $filter = $request->get('created_at', "all");
+
+
+    $availableDates = DB::table('posimportdata')
+        ->select(DB::raw('DATE(created_at) as date'))
+        ->distinct()
+        ->orderBy('date', 'desc')
+        ->get();
+
     $logs = ActivityLog::latest()->take(10)->get();
    
             $logs = ActivityLog::whereIn('action', ['added','updated','deleted'])
@@ -181,23 +191,41 @@ private function logActivity($action, $description)
     ? round(($totalQuantity / $totalStockPossible) * 100, 2) 
     : 0;
 
-     $totalSales = DB::table('posimportdata')
+     $importedData = DB::table('posimportdata')
     ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
     ->select('products.product_name', DB::raw('SUM(posimportdata.TotalSalesPerQty) as TotalSalesPerQty'))
-    ->groupBy('products.product_name')
-    ->orderBy('TotalSalesPerQty', 'desc')
+    ->groupBy('products.product_name');
+    if ($filter !== 'all' && !empty($filter)) {
+        // If the user selects a specific date (e.g., 2026-03-10)
+        $importedData->whereDate('posimportdata.created_at', $filter);
+    }
+    $totalSales = $importedData->orderBy('TotalSalesPerQty', 'desc')
     ->limit(10)
-    ->get();
+    ->get()
+    ->reverse();
+
+     
+
+
 
     $labels = $totalSales->pluck('product_name');
     $values  = $totalSales->pluck('TotalSalesPerQty');
     $totalSum = number_format($totalSales->sum('TotalSalesPerQty')) . 'k';
     $totalAverages = number_format($totalSales->sum('TotalSalesPerQty') / 1000, 1) . 'k';
+    $bestSeller = $totalSales->last();
     
-
+    // AJAX Check
+    if ($request->ajax()) {
+        return response()->json([
+            'labels' => $labels,
+            'values' => $values,
+            'totalSum' => $totalSum,
+            'totalAverages' => $totalAverages
+        ]);
+    }
     return view('dashboard', compact('logs', 'totalProducts', 'totalQuantity',
      'totalSold', 'instockProducts', 'lowStockProducts', 'outOfStock', 'quantityPercent' ,
-      'totalSales', 'totalStockPossible', 'totalSum', 'labels', 'values', 'totalAverages'));
+      'totalSales', 'totalStockPossible', 'totalSum', 'labels', 'values', 'totalAverages', 'bestSeller', 'filter', 'availableDates', 'importedData'));
     
 }
 
