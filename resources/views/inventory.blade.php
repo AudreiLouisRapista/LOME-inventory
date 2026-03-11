@@ -442,7 +442,7 @@
                 destroy: true,
                 processing: true,
                 serverSide: true,
-                searching: false,
+                searching: true,
                 lengthChange: false,
                 ajax: {
                     url: "{{ route('view_inventory') }}",
@@ -456,7 +456,11 @@
                 },
                 columns: [{
                         data: 'inventory_ID',
-                        name: 'inventory.inventory_ID'
+                        name: 'inventory.inventory_ID',
+                        render: function(data, type, row) {
+                            // This displays "PRDCT-11" instead of just "11"
+                            return '<span class="fw-bold text-secondary">INVT-' + data + '</span>';
+                        }
                     },
                     {
                         data: 'product_name',

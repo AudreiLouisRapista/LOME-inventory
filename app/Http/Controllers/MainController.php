@@ -179,40 +179,51 @@ private function logActivity($action, $description)
                    ->take(10)
                    ->get();
 
-    $totalProducts = DB::table('inventory')->count();  
-    $totalQuantity = DB::table('inventory')->sum('invt_remainingStock');  
-    $totalSold = DB::table('inventory')->sum('invt_totalSold');
-    $instockProducts = DB::table('inventory')->where('status_ID', 1)->count();
-    $lowStockProducts = DB::table('inventory')->where('status_ID', 2)->count();
-    $outOfStock = DB::table('inventory')->where('status_ID', 3)->count();    
-    
-   $totalStockPossible = $totalQuantity + $totalSold;
-    $quantityPercent = ($totalStockPossible > 0) 
-    ? round(($totalQuantity / $totalStockPossible) * 100, 2) 
-    : 0;
+        $totalProducts = DB::table('inventory')->count();  
+        $totalQuantity = DB::table('inventory')->sum('invt_remainingStock');  
+        $totalSold = DB::table('inventory')->sum('invt_totalSold');
+        $instockProducts = DB::table('inventory')->where('status_ID', 1)->count();
+        $lowStockProducts = DB::table('inventory')->where('status_ID', 2)->count();
+        $outOfStock = DB::table('inventory')->where('status_ID', 3)->count();    
+        
+    $totalStockPossible = $totalQuantity + $totalSold;
+        $quantityPercent = ($totalStockPossible > 0) 
+        ? round(($totalQuantity / $totalStockPossible) * 100, 2) 
+        : 0;
 
-     $importedData = DB::table('posimportdata')
-    ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
-    ->select('products.product_name', DB::raw('SUM(posimportdata.TotalSalesPerQty) as TotalSalesPerQty'))
-    ->groupBy('products.product_name');
-    if ($filter !== 'all' && !empty($filter)) {
-        // If the user selects a specific date (e.g., 2026-03-10)
-        $importedData->whereDate('posimportdata.created_at', $filter);
-    }
-    $totalSales = $importedData->orderBy('TotalSalesPerQty', 'desc')
-    ->limit(10)
-    ->get()
-    ->reverse();
+        $importedData = DB::table('posimportdata')
+            ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
+            ->select('products.product_name', DB::raw('SUM(posimportdata.TotalSalesPerQty) as TotalSalesPerQty'))
+            ->groupBy('products.product_name');
+        if ($filter !== 'all' && !empty($filter)) {
+            // If the user selects a specific date (e.g., 2026-03-10)
+            $importedData->whereDate('posimportdata.created_at', $filter);
+        }
+
+        // 3. GET FULL DATASET FIRST (For Totals)
+        $allFilteredSales = $importedData->get();
+
+        $totalSales = $importedData->orderBy('TotalSalesPerQty', 'desc')
+        ->limit(10)
+        ->get()
+        ->reverse();
 
      
 
 
+    // Calculate accurate stats from the FULL filtered list
+    $actualSum = $allFilteredSales->sum('TotalSalesPerQty');
+    $totalSum = '₱' . number_format($actualSum, 2);
+    $totalAverages = '₱' . number_format($actualSum / max(1, $allFilteredSales->count()), 2);
+    
+    // Get the absolute best seller from the filtered data
+    $bestSellerRecord = $allFilteredSales->sortByDesc('TotalSalesPerQty')->first();
+    $bestSellerName = $bestSellerRecord ? $bestSellerRecord->product_name : 'No Sales';
 
-    $labels = $totalSales->pluck('product_name');
-    $values  = $totalSales->pluck('TotalSalesPerQty');
-    $totalSum = number_format($totalSales->sum('TotalSalesPerQty')) . 'k';
-    $totalAverages = number_format($totalSales->sum('TotalSalesPerQty') / 1000, 1) . 'k';
-    $bestSeller = $totalSales->last();
+    // 4. GET TOP 10 FOR CHART ONLY
+    $chartData = $allFilteredSales->sortByDesc('TotalSalesPerQty')->take(10)->reverse();
+    $labels = $chartData->pluck('product_name');
+    $values = $chartData->pluck('TotalSalesPerQty');
     
     // AJAX Check
     if ($request->ajax()) {
@@ -225,7 +236,8 @@ private function logActivity($action, $description)
     }
     return view('dashboard', compact('logs', 'totalProducts', 'totalQuantity',
      'totalSold', 'instockProducts', 'lowStockProducts', 'outOfStock', 'quantityPercent' ,
-      'totalSales', 'totalStockPossible', 'totalSum', 'labels', 'values', 'totalAverages', 'bestSeller', 'filter', 'availableDates', 'importedData'));
+      'totalSales', 'totalStockPossible', 'totalSum', 'labels', 'values', 'totalAverages',
+       'filter', 'availableDates', 'importedData', 'allFilteredSales', 'bestSellerName','chartData','bestSellerRecord'));
     
 }
 
@@ -278,20 +290,7 @@ public function download_importedFile($id) {
 }
 
 
-public function product_report() {
-    // $pos_sales = DB::table('pos_sales')
-    //     ->join('products', 'pos_sales.product_ID', '=', 'products.product_ID')
-    //     ->join('category', 'products.category_ID', '=', 'category.category_ID')
-    //     ->select(
-    //         'pos_sales.*',
-    //         'products.product_name',
-    //         'category.category_name'
-    //     )
-    //     ->orderBy('pos_sales.sale_date', 'desc')
-    //     ->get();
 
-    return view('product_report');
-}
 
 public function inventory_report() {
    
@@ -366,13 +365,13 @@ public function view_products(Request $request) {
 public function save_product(Request $request)
 {
             //  // 1. Validate the input
-            //     $request->validate([
-            //         'product_name'  => 'required|string',
-            //         'category_ID'   => 'required|integer',
-            //         'product_cost'  => 'required|numeric',
-            //         'product_price' => 'required|numeric',
-            //         'perishable_ID' => 'required|integer'
-            //     ]);
+                $request->validate([
+                    'product_name'  => 'required|string',
+                    'category_ID'   => 'required|integer',
+                    'product_cost'  => 'required|numeric',
+                    'product_price' => 'required|numeric',
+                    'perishable_ID' => 'required|integer'
+                ]);
 
     $product = $request->product_name;
     $category = $request->category_ID;
@@ -540,16 +539,16 @@ public function view_inventory(Request $request) {
            ->addColumn('action', function($row){
                         return '<div class="d-flex justify-content-center gap-2">
                                     <button class="btn btn-sm btn-outline-success edit-btn"
-                                            data-inventory-id="'.$row->inventory_ID.'"
-                                            data-product-id="'.$row->product_ID.'"
-                                            data-product-name="'.$row->product_name.'"
-                                            data-category="'.$row->name.'"
-                                            data-category-ID="'.$row->category_ID.'"
-                                            data-cost="'.$row->product_cost.'"
-                                            data-price="'.$row->product_price.'"
-                                            data-update_NewQuantity="'.$row->invt_NewQuantity.'"
-                                            data-update_remainingstock="'.$row->invt_remainingStock.'">
-                                        <i class="bi bi-pen"></i>
+                                    data-inventory-id="'.$row->inventory_ID.'"
+                                    data-product-id="'.$row->product_ID.'"
+                                    data-product-name="'.$row->product_name.'"
+                                    data-category="'.$row->name.'"
+                                    data-category-ID="'.$row->category_ID.'"
+                                    data-cost="'.$row->product_cost.'"
+                                    data-price="'.$row->product_price.'"
+                                    data-update_NewQuantity="'.$row->invt_NewQuantity.'"
+                                    data-update_remainingstock="'.$row->invt_remainingStock.'">
+                                    <i class="bi bi-pen"></i>
                                     </button>
                                     <button class="btn btn-sm btn-outline-danger delete-btn"
                                             data-id="'.$row->inventory_ID.'">
@@ -589,7 +588,8 @@ public function view_inventory(Request $request) {
     $totalSold = DB::table('inventory')->sum('invt_totalSold');
     $instockProducts = DB::table('inventory')->where('status_ID', 1)->count();
     $lowStockProducts = DB::table('inventory')->where('status_ID', 2)->count();
-    $outOfStock = DB::table('inventory')->where('status_ID', 3)->count();    
+    $outOfStock = DB::table('inventory')->where('status_ID', 3)->count();
+ 
 
     return view('inventory', compact(
         'categories', 
@@ -600,7 +600,8 @@ public function view_inventory(Request $request) {
         'totalQuantity', 
         'selectedCategory',
         'products',
-        'totalSold'
+        'totalSold',
+        'totalDeleted'
         
     ));
 }
@@ -1035,39 +1036,49 @@ public function add_invoice(Request $request)
 
 public function stockMovement(Request $request)
 {
-    // 1. Fetch all movements with their related product and category data
-    // We order by ID desc so the newest "Activity" is at the top
-    $movements = DB::table('stock_movements')
+    // 1. Get Inbound (Stock Adjustments/Purchases)
+    $inbound = DB::table('stock_movements')
         ->join('products', 'stock_movements.product_ID', '=', 'products.product_ID')
-        ->join('purchases', 'stock_movements.purchase_id', '=', 'purchases.purchase_id')
-        ->join('batches', 'stock_movements.batch_ID', '=', 'batches.batch_ID')
-        ->join('purchase_items', 'stock_movements.purchase_item_id', '=', 'purchase_items.purchase_item_id')
+        ->leftJoin('purchases', 'stock_movements.purchase_id', '=', 'purchases.purchase_id')
+        ->leftJoin('batches', 'stock_movements.batch_ID', '=', 'batches.batch_ID')
         ->select(
-            'stock_movements.*', 
-            'products.product_name', 
-            'purchases.invoice_number',
-            'batches.quantity as batch_quantity',
-
-            
+            'stock_movements.created_at',
+            'products.product_name',
+            'stock_movements.Quantity as move_amount', // This is what moved
+            'batches.quantity as batch_limit', // This is the batch capacity
+            'purchases.invoice_number'
         )
-        ->orderBy('stock_movements.created_at', 'desc')
-        ->get();
+        ->get()
+        ->map(function ($item) {
+            $item->type = 'Inbound';
+            $item->reference = $item->invoice_number ?? 'MANUAL';
+            $item->move_qty = $item->move_amount; // Standardized name
+            $item->batch_display = $item->batch_limit ?? 0;
+            return $item;
+        });
 
-    // 2. Calculate Quick Stats for the Top Cards (Last 30 days)
-    $recentIn = DB::table('stock_movements')
-        ->where('MovementType', 'IN')
-        ->where('created_at', '>=', now()->subDays(30))
-        ->sum('quantity');
+    // 2. Get Outbound (POS Imports)
+    $outbound = DB::table('posimportdata')
+        ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
+        ->select(
+            'posimportdata.created_at',
+            'products.product_name',
+            'posimportdata.QuantitySold',
+            'posimportdata.pos_import_ID'
+        )
+        ->get()
+        ->map(function ($item) {
+            $item->type = 'Outbound';
+            $item->reference = 'IMPORT-' . $item->pos_import_ID;
+            $item->move_qty = $item->QuantitySold; // Standardized name
+            $item->batch_display = 0; // Imports don't have batch data
+            return $item;
+        });
 
-    $recentOut = DB::table('stock_movements')
-        ->where('MovementType', 'OUT')
-        ->where('created_at', '>=', now()->subDays(30))
-        ->sum('quantity');
+    $movements = $inbound->concat($outbound)->sortByDesc('created_at');
 
-    // 3. Pass everything to the view
-    return view('stockMovement', compact('movements', 'recentIn', 'recentOut'));
+    return view('stockMovement', compact('movements'));
 }
-
 
         // LOG OUT
 

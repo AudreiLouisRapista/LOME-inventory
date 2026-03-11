@@ -327,14 +327,7 @@
                                     Inventory Report
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a href="{{ route('product_report') }}" class="nav-link"
-                                    style="display:block; padding:8px 10px; font-size: 0.9rem; border-radius:4px; text-decoration: none;
-                          color:{{ Route::is('product_report') ? $text_white : $text_dark }}; 
-                          background:{{ Route::is('product_report') ? $primary_red : 'transparent' }};">
-                                    Product Report
-                                </a>
-                            </li>
+
 
                         </ul>
                     </div>

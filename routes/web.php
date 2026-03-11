@@ -51,7 +51,6 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     Route::get('/view_products', [MainController::class, 'view_products'])->name('view_products');
     Route::get('/view_inventory', [MainController::class, 'view_inventory'])->name('view_inventory');
     Route::get('/pos_history', [MainController::class, 'pos_history'])->name('pos_history');
-    Route::get('/product_report', [MainController::class, 'product_report'])->name('product_report');
     Route::get('/inventory_report', [MainController::class, 'inventory_report'])->name('inventory_report');
     Route::get('/download-import/{id}', [MainController::class, 'download_importedFile'])->name('download_importedFile');
     Route::get('/updateTeacherStatus', [MainController::class, 'updateTeacherStatus'])->name('updateTeacherStatus');

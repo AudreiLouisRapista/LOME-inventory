@@ -125,6 +125,37 @@
                 </div>
             </div>
 
+            <div class="col py-4 bg-dashboard">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4">
+                        <h6 class="fw-bold mb-4"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Reorder
+                            Required</h6>
+
+                        <div class="reorder-item p-3 rounded-4 mb-3 border bg-light-danger">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="fw-bold">USB Cable</span>
+                                <span class="badge bg-danger rounded-pill">Urgent</span>
+                            </div>
+                            <p class="small text-muted mb-2">Current: 12 | Reorder: 50</p>
+                            <div class="progress rounded-pill" style="height: 6px;">
+                                <div class="progress-bar bg-danger" style="width: 24%"></div>
+                            </div>
+                        </div>
+
+                        <div class="reorder-item p-3 rounded-4 mb-3 border bg-light-warning">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="fw-bold">Notebook</span>
+                                <span class="badge bg-warning rounded-pill">Soon</span>
+                            </div>
+                            <p class="small text-muted mb-2">Current: 45 | Reorder: 100</p>
+                            <div class="progress rounded-pill" style="height: 6px;">
+                                <div class="progress-bar bg-warning" style="width: 45%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="py-4 bg-dashboard">
                 <div class="col-xl-12">
                     <div class="card main-card border-0 shadow-lg rounded-5 overflow-hidden">
@@ -181,9 +212,9 @@
                                     <span class="text-purple-dark fw-bold small">
                                         Top Seller:
                                         <span id="topSellerName"
-                                            class="text-navy">{{ $bestSeller->product_name ?? 'No Sales' }}</span>
+                                            class="text-navy">{{ $bestSellerName->product_name ?? 'No Sales' }}</span>
                                         <span id="topSellerValue" class="text-muted ms-1">
-                                            ({{ $bestSeller ? '₱' . number_format($bestSeller->TotalSalesPerQty / 1000, 1) . 'k' : '₱0k' }})
+                                            ({{ $bestSellerRecord ? '₱' . number_format($bestSellerRecord->TotalSalesPerQty / 1000, 1) : 'No Sales' }})
                                         </span>
                                     </span>
                                 </div>
@@ -262,20 +293,44 @@
                 data: {
                     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
                     datasets: [{
-                        label: 'Profit',
-                        data: [35, 42, 38, 55, 48, 62],
-                        borderColor: '#6366f1',
-                        backgroundColor: 'rgba(99, 102, 241, 0.05)',
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 5,
-                        pointBackgroundColor: '#fff',
-                        pointBorderWidth: 2
-                    }]
+                            label: 'Profit',
+                            data: [35, 42, 38, 55, 48, 62],
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.05)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#fff',
+                            pointBorderWidth: 2
+                        },
+                        {
+                            label: 'Expenses',
+                            data: [20, 25, 30, 28, 35, 30], // Example data for expenses
+                            borderColor: '#ef4444', // Professional Red
+                            backgroundColor: 'transparent', // Keep it clean to avoid overlap
+                            fill: false,
+                            tension: 0.4,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#fff',
+                            pointBorderWidth: 2
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    family: 'Plus Jakarta Sans',
+                                    size: 12
+                                }
+                            }
+                        }
+                    },
                     scales: {
                         y: {
                             grid: {
@@ -407,7 +462,7 @@
                                 drawBorder: false
                             },
                             ticks: {
-                                callback: (value) => '₱' + (value >= 1000 ? (value / 1000) + 'k' : value),
+                                callback: (value) => (value >= 1000 ? (value / 1000) : value),
                                 font: {
                                     family: 'Plus Jakarta Sans',
                                     size: 12
@@ -449,25 +504,23 @@
                             return response.json();
                         })
                         .then(data => {
-                            // UPDATE THE CHART WITHOUT RELOADING
+                            // 1. Update the Chart
                             posSalesChart.data.labels = data.labels;
                             posSalesChart.data.datasets[0].data = data.values;
-                            // Inside your AJAX .then() block
-                            document.getElementById('totalSumDisplay').innerText = data
-                                .totalSum;
-                            document.getElementById('avgSalesDisplay').innerText = data
-                                .totalAverages;
-                            document.getElementById('bestSellerDisplay').innerText = data
-                                .bestSeller;
-
-
-                            // Animate the "Wave" change
                             posSalesChart.update();
 
-                            // Optional: Update total sum if you have an element with this ID
-                            if (data.totalSum && document.getElementById('totalSumBadge')) {
-                                document.getElementById('totalSumBadge').innerText = data
-                                    .totalSum;
+                            // 2. Fix the IDs to match your HTML exactly
+                            if (document.getElementById('totalSumBadge')) {
+                                document.getElementById('totalSumBadge').innerText = data.totalSum;
+                            }
+
+                            if (document.getElementById('totalAvgBadge')) {
+                                document.getElementById('totalAvgBadge').innerText = data.totalAverages;
+                            }
+
+                            if (document.getElementById('topSellerName')) {
+                                document.getElementById('topSellerName').innerText = data
+                                    .bestSellerName;
                             }
                         })
                         .catch(error => console.error('Error fetching filtered data:', error));

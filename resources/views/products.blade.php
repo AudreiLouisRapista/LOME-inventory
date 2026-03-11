@@ -250,7 +250,11 @@
                 ajax: "{{ route('view_products') }}",
                 columns: [{
                         data: 'product_ID',
-                        name: 'products.product_ID'
+                        name: 'products.product_ID',
+                        render: function(data, type, row) {
+                            // This displays "PRDCT-11" instead of just "11"
+                            return '<span class="fw-bold text-secondary">PRDCT-' + data + '</span>';
+                        }
                     },
                     {
                         data: 'product_name',

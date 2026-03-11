@@ -46,6 +46,20 @@ class POSsaleImport implements ToCollection
                 'TotalSalesPerQty'     => $salesValue
             ]);
 
+            if ($product) {
+                // 1. Record the Stock Movement (Audit Trail)
+                DB::table('stock_movements')->insert([
+                    'Product_ID'       => $product->product_ID,
+                    'Purchase_item_id' => null, // Sales don't have a purchase item ID
+                    'Purchase_id'      => null, // Sales don't have a purchase ID
+                    'Batch_ID'         => null, // Optional: tracking specific batches
+                    'MovementType'     => 'OUT', // Changed to OUT for sales
+                    'Quantity'         => $qtySoldNow,
+                    'created_at'       => now(),
+                    'updated_at'       => now(),
+                ]);
+                }
+
             // Update Inventory logic
             $inventory = DB::table('inventory')->where('product_ID', $product->product_ID)->first();
             if ($inventory) {
@@ -55,7 +69,9 @@ class POSsaleImport implements ToCollection
                 DB::table('inventory')->where('product_ID', $product->product_ID)->update([
                     'invt_totalSold'      => $newTotalSold,
                     'invt_remainingStock' => $newRemaining,
-                    'status_ID'           => ($newRemaining <= 0) ? 3 : (($newRemaining <= 5) ? 2 : 1)
+                    'status_ID'           => ($newRemaining <= 0) ? 3 : (($newRemaining <= 5) ? 2 : 1),
+                    'deleted_at'          => null,
+                    'updated_at'          => now()
                 ]);
             }
         }
