@@ -72,27 +72,6 @@
                                                         </div>
                                                         <div class="col-md-6">
                                                             <label class="form-label fw-semibold"
-                                                                style="color: #475569;">Perishable Type</label>
-                                                            <div class="input-group">
-                                                                <span class="input-group-text bg-light border-end-0"
-                                                                    style="border-radius: 10px 0 0 10px;">
-                                                                    <i class="bi bi-tag text-muted"></i>
-                                                                </span>
-                                                                <select id="perishable_type" name="perishable_ID"
-                                                                    class="form-select bg-light border-start-0 js-category-select"
-                                                                    style="border-radius: 0 10px 10px 0; height: 45px;"
-                                                                    required>
-                                                                    <option value="">Select</option>
-                                                                    @foreach ($perishables as $perishable)
-                                                                        <option value="{{ $perishable->perishable_ID }}">
-                                                                            {{ $perishable->perishable_title }}</option>
-                                                                    @endforeach
-                                                                </select>
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="col-md-6">
-                                                            <label class="form-label fw-semibold"
                                                                 style="color: #475569;">Product</label>
                                                             <div class="input-group">
                                                                 <span class="input-group-text bg-light border-end-0"
@@ -113,6 +92,28 @@
                                                                 </datalist>
                                                             </div>
                                                         </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-semibold"
+                                                                style="color: #475569;">Perishable Type</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text bg-light border-end-0"
+                                                                    style="border-radius: 10px 0 0 10px;">
+                                                                    <i class="bi bi-tag text-muted"></i>
+                                                                </span>
+                                                                <select id="perishable_type" name="perishable_ID"
+                                                                    class="form-select bg-light border-start-0 js-category-select"
+                                                                    style="border-radius: 0 10px 10px 0; height: 45px;"
+                                                                    required>
+                                                                    <option value="">Select</option>
+                                                                    @foreach ($perishables as $perishable)
+                                                                        <option value="{{ $perishable->perishable_ID }}">
+                                                                            {{ $perishable->perishable_title }}</option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
+                                                        </div>
+
+
                                                     </div>
                                                 </div>
 

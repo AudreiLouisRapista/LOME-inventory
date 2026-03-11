@@ -365,35 +365,52 @@ public function view_products(Request $request) {
 
 public function save_product(Request $request)
 {
- // 1. Validate the input
-    $request->validate([
-        'product_name'  => 'required|string',
-        'category_ID'   => 'required|integer',
-        'product_cost'  => 'required|numeric',
-        'product_price' => 'required|numeric',
-        'perishable_ID' => 'required|integer'
-    ]);
+            //  // 1. Validate the input
+            //     $request->validate([
+            //         'product_name'  => 'required|string',
+            //         'category_ID'   => 'required|integer',
+            //         'product_cost'  => 'required|numeric',
+            //         'product_price' => 'required|numeric',
+            //         'perishable_ID' => 'required|integer'
+            //     ]);
 
-    // 2. Link the data. 
-    // This finds the product by name and updates the category and prices.
-    // If the name doesn't exist, it creates a new row.
-    DB::table('products')->updateOrInsert(
-        ['product_name' => $request->product_name], // Search by name
-        [
-            'category_ID'   => $request->category_ID,
-            'product_cost'  => $request->product_cost,
-            'product_price' => $request->product_price,
-            'perishable_ID' => $request->perishable_ID,
-            'created_at'    => now(),
-            'updated_at'    => now()
-        ]
-    );
-    // 5. Create Activity Log
-    $this->logActivity('added', 'Added Product for Name: ' . $request->product_name);
-    // 6. Success Feedback
-    session()->flash('save', 'Product added successfully!');
-    return redirect()->back();
+    $product = $request->product_name;
+    $category = $request->category_ID;
+    $perishable = $request->perishable_ID;
+    $cost = $request->product_cost;
+    $price = $request->product_price;
+
+
+        $duplicate = DB::table('products')
+        ->where('category_ID', $category)
+        ->where('product_name', $product)
+         ->whereNull('deleted_at')
+        ->exists();
+    if ($duplicate) {
+        // NEED EDIT THE NAME 
+        return back()->with('duplicate', 'The product ' . $request->product_name .'already exists in this category.');
+    }
+        else{
+            DB::table('products')
+            ->insert([
+                'product_name' => $product,
+                'category_ID' => $category,
+                'perishable_ID' => $perishable,
+                'product_cost' => $cost,
+                'product_price' => $price,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            // 5. Create Activity Log
+            $this->logActivity('added', 'Added Product for Name: ' . $request->product_name);
+            // 6. Success Feedback
+            session()->flash('save', 'Product added successfully!');
+            return redirect()->back();
+        }
 }
+
+
 
 public function update_product(Request $request) {
 
@@ -427,15 +444,16 @@ public function save_inventory(Request $request){
    
   
 
-    // Step 2: HIGHEST PRIORITY - Check for an EXACT duplicate schedule (Same time, section, day)
+    // Step 2: HIGHEST PRIORITY - Check for an EXACT duplicate 
     $duplicate = DB::table('inventory')
         ->where('category_ID', $category_ID)
         ->where('product_ID', $product_ID)
         ->where('invt_StartingQuantity', $StartingQuantity)
+        ->whereNull('deleted_at')
         ->exists();
     if ($duplicate) {
         // NEED EDIT THE NAME 
-        return back()->with('error', 'Product with the same category already exists.');
+        return back()->with('duplicate', 'Product with the same category already exists.');
     }
 
     $status_ID = 1; // Assuming new inventory is always "In Stock"
