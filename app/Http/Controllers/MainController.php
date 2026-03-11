@@ -302,43 +302,64 @@ public function inventory_report() {
 
 
 
-
 public function view_products(Request $request) {
- if ($request->ajax()) {
+    if ($request->ajax()) {
         $data = DB::table('products')
             ->join('category', 'products.category_ID', '=', 'category.category_ID')
+            ->leftJoin('perishable', 'products.perishable_ID', '=', 'perishable.perishable_ID')
+            ->whereNull('products.deleted_at')
             ->select([
                 'products.product_ID', 
                 'products.product_name', 
                 'products.product_price',
                 'products.product_cost',
                 'products.category_ID',
-                'category.category_name as name'
+                'category.category_name as name',
+                'products.perishable_ID',
+                'perishable.perishable_title'
             ]);
-             return DataTables::of($data)
+
+        return DataTables::of($data)
             ->addColumn('action', function($row){
-                // We write the HTML for the button here
-                return '<button class="btn btn-sm btn-outline-success edit-btn" 
-                        data-id="'.$row->product_ID.'" 
-                        data-name="'.$row->product_name.'" 
-                        data-category="'.$row->name.'"
-                        data-category-ID="'.$row->category_ID.'"
-                        data-cost="'.$row->product_cost.'"
-                        data-price="'.$row->product_price.'">
-                      <i class="bi bi-pen"></i></button>';
+                return '    <div class="d-flex justify-content-center gap-2">
+                            <button class="btn btn-sm btn-outline-success edit-btn"
+                                data-id="'.$row->product_ID.'" 
+                                data-name="'.$row->product_name.'" 
+                                data-category="'.$row->name.'"
+                                data-category-ID="'.$row->category_ID.'"
+                                data-perishable_title="'.$row->perishable_title.'"
+                                data-perishable_ID="'.$row->perishable_ID.'"
+                                data-cost="'.$row->product_cost.'"
+                                data-price="'.$row->product_price.'">
+                                <i class="bi bi-pen"></i>
+                            </button>
+                           <button class="btn btn-sm btn-outline-danger delete-btn"
+                                data-id="'.$row->product_ID.'">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            </div>';
+                        
             })
-            ->rawColumns(['action']) // Tells Yajra to render HTML, not just text
+            ->rawColumns(['action'])
             ->make(true);
     }
-  
-     $categories = DB::table('category')->orderBy('category_name', 'ASC')->get();
-    $products = DB::table('products')->orderBy('product_name', 'ASC')->get();
-     
 
-    return view('products', compact('categories', 'products'));
+    $categories = DB::table('category')->orderBy('category_name', 'ASC')->get();
+    $products = DB::table('products')->orderBy('product_name', 'ASC')->get();
+    $perishables = DB::table('perishable')->orderBy('perishable_title', 'ASC')->get();
+
+    return view('products', compact('categories', 'products', 'perishables'));
 }
 
+    public function ProductsoftDelete($id)
+{
+    // Instead of deleting the row, we just mark it with the current time
+    DB::table('products')
+        ->where('product_ID', $id)
+        ->update(['deleted_at' => now()]);
 
+    return response()->json(['success' => 'Product moved to trash!']);
+}
 
 
 
@@ -350,6 +371,7 @@ public function save_product(Request $request)
         'category_ID'   => 'required|integer',
         'product_cost'  => 'required|numeric',
         'product_price' => 'required|numeric',
+        'perishable_ID' => 'required|integer'
     ]);
 
     // 2. Link the data. 
@@ -361,6 +383,7 @@ public function save_product(Request $request)
             'category_ID'   => $request->category_ID,
             'product_cost'  => $request->product_cost,
             'product_price' => $request->product_price,
+            'perishable_ID' => $request->perishable_ID,
             'created_at'    => now(),
             'updated_at'    => now()
         ]
@@ -450,6 +473,15 @@ public function save_inventory(Request $request){
 }
 
 
+public function InventorysoftDelete($id)
+{
+    // Instead of deleting the row, we just mark it with the current time
+    DB::table('inventory')
+        ->where('inventory_ID', $id)
+        ->update(['deleted_at' => now()]);
+
+    return response()->json(['success' => 'Inventory moved to trash!']);
+}
 
    
         // VIEW INVENTORY
@@ -459,7 +491,9 @@ public function view_inventory(Request $request) {
     if ($request->ajax() && !$request->has('get_chart')) {
         $data = DB::table('inventory')
             ->Join('products', 'inventory.product_ID', '=', 'products.product_ID')
-            ->Join('category', 'products.category_ID', '=', 'category.category_ID');
+            ->Join('category', 'products.category_ID', '=', 'category.category_ID')
+              ->whereNull('inventory.deleted_at');
+        
                                 // FILTERS:
                     if ($request->category_id_table && $request->category_id_table != 'all') {
                         $data->where('category.category_ID', $request->category_id_table);
@@ -485,22 +519,29 @@ public function view_inventory(Request $request) {
 
             ]);
         return DataTables::of($data)
-            ->addColumn('action', function($row){
-                return '<button class="btn btn-sm btn-outline-success edit-btn" 
-                        data-inventory-id="'.$row->inventory_ID.'"
-                        data-product-id="'.$row->product_ID.'"
-                        data-product-name="'.$row->product_name.'"
-                        data-category="'.$row->name.'"
-                        data-category-ID="'.$row->category_ID.'"
-                        data-cost="'.$row->product_cost.'"
-                        data-price="'.$row->product_price.'"
-                        data-update_NewQuantity="'.$row->invt_NewQuantity.'"
-                        data-update_remainingstock="'.$row->invt_remainingStock. '">
-                        <i class="bi bi-pen"></i></button>';
-            })
+           ->addColumn('action', function($row){
+                        return '<div class="d-flex justify-content-center gap-2">
+                                    <button class="btn btn-sm btn-outline-success edit-btn"
+                                            data-inventory-id="'.$row->inventory_ID.'"
+                                            data-product-id="'.$row->product_ID.'"
+                                            data-product-name="'.$row->product_name.'"
+                                            data-category="'.$row->name.'"
+                                            data-category-ID="'.$row->category_ID.'"
+                                            data-cost="'.$row->product_cost.'"
+                                            data-price="'.$row->product_price.'"
+                                            data-update_NewQuantity="'.$row->invt_NewQuantity.'"
+                                            data-update_remainingstock="'.$row->invt_remainingStock.'">
+                                        <i class="bi bi-pen"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger delete-btn"
+                                            data-id="'.$row->inventory_ID.'">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>';
+                    })
             ->rawColumns(['action'])
             ->make(true);
-    }
+                }
 
 
     // Handle Chart AJAX ONLY (Refresh only the chart)
@@ -861,21 +902,10 @@ public function storePayment(Request $request)
 public function saveInvoiceAndItem(Request $request)
 {   
     // dd($request->all());
-        //     // Validate the incoming data
-        //    $request->validate([
-        //     'supplier_id' => 'required',
-        //     'invoice_number' => 'required',
-        //     'product_name.*' => 'required',
-        //     'quantity.*' => 'required|numeric|min:1', // Add this
-        //     'unit_price.*' => 'required|numeric',    // Add this
-        // ]);
 
     DB::beginTransaction();
 
    try {
-
-   
-    
 
     // 1. Save the Main Invoice
     $invoiceId = DB::table('purchases')->insertGetId([
@@ -926,7 +956,7 @@ public function saveInvoiceAndItem(Request $request)
         'product_id' => $productId,
         'batch_code' => $request->batch_number,
         'mfg_date' => $request->mfg_date,
-        'expiration_date' => $request->exp_date,
+        'expiration_date' => $request->exp_date ?: null,
         'quantity' => $request->quantity_per_unit[$key] * ($request-> tie_number[$key]),
         'created_at' => now(),
         'updated_at' => now(),

@@ -97,3 +97,24 @@
     box-shadow: 0 6px 12px rgba(76, 175, 80, 0.3);
     color: white;
 }
+
+/* Professional Header Styling */
+#example2 thead th {
+    background-color: #f1f5f9;
+    color: #475569;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    padding: 15px;
+    border: none;
+}
+
+/* Body Styling */
+#example2 tbody td {
+    padding: 14px;
+    vertical-align: middle;
+    color: #1e293b;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.85rem;
+}

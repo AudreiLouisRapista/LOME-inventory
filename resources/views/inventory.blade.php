@@ -511,6 +511,49 @@
                     }
                 ],
             });
+            $('#example2 tbody').on('click', '.delete-btn', function() {
+                var id = $(this).data('id');
+
+                Swal.fire({
+                    title: 'Move to Trash?',
+                    text: "Please Double Check before moving to trash.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#198754', // Matches your success/green theme
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, trash it!',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // If user clicks "Yes", run the AJAX
+                        $.ajax({
+                            url: "/admin/InventorysoftDelete/" + id,
+                            method: 'POST',
+                            data: {
+                                _token: '{{ csrf_token() }}',
+                                _method: 'POST'
+                            },
+                            success: function(response) {
+                                table.ajax.reload(null, false);
+
+                                // Show a success SweetAlert after deletion
+                                Swal.fire(
+                                    'Deleted!',
+                                    'Inventory has been moved to trash.',
+                                    'success'
+                                );
+                            },
+                            error: function(xhr) {
+                                Swal.fire(
+                                    'Error!',
+                                    'Could not delete the Inventory.',
+                                    'error'
+                                );
+                            }
+                        });
+                    }
+                });
+            });
 
             // ==========================================
             // 2. CHART.JS LOGIC

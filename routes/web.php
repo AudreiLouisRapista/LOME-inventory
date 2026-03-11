@@ -87,6 +87,8 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     Route::post('/saveInvoiceAndItem', [MainController::class, 'saveInvoiceAndItem'])->name('saveInvoiceAndItem');
     Route::post('/save_invoice', [MainController::class, 'save_invoice'])->name('save_invoice');
     Route::post('/add_new_inventory', [MainController::class, 'add_new_inventory'])->name('add_new_inventory');
+    Route::post('/ProductsoftDelete/{id}', [MainController::class, 'ProductsoftDelete'])->name('ProductsoftDelete');
+    Route::post('/InventorysoftDelete/{id}', [MainController::class, 'InventorysoftDelete'])->name('InventorysoftDelete');
     
    // Add {id} to the URL
     Route::post('/admin-profile/{id}', [MainController::class, 'adminProfile'])->name('adminProfile');

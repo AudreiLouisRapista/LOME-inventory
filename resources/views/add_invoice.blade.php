@@ -110,9 +110,19 @@
                                     class="form-control form-control-lg bg-light border-0 shadow-none" required>
                             </div>
                             <div class="col-md-4">
+                                <label class="form-label small fw-bold text-muted">Perishable Type</label>
+                                <select id="perishableToggle" name="perishable_type"
+                                    class="form-select form-select-lg bg-light border-0 shadow-none" required>
+                                    <option value="">Select</option>
+                                    <option value="perishable">perishable</option>
+                                    <option value="non-perishable">non-perishable</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4" id="expiryField" style="display: none;">
                                 <label class="form-label small fw-bold text-muted">Expiration Date</label>
-                                <input type="date" name="exp_date"
-                                    class="form-control form-control-lg bg-light border-0 shadow-none" required>
+                                <input type="date" id="exp_date_input" name="exp_date"
+                                    class="form-control form-control-lg bg-light border-0 shadow-none">
                             </div>
 
                         </div>
@@ -326,6 +336,21 @@
                 $('#vat_amount_raw').val(vatAmount.toFixed(2));
                 $('#grand_total_raw').val(grossTotal.toFixed(2));
             }
+
+            document.getElementById('perishableToggle').addEventListener('change', function() {
+                const expiryField = document.getElementById('expiryField');
+                const expiryInput = document.getElementById('exp_date_input');
+
+                if (this.value === 'perishable') {
+                    expiryField.style.display = 'block'; // Show it
+                    expiryInput.setAttribute('required', 'required'); // Make it mandatory
+                } else {
+                    expiryField.style.display = 'none'; // Hide it
+                    expiryInput.removeAttribute('required'); // Not mandatory
+                    expiryInput.value = ''; // Clear the date if they switch back
+                }
+            });
+
         });
     </script>
 @endsection
