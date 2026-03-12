@@ -102,7 +102,6 @@
                                     <th>Reference</th>
                                     <th>Product Name</th>
                                     <th>Type</th>
-                                    <th>Batch Quantity</th>
                                     <th class="text-end">Qty</th>
                                 </tr>
                             </thead>
@@ -134,7 +133,6 @@
                                                 </span>
                                             @endif
                                         </td>
-                                        <td>{{ number_format($move->batch_display) }}</td>
 
                                         <td
                                             class="text-end fw-bold {{ $move->type == 'Inbound' ? 'text-success' : 'text-danger' }}">

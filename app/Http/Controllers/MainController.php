@@ -309,7 +309,9 @@ public function view_products(Request $request) {
             ->whereNull('products.deleted_at')
             ->select([
                 'products.product_ID', 
-                'products.product_name', 
+                'products.product_name',
+                'products.tie_number',
+                'products.tie_qty', 
                 'products.product_price',
                 'products.product_cost',
                 'products.category_ID',
@@ -325,6 +327,8 @@ public function view_products(Request $request) {
                                 data-id="'.$row->product_ID.'" 
                                 data-name="'.$row->product_name.'" 
                                 data-category="'.$row->name.'"
+                                data-tie_number="'.$row->tie_number.'"
+                                data-tie_qty="'.$row->tie_qty.'"
                                 data-category-ID="'.$row->category_ID.'"
                                 data-perishable_title="'.$row->perishable_title.'"
                                 data-perishable_ID="'.$row->perishable_ID.'"
@@ -364,18 +368,23 @@ public function view_products(Request $request) {
 
 public function save_product(Request $request)
 {
+
+    // dd($request->all());
             //  // 1. Validate the input
-                $request->validate([
-                    'product_name'  => 'required|string',
-                    'category_ID'   => 'required|integer',
-                    'product_cost'  => 'required|numeric',
-                    'product_price' => 'required|numeric',
-                    'perishable_ID' => 'required|integer'
-                ]);
+                // $request->validate([
+                //     'product_name'  => 'required|string',
+                //     'category_ID'   => 'required|integer',
+                //     'product_cost'  => 'required|numeric',
+
+                //     'product_price' => 'required|numeric',
+                //     'perishable_ID' => 'required|integer'
+                // ]);
 
     $product = $request->product_name;
     $category = $request->category_ID;
     $perishable = $request->perishable_ID;
+    $tie_number = $request->tie_number;
+    $tie_qty = $request->tie_qty;
     $cost = $request->product_cost;
     $price = $request->product_price;
 
@@ -395,6 +404,8 @@ public function save_product(Request $request)
                 'product_name' => $product,
                 'category_ID' => $category,
                 'perishable_ID' => $perishable,
+                'tie_number' => $tie_number,
+                'tie_qty' => $tie_qty,
                 'product_cost' => $cost,
                 'product_price' => $price,
                 'created_at' => now(),
@@ -600,8 +611,7 @@ public function view_inventory(Request $request) {
         'totalQuantity', 
         'selectedCategory',
         'products',
-        'totalSold',
-        'totalDeleted'
+        'totalSold'
         
     ));
 }
@@ -851,24 +861,27 @@ public function purchase_invoice(Request $request)
 
     $purchases = $query->latest('purchases.created_at')->get();
 
-    // 2. Fetch all Items and group them by invoice_id for the modals
-    $purchase_items = DB::table('purchase_items')
-        ->join('products', 'purchase_items.product_id', '=', 'products.product_ID')
-        ->join('uom', 'purchase_items.uom_ID', '=', 'uom.uom_ID')
-        ->select([
-            'purchase_items.*',
-            'products.product_name',
-            'uom.uom_title'
-        ])
-        ->get()
-        ->groupBy('purchase_id'); // Ensure this matches your FK column
+  
+   // 2. Fetch all Items and group them by invoice_id
+        $purchase_items = DB::table('purchase_items')
+            ->join('products', 'purchase_items.product_id', '=', 'products.product_ID')
+            ->select([
+                'purchase_items.*',
+                'products.product_name',
+               'products.tie_number',
+                'products.tie_qty',
+
+                DB::raw('products.tie_number * products.tie_qty as tie_total'),
+                
+            ])
+            ->get()
+            ->groupBy('purchase_id'); // Grouping by invoice_id as you mentioned
 
     // 3. Dropdown data
     $suppliers = DB::table('suppliers')->orderBy('supplier_name', 'ASC')->get();
     $products  = DB::table('products')->orderBy('product_name', 'ASC')->get();
-    $uoms      = DB::table('uom')->get();
 
-    return view('purchase_invoice', compact('suppliers', 'purchases', 'products', 'uoms', 'purchase_items'));
+    return view('purchase_invoice', compact('suppliers', 'purchases', 'products', 'purchase_items'));
 }
 
 public function getPaymentHistory($id)
@@ -920,119 +933,134 @@ public function storePayment(Request $request)
 
 public function saveInvoiceAndItem(Request $request)
 {   
-    // dd($request->all());
-
     DB::beginTransaction();
 
-   try {
+    try {
+        // STEP 1: Insert the main invoice record first
+        // We need this ID to link all items, batches, and movements back to this purchase
+        $invoiceId = DB::table('purchases')->insertGetId([
+            'supplier_id'    => $request->supplier_id,
+            'invoice_number' => $request->invoice_number,
+            'invoice_date'   => $request->invoice_date,
+            'gross_amount'   => $request->gross_total_raw, // Raw numbers for DB accuracy
+            'vat_amount'     => $request->vat_amount_raw,
+            'net_amount'     => $request->grand_total_raw,
+            'due_date'       => $request->due_date,
+            'created_at'     => now(),
+            'updated_at'     => now(),
+        ]);
 
-    // 1. Save the Main Invoice
-    $invoiceId = DB::table('purchases')->insertGetId([
-        'supplier_id'    => $request->supplier_id,
-        'invoice_number'     => $request->invoice_number,
-        'invoice_date'   => $request->invoice_date,
-        'gross_amount'    => $request->gross_total_raw,
-        'vat_amount'     => $request->vat_amount_raw,
-        'net_amount'    => $request->grand_total_raw,
-        'due_date'      => $request->due_date,
-        'invoice_date' => $request->invoice_date,
-        'created_at'     => now(),
-        'updated_at'        => now(),
-    ]);
-
-
-
+        // STEP 2: Loop through each row submitted from the table
         foreach ($request->product_name as $key => $name) {
+            
+            // Check if product exists; if not, create it on the fly
             $product = DB::table('products')->where('product_name', $name)->first();
 
             if (!$product) {
                 $productId = DB::table('products')->insertGetId([
                     'product_name' => $name,
-                    // 'uom_ID'       => $request->uom[$key],
                     'created_at'   => now(),
                     'updated_at'   => now(),
                 ]);
             } else {
-            
                 $productId = $product->product_ID; 
             }
 
-      $purchaseItemID = DB::table('purchase_items')->insertGetId([
-            'purchase_id'        => $invoiceId,
-            'product_id'        => $productId,
-            'uom_quantity'  => $request->quantity[$key],
-            'uom_ID'            => $request->uom[$key],
-            'quantity_per_uom' => $request->quantity_per_unit[$key],
-            'unit_tie'          => $request->tie_number[$key],
-            'unit_price'        => $request->unit_price[$key],
-            'total_price'       => $request->quantity[$key] * ($request->quantity_per_unit[$key] * $request->tie_number[$key] * $request->unit_price[$key]),
-            'created_at'        => now(),
-            'updated_at'        => now(),
-        ]);
+            // STEP 3: Save the individual line item (Purchase Item)
+            // Logic: Total Price = Qty * (Qty per Tie * Tie Number * Unit Price)
+            $purchaseItemID = DB::table('purchase_items')->insertGetId([
+                'purchase_id' => $invoiceId,
+                'product_id'  => $productId,
+                'unit_price'  => $request->unit_price[$key],
+                'total_price' => $request->quantity[$key] * ($request->tie_qty[$key] * $request->tie_number[$key] * $request->unit_price[$key]),
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
 
-         $batchId = DB::table('batches')->insertGetId([
-        'purchase_item_id' => $purchaseItemID,
-        'product_id' => $productId,
-        'batch_code' => $request->batch_number,
-        'mfg_date' => $request->mfg_date,
-        'expiration_date' => $request->exp_date ?: null,
-        'quantity' => $request->quantity_per_unit[$key] * ($request-> tie_number[$key]),
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
+            // STEP 4: Save the Batch Information (Moving Expiry here)
+            // We use the $key to get the specific expiry date for THIS row only
+            $batchId = DB::table('batches')->insertGetId([
+                'purchase_item_id' => $purchaseItemID,
+                'product_id'       => $productId,
+                // If the user selected 'non-perishable', this will save as NULL
+                'expiration_date'  => ($request->perishable_type[$key] === 'perishable') ? $request->exp_date[$key] : null,
+                'quantity'         => $request->tie_qty[$key] * $request->tie_number[$key],
+                'created_at'       => now(),
+                'updated_at'       => now(),
+            ]);
 
-        $stockMovement = DB::table('stock_movements')->insert([
-            'product_ID' => $productId,
-            'purchase_item_id' => $purchaseItemID,
-            'purchase_id' => $invoiceId,
-            'batch_ID' => $batchId,
-            'MovementType' => 'IN',
-            'quantity' => $request->quantity[$key],
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-    }
+            // STEP 5: Record the 'IN' movement for stock history
+            $stockMovement = DB::table('stock_movements')->insert([
+                'product_ID'       => $productId,
+                'purchase_item_id' => $purchaseItemID,
+                'purchase_id'      => $invoiceId,
+                'batch_ID'         => $batchId,
+                'MovementType'     => 'IN',
+                'quantity'         => $request->quantity[$key],
+                'created_at'       => now(),
+                'updated_at'       => now(),
+            ]);
+        }
 
-    DB::commit();
-    // Use the session key 'save' to match your 'with' call
-    return redirect()->route('add_invoice')->with('save', 'Invoice saved successfully!');
+     DB::commit(); 
+        return redirect()->route('add_invoice')->with('save', 'Invoice saved successfully!');
+
+    } catch (\Illuminate\Database\QueryException $e) {
+        DB::rollback();
+        
+        // Check if the error is a "Duplicate Entry" (MySQL error code 1062)
+        if ($e->errorInfo[1] == 1062) {
+            return back()->withInput()->with('duplicate', 'DUPLICATED INVOICE NUMBER');
+        }
+
+        // For any other database errors
+        return back()->withInput()->with('errorMessage', 'Database Error: ' . $e->getMessage());
 
     } catch (\Exception $e) {
         DB::rollback();
-        // Return with the error message so you can see what went wrong
-        return back()->with('errorMessage', 'Error: ' . $e->getMessage());
+        return back()->withInput()->with('errorMessage', 'General Error: ' . $e->getMessage());
     }
 }
-
 
 
 
 
 public function add_invoice(Request $request)
 {
-    //  1. Fetch data using Eloquent (latest first)
+    // 1. Fetch data using Eloquent (latest first)
     $query = Purchase::with('supplier')->withSum('payments as total_paid_sum', 'amount_paid')->latest();
 
-    // 2. Apply your existing filters
+    // 2. Apply existing filters
     if ($request->supplier_id) {
         $query->where('supplier_id', $request->supplier_id);
     }
     
     $purchases_data = $query->get();
 
-    // 2. AJAX Response
+    // AJAX Response for the main table
     if ($request->ajax()) {
         return response()->json(['data' => $purchases_data]);
     }
 
-    // 3. Normal Load Variables (Ensure lowercase names!)
+    // 3. Normal Load Variables
     $suppliers = DB::table('suppliers')->orderBy('supplier_name', 'ASC')->get();
-    $products  = DB::table('products')->orderBy('product_name', 'ASC')->get();
-    $uoms      = DB::table('uom')->get();
-    $purchases = $purchases_data;
+    
+    // UPDATED: Join with the perishable table to get the 'perishable_title' string
+    $products = DB::table('products')
+        ->leftJoin('perishable', 'products.perishable_ID', '=', 'perishable.perishable_ID') // Change 'perishable_ID' if your FK name differs
+        ->select(
+            'products.product_ID', 
+            'products.product_name', 
+            'products.tie_qty', 
+            'products.tie_number',
+            'perishable.perishable_title' // This provides the "Perishable" or "Non-Perishable" string
+        ) 
+        ->orderBy('products.product_name', 'ASC')
+        ->get();
 
- return view('add_invoice', compact('suppliers', 'purchases', 'products', 'uoms'));
+    return view('add_invoice', compact('suppliers', 'products'));
 }
+
 
 public function stockMovement(Request $request)
 {
@@ -1044,16 +1072,14 @@ public function stockMovement(Request $request)
         ->select(
             'stock_movements.created_at',
             'products.product_name',
-            'stock_movements.Quantity as move_amount', // This is what moved
-            'batches.quantity as batch_limit', // This is the batch capacity
+            'batches.quantity as batch_quantity', // This is the batch capacity
             'purchases.invoice_number'
         )
         ->get()
         ->map(function ($item) {
             $item->type = 'Inbound';
             $item->reference = $item->invoice_number ?? 'MANUAL';
-            $item->move_qty = $item->move_amount; // Standardized name
-            $item->batch_display = $item->batch_limit ?? 0;
+            $item->move_qty = $item->batch_quantity ?? 0; // Standardized name
             return $item;
         });
 
@@ -1071,13 +1097,17 @@ public function stockMovement(Request $request)
             $item->type = 'Outbound';
             $item->reference = 'IMPORT-' . $item->pos_import_ID;
             $item->move_qty = $item->QuantitySold; // Standardized name
-            $item->batch_display = 0; // Imports don't have batch data
             return $item;
         });
 
+  
+        // --- NEW: Calculate Totals ---
+    $recentIn = $inbound->sum('move_qty');
+    $recentOut = $outbound->sum('move_qty');
+
     $movements = $inbound->concat($outbound)->sortByDesc('created_at');
 
-    return view('stockMovement', compact('movements'));
+    return view('stockMovement', compact('movements', 'recentIn', 'recentOut'));
 }
 
         // LOG OUT

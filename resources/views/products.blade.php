@@ -92,6 +92,7 @@
                                                                 </datalist>
                                                             </div>
                                                         </div>
+
                                                         <div class="col-md-6">
                                                             <label class="form-label fw-semibold"
                                                                 style="color: #475569;">Perishable Type</label>
@@ -100,11 +101,11 @@
                                                                     style="border-radius: 10px 0 0 10px;">
                                                                     <i class="bi bi-tag text-muted"></i>
                                                                 </span>
-                                                                <select id="perishable_type" name="perishable_ID"
+                                                                <select id="perishable_ID_add" name="perishable_ID"
                                                                     class="form-select bg-light border-start-0 js-category-select"
                                                                     style="border-radius: 0 10px 10px 0; height: 45px;"
                                                                     required>
-                                                                    <option value="">Select</option>
+                                                                    <option value="">Select Perishable Type</option>
                                                                     @foreach ($perishables as $perishable)
                                                                         <option value="{{ $perishable->perishable_ID }}">
                                                                             {{ $perishable->perishable_title }}</option>
@@ -114,6 +115,32 @@
                                                         </div>
 
 
+
+                                                    </div>
+                                                </div>
+
+
+
+                                                <p class="text-muted small fw-bold text-uppercase mb-3 border-bottom pb-1">
+                                                    Bundle Size</p>
+                                                <div class="row g-3 mb-4">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label fw-semibold">Tie Size</label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text"></span>
+                                                            <input type="number" name="tie_number" class="form-control"
+                                                                step="0.01" placeholder="0.00"
+                                                                value="{{ old('tie_number') }}" required>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label fw-semibold">Tie Quantity</label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text"></span>
+                                                            <input type="number" name="tie_qty" class="form-control"
+                                                                step="0.01" placeholder="0.00"
+                                                                value="{{ old('tie_qty') }}" required>
+                                                        </div>
                                                     </div>
                                                 </div>
 
@@ -124,8 +151,8 @@
                                                         <label class="form-label fw-semibold">Cost Price</label>
                                                         <div class="input-group">
                                                             <span class="input-group-text">$</span>
-                                                            <input type="number" name="product_cost" class="form-control"
-                                                                step="0.01" placeholder="0.00"
+                                                            <input type="number" name="product_cost"
+                                                                class="form-control" step="0.01" placeholder="0.00"
                                                                 value="{{ old('product_cost') }}" required>
                                                         </div>
                                                     </div>
@@ -164,6 +191,8 @@
                                             <th class="text-secondary text-uppercase small fw-bold">Name</th>
                                             <th class="text-secondary text-uppercase small fw-bold">Category</th>
                                             <th class="text-secondary text-uppercase small fw-bold">Perishable Type</th>
+                                            <th class="text-secondary text-uppercase small fw-bold">Tie Number</th>
+                                            <th class="text-secondary text-uppercase small fw-bold">Tie Quantity</th>
                                             <th class="text-secondary text-uppercase small fw-bold">Cost</th>
                                             <th class="text-secondary text-uppercase small fw-bold">Price</th>
                                             <th class="text-secondary text-uppercase small fw-bold">Actions</th>
@@ -267,6 +296,14 @@
                     {
                         data: 'perishable_title',
                         name: 'perishable.perishable_title'
+                    },
+                    {
+                        data: 'tie_number',
+                        name: 'products.tie_number'
+                    },
+                    {
+                        data: 'tie_qty',
+                        name: 'products.tie_qty'
                     },
                     {
                         data: 'product_cost',

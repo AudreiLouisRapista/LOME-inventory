@@ -1,21 +1,9 @@
 @extends('themes.main')
 
-{{-- 1. DEFINE PAGE TITLE --}}
 @section('title', 'Invoice Encoder')
 
-{{-- 2. DEFINE CONTENT HEADER (Breadcrumbs) --}}
-@section('content_header')
-    <div class="px-4 pt-3">
-        <h1 class="m-0 text-dark">Invoice Encoder</h1>
-        <p class="text-muted">Manage supplier invoices</p>
-    </div>
-@endsection
-
-
-
-
 @section('content')
-
+    <link rel="stylesheet" href="{{ asset('css/pages/add_invoice.css') }}">
     <div class="container py-5">
         <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
             <div class="card-header bg-danger bg-gradient p-4 d-flex justify-content-between align-items-center border-0">
@@ -37,39 +25,29 @@
             <div class="card-body p-4 p-lg-5">
                 @include('layout.partials.alerts')
 
-                {{-- HELP FOR DEBUGGING --}}
-
-
-                @if (session('errorMessage'))
-                    <div class="alert alert-warning">{{ session('errorMessage') }}</div>
-                @endif
                 <form id="invoiceEncoderForm" action="{{ route('saveInvoiceAndItem') }}" method="POST">
                     @csrf
-                    <div class="mb-5">
 
+                    <div class="mb-5">
                         <h5 class="text-dark fw-bold mb-4 d-flex align-items-center">
-                            <span class="badge bg-danger me-2 p-2"><i class="fas fa-hashtag"></i></span> Invoice
-                            Information
+                            <span class="badge bg-danger me-2 p-2"><i class="fas fa-hashtag"></i></span> Invoice Information
                         </h5>
                         <div class="row g-4">
                             <div class="col-md-4">
                                 <label class="form-label small fw-bold text-muted">Invoice Number</label>
-                                <input type="text" name="invoice_number"
-                                    class="form-control form-control-lg bg-light border-0 shadow-none"
+                                <input type="text" name="invoice_number" class="form-control form-control-lg bg-light"
                                     placeholder="e.g. INV-10023" required>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label small fw-bold text-muted">Invoice Date</label>
-                                <input type="date" name="invoice_date"
-                                    class="form-control form-control-lg bg-light border-0 shadow-none"
+                                <input type="date" name="invoice_date" class="form-control form-control-lg bg-light"
                                     value="{{ date('Y-m-d') }}" required>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label small fw-bold text-muted">Due Date</label>
-                                <input type="date" name="due_date"
-                                    class="form-control form-control-lg bg-light border-0 shadow-none">
+                                <input type="date" name="due_date" class="form-control form-control-lg bg-light"
+                                    required>
                             </div>
-
                         </div>
                     </div>
 
@@ -81,8 +59,7 @@
                         <div class="row g-4">
                             <div class="col-md-12">
                                 <label class="form-label small fw-bold text-muted">Select Supplier</label>
-                                <select name="supplier_id" class="form-select form-select-lg bg-light border-0 shadow-none"
-                                    required>
+                                <select name="supplier_id" class="form-select form-select-lg bg-light" required>
                                     <option value="">Choose a supplier...</option>
                                     @foreach ($suppliers as $supplier)
                                         <option value="{{ $supplier->supplier_id }}">{{ $supplier->supplier_name }}
@@ -90,41 +67,6 @@
                                     @endforeach
                                 </select>
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="mb-5">
-                        <h5 class="text-dark fw-bold mb-4 d-flex align-items-center">
-                            <span class="badge bg-danger me-2 p-2"><i class="bi bi-box-seam-fill"></i></span> Batch
-                            Information
-                        </h5>
-                        <div class="row g-4">
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold text-muted">Batch Number</label>
-                                <input type="number" name="batch_number"
-                                    class="form-control form-control-lg bg-light border-0 shadow-none" required>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold text-muted">Mfg. Date</label>
-                                <input type="date" name="mfg_date"
-                                    class="form-control form-control-lg bg-light border-0 shadow-none" required>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold text-muted">Perishable Type</label>
-                                <select id="perishableToggle" name="perishable_type"
-                                    class="form-select form-select-lg bg-light border-0 shadow-none" required>
-                                    <option value="">Select</option>
-                                    <option value="perishable">perishable</option>
-                                    <option value="non-perishable">non-perishable</option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-4" id="expiryField" style="display: none;">
-                                <label class="form-label small fw-bold text-muted">Expiration Date</label>
-                                <input type="date" id="exp_date_input" name="exp_date"
-                                    class="form-control form-control-lg bg-light border-0 shadow-none">
-                            </div>
-
                         </div>
                     </div>
 
@@ -136,71 +78,57 @@
                             </button>
                         </div>
                         <div class="table-responsive">
-
                             <table class="table table-hover align-middle">
                                 <thead class="table-light">
                                     <tr class="small text-uppercase text-muted">
-                                        <th style="width: 7%;">Qty</th>
-                                        <th style="width: 12%;">UOM</th>
-                                        <th style="width: 8%;">Tie #</th>
-                                        <th style="width: 10%;">Qty. per Tie</th>
-                                        <th style="width: 30%;">Description (Product)</th>
-                                        <th style="width: 12%;">Unit Price</th>
-                                        <th style="width: 10%;">Price</th>
-                                        <th style="width: 10%; text-align: right;">Amount</th>
-                                        <th style="width: 3%;"></th>
+                                        <th style="width: 8%;">QTY</th>
+                                        <th>DESCRIPTION (PRODUCT)</th>
+                                        <th style="width: 8%;">TIE #</th>
+                                        <th style="width: 10%;">QTY/TIE</th>
+                                        <th style="width: 12%;">TYPE</th>
+                                        <th class="expiry-column" style="width: 15%; display: none;">EXPIRY DATE
+                                        </th>
+                                        <th style="width: 10%;">UNIT PRICE</th>
+                                        <th style="width: 8%;">PRICE</th>
+                                        <th style="width: 10%;">AMOUNT</th>
+                                        <th style="width: 5%;"></th>
                                     </tr>
                                 </thead>
                                 <tbody id="itemRows">
                                     <tr class="item-row">
-                                        <td><input type="number" name="quantity[]"
-                                                class="form-control border-0 bg-light shadow-none qty" value="1"
-                                                min="1"></td>
-                                        <td>
-                                            <select name="uom[]" class="form-select border-0 bg-light shadow-none uom"
-                                                required>
-                                                <option value="">Select</option>
-                                                @foreach ($uoms as $uom)
-                                                    <option value="{{ $uom->uom_ID }}">{{ $uom->uom_title }}</option>
-                                                @endforeach
-                                            </select>
+                                        <td><input type="number" name="quantity[]" class="form-control qty" value="1">
                                         </td>
-                                        <td><input type="number" name="quantity_per_unit[]"
-                                                class="form-control border-0 bg-light shadow-none qty_per_unit"
-                                                value="1" min="1"></td>
-                                        <td><input type="text" name="tie_number[]"
-                                                class="form-control border-0 bg-light shadow-none tie_number"
-                                                value="0">
-                                        </td>
+                                        <td><input type="text" name="product_name[]" list="productData"
+                                                class="form-control product-input" required></td>
+                                        <td><input type="number" name="tie_number[]" class="form-control tie_number"
+                                                value="0"></td>
+                                        <td><input type="number" name="tie_qty[]" class="form-control tie_qty"
+                                                value="1"></td>
                                         <td>
-                                            <input type="text" name="product_name[]" list="productData"
-                                                class="form-control border-0 bg-light shadow-none"
-                                                placeholder="Enter product name..." required>
+                                            <input type="text" name="perishable_type[]"
+                                                class="form-control type-input bg-light" readonly placeholder="-">
                                         </td>
-                                        <td>
-                                            <div class="input-group bg-light rounded">
-                                                <span
-                                                    class="input-group-text border-0 bg-transparent text-muted small">₱</span>
-                                                <input type="number" name="unit_price[]" id="unit_price"
-                                                    class="form-control border-0 bg-transparent shadow-none unit_price"
-                                                    step="0.01" value="0.00">
+                                        <td class="expiry-column" style="display: none;">
+                                            <div class="expiry-wrapper" style="display: none;">
+                                                <input type="date" name="exp_date[]" class="form-control expiry-input">
                                             </div>
                                         </td>
-
-                                        <td class="text-end fw-bold pe-3 totalPrice">0.00</td>
-                                        <td class="text-end fw-bold pe-3 row-total">0.00</td>
-
-                                        <td><button type="button" class="btn btn-link text-danger p-0 remove-row"><i
-                                                    class="fas fa-times-circle"></i></button></td>
+                                        <td><input type="number" name="unit_price[]" class="form-control unit_price"
+                                                step="0.01"></td>
+                                        <td class="totalPrice fw-bold">0.00</td>
+                                        <td class="row-total fw-bold text-primary">0.00</td>
+                                        <td>
+                                            <button type="button"
+                                                class="btn btn-outline-danger btn-sm border-0 remove-row">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
 
-                            {{-- This list provides the "Autocomplete" for all rows --}}
                             <datalist id="productData">
-                                @foreach ($products as $product)
-                                    <option value="{{ $product->product_name }}">
-                                @endforeach
+                                {{-- Dynamically populated by JS to show only top 10 --}}
                             </datalist>
                         </div>
                     </div>
@@ -209,21 +137,20 @@
                         <div class="col-md-4 p-4 bg-light rounded-4">
                             <div class="d-flex justify-content-between mb-2">
                                 <span class="text-muted">Gross Amount:</span>
-                                <span id="gross_total" name="gross_total" class="fw-bold text-dark">₱0.00</span>
+                                <span id="gross_total" class="fw-bold text-dark">₱0.00</span>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
                                 <span class="text-muted">Vatable Sales:</span>
-                                <span id="vatable_sales" name="vatable_sales" class="fw-bold text-dark">₱0.00</span>
+                                <span id="vatable_sales" class="fw-bold text-dark">₱0.00</span>
                             </div>
                             <div class="d-flex justify-content-between mb-3">
                                 <span class="text-muted">VAT (12%):</span>
-                                <span id="vat_amount" name="vat_amount" class="fw-bold text-dark">₱0.00</span>
+                                <span id="vat_amount" class="fw-bold text-dark">₱0.00</span>
                             </div>
                             <div
                                 class="d-flex justify-content-between align-items-center pt-3 border-top border-secondary border-opacity-10">
                                 <span class="h6 fw-bold mb-0">Grand Total (Net):</span>
-                                <span id="grand_total" name="grand_total"
-                                    class="h4 fw-bold text-primary mb-0">₱0.00</span>
+                                <span id="grand_total" class="h4 fw-bold text-primary mb-0">₱0.00</span>
                             </div>
                             <input type="hidden" name="gross_total_raw" id="gross_total_raw">
                             <input type="hidden" name="vat_amount_raw" id="vat_amount_raw">
@@ -234,90 +161,131 @@
             </div>
         </div>
     </div>
-
-    <link rel="stylesheet" href="{{ asset('css/pages/add_invoice.css') }}">
 @endsection
 
 @section('scripts src')
     <script>
         $(document).ready(function() {
-            // 1. Build UOM options
-            let uomOptions = '<option value="">Select</option>';
-            @foreach ($uoms as $uom)
-                uomOptions += `<option value="{{ $uom->uom_ID }}">{{ $uom->uom_title }}</option>`;
-            @endforeach
+            // Load products once from server
+            const allProducts = @json($products);
 
-            // 2. Add Row
+            // 1. Add Row Logic
             $('#addRow').on('click', function() {
                 let newRow = `
-                    <tr class="item-row">
-                        <td><input type="number" name="quantity[]" class="form-control border-0 bg-light shadow-none qty" value="1" min="1"></td>
-                        <td>
-                            <select name="uom[]" class="form-select border-0 bg-light shadow-none uom" required>
-                                ${uomOptions}
-                            </select>
-                        </td>
-                        <td><input type="number" name="quantity_per_unit[]" class="form-control border-0 bg-light shadow-none qty_per_unit" value="1" min="1"></td>
-                        <td><input type="number" name="tie_number[]" class="form-control border-0 bg-light shadow-none tie_number" value="0"></td>
-                        <td>
-                            <input type="text" name="product_name[]" list="productData" class="form-control border-0 bg-light shadow-none" placeholder="Enter product name..." required>
-                        </td>
-                        <td>
-                            <div class="input-group bg-light rounded">
-                                <span class="input-group-text border-0 bg-transparent text-muted small">₱</span>
-                                <input type="number" name="unit_price[]" class="form-control border-0 bg-transparent shadow-none unit_price" step="0.01" value="0.00">
-                            </div>
-                        </td>
-                        <td class="text-end fw-bold pe-3 totalPrice">0.00</td>
-                        <td class="text-end fw-bold pe-3 row-total">0.00</td>
-                        <td><button type="button" class="btn btn-link text-danger p-0 remove-row"><i class="fas fa-times-circle"></i></button></td>
-                    </tr>`;
+                <tr class="item-row">
+                    <td><input type="number" name="quantity[]" class="form-control qty" value="1"></td>
+                    <td><input type="text" name="product_name[]" list="productData" class="form-control product-input" required></td>
+                    <td><input type="number" name="tie_number[]" class="form-control tie_number" value="0"></td>
+                    <td><input type="number" name="tie_qty[]" class="form-control tie_qty" value="1"></td>
+                    <td><input type="text" name="perishable_type[]" class="form-control type-input bg-light" readonly placeholder="-"></td>
+                    <td class="expiry-column" style="display: none;">
+                        <div class="expiry-wrapper" style="display: none;">
+                            <input type="date" name="exp_date[]" class="form-control expiry-input">
+                        </div>
+                    </td>
+                    <td><input type="number" name="unit_price[]" class="form-control unit_price" step="0.01"></td>
+                    <td class="totalPrice fw-bold">0.00</td>
+                    <td class="row-total fw-bold text-primary">0.00</td>
+                    <td><button type="button" class="btn btn-outline-danger btn-sm border-0 remove-row"><i class="fas fa-trash-alt"></i></button></td>
+                </tr>`;
                 $('#itemRows').append(newRow);
+                toggleExpiryHeader();
             });
 
-            // 3. Remove Row
-            $(document).on('click', '.remove-row', function() {
-                if ($('.item-row').length > 1) {
-                    $(this).closest('tr').remove();
+            // 2. Dynamic Datalist (Shows only Top 10)
+            $(document).on('input', '.product-input', function() {
+                let inputVal = $(this).val().toLowerCase();
+                let $datalist = $('#productData');
+                $datalist.empty();
+
+                if (inputVal.length > 0) {
+                    let matches = allProducts.filter(p =>
+                        p.product_name.toLowerCase().includes(inputVal)
+                    ).slice(0, 10);
+
+                    matches.forEach(p => {
+                        $datalist.append(`<option value="${p.product_name}">`);
+                    });
+                }
+            });
+
+            // 3. Selection Logic (Triggered on change/select)
+            $(document).on('change', '.product-input', function() {
+                let val = $(this).val();
+                let $row = $(this).closest('tr');
+                let product = allProducts.find(p => p.product_name === val);
+
+                if (product) {
+                    let typeValue = product.perishable_title ? product.perishable_title.toLowerCase() :
+                        'non-perishable';
+                    $row.find('.type-input').val(typeValue);
+                    $row.find('.tie_number').val(product.tie_number || 0);
+                    $row.find('.tie_qty').val(product.tie_qty || 0);
+
+                    handleExpiryVisibility($row, typeValue);
                     calculateTotals();
                 }
             });
 
-            // 4. Trigger Calculation
-            $(document).on('input', '.qty, .unit_price, .qty_per_unit, .tie_number', function() {
+            // 4. Expiry Visibility Logic
+            function handleExpiryVisibility($row, typeValue) {
+                let $wrapper = $row.find('.expiry-wrapper');
+                let $input = $row.find('.expiry-input');
+
+                // Shows date only if 'perishable' is found but not 'non-perishable'
+                if (typeValue.includes('perishable') && !typeValue.includes('non')) {
+                    $wrapper.show();
+                    $input.attr('required', 'required');
+                } else {
+                    $wrapper.hide();
+                    $input.removeAttr('required').val('');
+                }
+                toggleExpiryHeader();
+            }
+
+            // 5. Global Table Header Visibility
+            function toggleExpiryHeader() {
+                let anyVisible = false;
+                $('.type-input').each(function() {
+                    let val = $(this).val().toLowerCase();
+                    if (val.includes('perishable') && !val.includes('non')) {
+                        anyVisible = true;
+                        return false;
+                    }
+                });
+                $('.expiry-column').toggle(anyVisible);
+            }
+
+            // 6. Calculations & Removal
+            $(document).on('click', '.remove-row', function() {
+                $(this).closest('tr').remove();
+                calculateTotals();
+                toggleExpiryHeader();
+            });
+
+            $(document).on('input', '.qty, .unit_price, .tie_qty, .tie_number', function() {
                 calculateTotals();
             });
 
             function calculateTotals() {
                 let grossTotal = 0;
-
                 $('.item-row').each(function() {
                     let qty = parseFloat($(this).find('.qty').val()) || 0;
-                    let unit_price = parseFloat($(this).find('.unit_price').val()) || 0;
-                    let qty_per_unit = parseFloat($(this).find('.qty_per_unit').val()) || 0;
-                    let tie_number = parseFloat($(this).find('.tie_number').val()) || 0;
+                    let up = parseFloat($(this).find('.unit_price').val()) || 0;
+                    let qpu = parseFloat($(this).find('.tie_qty').val()) || 0;
+                    let tie = parseFloat($(this).find('.tie_number').val()) || 0;
 
-                    // Price = Qty/Unit * Tie * Unit Price
-                    let priceCalculated = qty_per_unit * tie_number * unit_price;
-                    $(this).find('.totalPrice').text(priceCalculated.toLocaleString(undefined, {
-                        minimumFractionDigits: 2
-                    }));
+                    let priceCalculated = qpu * tie * up;
+                    $(this).find('.totalPrice').text(priceCalculated.toFixed(2));
 
-                    // Amount = Qty * Price
                     let rowTotal = priceCalculated * qty;
-                    $(this).find('.row-total').text(rowTotal.toLocaleString(undefined, {
-                        minimumFractionDigits: 2
-                    }));
-
+                    $(this).find('.row-total').text(rowTotal.toFixed(2));
                     grossTotal += rowTotal;
                 });
 
-                // VAT Calculations (Assuming 12% is included in Gross)
-                // If Gross is the sum of items, Net = Gross / 1.12
                 let vatableSales = grossTotal / 1.12;
                 let vatAmount = grossTotal - vatableSales;
 
-                // Display Results
                 $('#gross_total').text('₱' + grossTotal.toLocaleString(undefined, {
                     minimumFractionDigits: 2
                 }));
@@ -331,26 +299,12 @@
                     minimumFractionDigits: 2
                 }));
 
-                // Add this at the very bottom of your calculateTotals() function
                 $('#gross_total_raw').val(grossTotal.toFixed(2));
                 $('#vat_amount_raw').val(vatAmount.toFixed(2));
                 $('#grand_total_raw').val(grossTotal.toFixed(2));
             }
 
-            document.getElementById('perishableToggle').addEventListener('change', function() {
-                const expiryField = document.getElementById('expiryField');
-                const expiryInput = document.getElementById('exp_date_input');
-
-                if (this.value === 'perishable') {
-                    expiryField.style.display = 'block'; // Show it
-                    expiryInput.setAttribute('required', 'required'); // Make it mandatory
-                } else {
-                    expiryField.style.display = 'none'; // Hide it
-                    expiryInput.removeAttribute('required'); // Not mandatory
-                    expiryInput.value = ''; // Clear the date if they switch back
-                }
-            });
-
+            toggleExpiryHeader();
         });
     </script>
 @endsection

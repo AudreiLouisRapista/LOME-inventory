@@ -324,7 +324,7 @@
                                     style="display:block; padding:8px 10px; font-size: 0.9rem; border-radius:4px; text-decoration: none;
                           color:{{ Route::is('inventory_report') ? $text_white : $text_dark }}; 
                           background:{{ Route::is('inventory_report') ? $primary_red : 'transparent' }};">
-                                    Inventory Report
+                                    Sales Report
                                 </a>
                             </li>
 

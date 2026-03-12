@@ -442,7 +442,7 @@
                 destroy: true,
                 processing: true,
                 serverSide: true,
-                searching: true,
+                searching: false,
                 lengthChange: false,
                 ajax: {
                     url: "{{ route('view_inventory') }}",
