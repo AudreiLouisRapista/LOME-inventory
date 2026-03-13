@@ -92,7 +92,7 @@
                                         <i class="bi bi-geo-alt-fill"></i> Locate
                                     </a>
                                     {{-- Download Button (Physical Repository) --}}
-                                    <a href="{{ route('download_import', $log->Import_logs_ID) }}"
+                                    <a href="{{ route('download_importedFile', $log->Import_logs_ID) }}"
                                         class="btn btn-sm btn-light border ms-1" title="Download Original">
                                         <i class="bi bi-download"></i>
                                     </a>

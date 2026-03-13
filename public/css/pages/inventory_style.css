@@ -31,6 +31,9 @@
     letter-spacing: 0.025em;
     padding: 15px;
     border: none;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 /* Body Styling */
@@ -163,6 +166,9 @@
     transition: all 0.2s ease;
     border: 1px solid #e2e8f0;
     background: #fff;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border: 1px solid rgba(226, 232, 240, 0.8);
 }
 
 /* View Button - Blue Theme */

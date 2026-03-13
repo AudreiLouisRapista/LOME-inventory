@@ -12,6 +12,7 @@
 @endsection
 
 @section('content')
+    <link rel="stylesheet" href="{{ asset('css/pages/inventory_style.css') }}">
     <div class="row mb-4 g-3" style="font-family: 'Inter', sans-serif;">
         <div class="col-lg-3 col-md-4 col-6 col-5-custom">
             <div class="dash-stat-card">
@@ -442,7 +443,7 @@
                 destroy: true,
                 processing: true,
                 serverSide: true,
-                searching: false,
+                searching: true,
                 lengthChange: false,
                 ajax: {
                     url: "{{ route('view_inventory') }}",
@@ -456,7 +457,11 @@
                 },
                 columns: [{
                         data: 'inventory_ID',
-                        name: 'inventory.inventory_ID'
+                        name: 'inventory.inventory_ID',
+                        render: function(data, type, row) {
+                            // This displays "PRDCT-11" instead of just "11"
+                            return '<span class="fw-bold text-secondary">INVT-' + data + '</span>';
+                        }
                     },
                     {
                         data: 'product_name',
@@ -510,6 +515,49 @@
                         searchable: false
                     }
                 ],
+            });
+            $('#example2 tbody').on('click', '.delete-btn', function() {
+                var id = $(this).data('id');
+
+                Swal.fire({
+                    title: 'Move to Trash?',
+                    text: "Please Double Check before moving to trash.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#198754', // Matches your success/green theme
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, trash it!',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // If user clicks "Yes", run the AJAX
+                        $.ajax({
+                            url: "/admin/InventorysoftDelete/" + id,
+                            method: 'POST',
+                            data: {
+                                _token: '{{ csrf_token() }}',
+                                _method: 'POST'
+                            },
+                            success: function(response) {
+                                table.ajax.reload(null, false);
+
+                                // Show a success SweetAlert after deletion
+                                Swal.fire(
+                                    'Deleted!',
+                                    'Inventory has been moved to trash.',
+                                    'success'
+                                );
+                            },
+                            error: function(xhr) {
+                                Swal.fire(
+                                    'Error!',
+                                    'Could not delete the Inventory.',
+                                    'error'
+                                );
+                            }
+                        });
+                    }
+                });
             });
 
             // ==========================================
@@ -575,18 +623,37 @@
 
             $('#updateProductForm').on('submit', function(e) {
                 e.preventDefault();
+
                 $.ajax({
                     url: $(this).attr('action'),
                     method: 'POST',
                     data: $(this).serialize(),
                     success: function(response) {
+                        // 1. Close the modal first
                         $('#UpdateProductModal').modal('hide');
+
+                        // 2. Trigger professional Success Alert
+                        Swal.fire({
+                            title: 'Updated!',
+                            text: response.save,
+                            icon: 'success',
+                            confirmButtonColor: '#3085d6',
+                            timer: 2000 // Optional: automatically closes after 2 seconds
+                        });
+
+                        // 3. Refresh live UI components
                         table.ajax.reload(null, false);
                         refreshChartOnly();
-                        alert('Inventory updated successfully!');
                     },
-                    error: function() {
-                        alert('Update failed!');
+                    error: function(xhr) {
+                        // Trigger Error Alert
+                        Swal.fire({
+                            title: 'Update Failed',
+                            text: xhr.responseJSON?.message ||
+                                'Something went wrong while updating the inventory.',
+                            icon: 'error',
+                            confirmButtonColor: '#d33'
+                        });
                     }
                 });
             });
@@ -695,8 +762,14 @@
                         );
                     },
                     success: function(response) {
-                        // 1. Success Notification
-                        alert(response.success || 'Import successful!');
+                        // 1. Success Notification using SweetAlert2
+                        Swal.fire({
+                            title: 'Success!',
+                            text: response.save,
+                            icon: 'success',
+                            confirmButtonText: 'OK',
+                            confirmButtonColor: '#3085d6'
+                        });
 
                         // 2. Clear the file input
                         $('.import-container form')[0].reset();
@@ -724,40 +797,89 @@
             // ==========================================
             $(document).on('click', '#btn-close-period', function(e) {
                 e.preventDefault();
-                if (confirm(
-                        "Are you sure? This will lock current remaining stock as the 'Starting Quantity' for the new month."
-                    )) {
-                    if (prompt("Type 'CLOSE' to confirm:") === 'CLOSE') {
-                        $.ajax({
-                            url: "{{ route('inventory_rollover') }}",
-                            type: "POST",
-                            data: {
-                                _token: "{{ csrf_token() }}"
+
+                // 1. Initial Confirmation Alert
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "This will lock current remaining stock as the 'Starting Quantity' for the new month.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Yes, proceed!',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+
+                        // 2. The "Type CLOSE" Confirmation
+                        Swal.fire({
+                            title: 'Type CLOSE to confirm:',
+                            input: 'text',
+                            inputAttributes: {
+                                autocapitalize: 'off'
                             },
-                            beforeSend: function() {
-                                $('#btn-close-month').prop('disabled', true).html(
-                                    '<span class="spinner-border spinner-border-sm"></span> Processing...'
-                                );
-                            },
-                            success: function(response) {
-                                alert(response.success);
-                                location.reload();
-                            },
-                            error: function(xhr) {
-                                alert("Error: " + (xhr.responseJSON.error || "System error"));
-                                $('#btn-close-month').prop('disabled', false).html(
-                                    '<i class="bi bi-calendar-check-fill"></i> Close Month & Reset'
-                                );
+                            showCancelButton: true,
+                            confirmButtonText: 'Submit',
+                            preConfirm: (value) => {
+                                if (value !== 'CLOSE') {
+                                    Swal.showValidationMessage(
+                                        'You must type "CLOSE" exactly');
+                                }
+                                return value;
+                            }
+                        }).then((inputResult) => {
+                            if (inputResult.isConfirmed && inputResult.value === 'CLOSE') {
+
+                                // 3. The Actual AJAX Call
+                                $.ajax({
+                                    url: "{{ route('inventory_rollover') }}",
+                                    type: "POST",
+                                    data: {
+                                        _token: "{{ csrf_token() }}"
+                                    },
+                                    beforeSend: function() {
+                                        // Show a "Processing" alert that doesn't close
+                                        Swal.fire({
+                                            title: 'Processing Rollover...',
+                                            text: 'Please wait while we update the inventory.',
+                                            allowOutsideClick: false,
+                                            didOpen: () => {
+                                                Swal.showLoading();
+                                            }
+                                        });
+                                    },
+                                    success: function(response) {
+                                        // Show final success message from your Backend 'save' key
+                                        Swal.fire({
+                                            title: 'Completed!',
+                                            text: response.save,
+                                            icon: 'success'
+                                        }).then(() => {
+                                            location
+                                                .reload(); // Reload after user clicks OK
+                                        });
+                                    },
+                                    error: function(xhr) {
+                                        // Show error message from Backend 'error' key
+                                        Swal.fire({
+                                            title: 'Error!',
+                                            text: xhr.responseJSON
+                                                .error ||
+                                                "System error",
+                                            icon: 'error'
+                                        });
+                                    }
+                                });
                             }
                         });
                     }
-                }
+                });
             });
 
             refreshChartOnly(); // Initial load
         });
     </script>
 
-    <link rel="stylesheet" href="{{ asset('css/pages/inventory_style.css') }}">
+
 
 @endsection

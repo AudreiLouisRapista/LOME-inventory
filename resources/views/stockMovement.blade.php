@@ -102,7 +102,6 @@
                                     <th>Reference</th>
                                     <th>Product Name</th>
                                     <th>Type</th>
-                                    <th>Batch Quantity</th>
                                     <th class="text-end">Qty</th>
                                 </tr>
                             </thead>
@@ -117,12 +116,14 @@
                                                 {{ \Carbon\Carbon::parse($move->created_at)->format('h:i A') }}
                                             </div>
                                         </td>
-                                        <td><span
-                                                class="badge bg-secondary-subtle text-dark border">{{ $move->invoice_number }}</span>
+                                        <td>
+                                            <span class="badge bg-secondary-subtle text-dark border">
+                                                {{ $move->reference ?? 'N/A' }}
+                                            </span>
                                         </td>
                                         <td class="fw-bold">{{ $move->product_name }}</td>
                                         <td>
-                                            @if ($move->MovementType == 'IN')
+                                            @if ($move->type == 'Inbound')
                                                 <span class="badge-columns bg-soft-success-column">
                                                     <i class="bi bi-arrow-down-left"></i> Inbound
                                                 </span>
@@ -132,10 +133,10 @@
                                                 </span>
                                             @endif
                                         </td>
-                                        <td>{{ $move->batch_quantity }}</td>
+
                                         <td
-                                            class="text-end fw-bold {{ $move->MovementType == 'IN' ? 'text-success' : 'text-danger' }}">
-                                            {{ $move->MovementType == 'IN' ? '+' : '-' }}{{ $move->batch_quantity }}
+                                            class="text-end fw-bold {{ $move->type == 'Inbound' ? 'text-success' : 'text-danger' }}">
+                                            {{ $move->type == 'Inbound' ? '+' : '-' }}{{ number_format($move->move_qty) }}
                                         </td>
                                     </tr>
                                 @endforeach

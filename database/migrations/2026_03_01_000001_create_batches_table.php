@@ -29,8 +29,7 @@ return new class extends Migration
             $table->index('product_ID');
             $table->index('expiration_date');
 
-            // Prevent duplicates for the core rule: one batch per product + expiration date
-            $table->unique(['product_ID', 'expiration_date'], 'batches_product_expiration_unique');
+         
 
             // Foreign key intentionally omitted because this repo does not include
             // the products/inventory table migrations (adding FK could break fresh installs).
