@@ -268,8 +268,7 @@
                             <table class="table table-hover align-middle mb-0">
                                 <thead class="table-light text-uppercase small fw-bold">
                                     <tr>
-                                        <th>Quantity</th>
-                                        <th>UOM</th>
+                                        <th>Quantity Per Pcs</th>
                                         <th>Description</th>
                                         <th>U. Price</th>
                                         <th>Amount</th>
@@ -280,8 +279,7 @@
                                     @if (isset($purchase_items[$purchase->purchase_id]))
                                         @foreach ($purchase_items[$purchase->purchase_id] as $item)
                                             <tr>
-                                                <td>{{ $item->uom_quantity }}</td>
-                                                <td>{{ $item->uom_title }}</td>
+                                                <td>{{ $item->tie_total }}</td>
                                                 <td>{{ $item->product_name }}</td>
                                                 <td>₱{{ number_format($item->unit_price, 2) }}</td>
                                                 <td class="fw-bold">₱{{ number_format($item->total_price, 2) }}</td>

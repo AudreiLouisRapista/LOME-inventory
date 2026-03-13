@@ -1,22 +1,25 @@
 /* Container for better targeting */
-.mb-5 .form-control {
+.mb-5 .form-control,
+.mb-5 .form-select {
     transition: all 0.3s ease-in-out;
-    border: 1px solid transparent;
-    /* Prevents layout jump on hover */
+    /* Changed from transparent to a light visible gray */
+    border: 1px solid #e0e0e0; 
+    background-color: #f8f9fa; /* Keeps the 'bg-light' feel */
 }
 
 /* Hover State */
-.mb-5 .form-control:hover {
+.mb-5 .form-control:hover,
+.mb-5 .form-select:hover {
     background-color: #ffffff !important;
-    border-color: #dee2e6;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+    border-color: #0f0f10 !important; /* Your dark border color */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
     transform: translateY(-1px);
 }
 
-/* Focus State (Optional but recommended for accessibility) */
-.mb-5 .form-control:focus {
+/* Focus State */
+.mb-5 .form-control:focus,
+.mb-5 .form-select:focus {
     background-color: #ffffff !important;
-    border-color: #dc3545;
-    /* Matches your bg-danger badge color */
-    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.1) !important;
+    border-color: #4d4d4d !important;
+    outline: none;
 }

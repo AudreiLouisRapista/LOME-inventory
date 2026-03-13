@@ -324,17 +324,10 @@
                                     style="display:block; padding:8px 10px; font-size: 0.9rem; border-radius:4px; text-decoration: none;
                           color:{{ Route::is('inventory_report') ? $text_white : $text_dark }}; 
                           background:{{ Route::is('inventory_report') ? $primary_red : 'transparent' }};">
-                                    Inventory Report
+                                    Sales Report
                                 </a>
                             </li>
-                            <li class="nav-item">
-                                <a href="{{ route('product_report') }}" class="nav-link"
-                                    style="display:block; padding:8px 10px; font-size: 0.9rem; border-radius:4px; text-decoration: none;
-                          color:{{ Route::is('product_report') ? $text_white : $text_dark }}; 
-                          background:{{ Route::is('product_report') ? $primary_red : 'transparent' }};">
-                                    Product Report
-                                </a>
-                            </li>
+
 
                         </ul>
                     </div>
@@ -365,6 +358,14 @@
                         class="nav-link {{ Route::is('add_invoice') ? 'active' : '' }}"
                         style="display:flex; align-items:center; gap:10px; color:{{ Route::is('add_invoice') ? '#fff' : '#333' }}; background:{{ Route::is('add_invoice') ? '#ff5757' : 'transparent' }};">
                         <i class="nav-icon fas fa-file-signature"></i> Invoice Encoder
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a href="{{ route('stockMovement') }}"
+                        class="nav-link {{ Route::is('stockMovement') ? 'active' : '' }}"
+                        style="display:flex; align-items:center; gap:10px; color:{{ Route::is('stockMovement') ? '#fff' : '#333' }}; background:{{ Route::is('stockMovement') ? '#ff5757' : 'transparent' }};">
+                        <i class="fas fa-exchange-alt"></i> Stock Ledger
                     </a>
                 </li>
 

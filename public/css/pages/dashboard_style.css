@@ -178,3 +178,87 @@
     font-weight: 800;
     color: #0f172a;
 }
+
+   
+
+
+        :root {
+            --purple-main: #8a3ffc;
+            --purple-soft: #f4f0ff;
+            --navy: #001d44;
+            --bg-gray: #f8f9fd;
+        }
+
+        
+
+        .main-card {
+            background: #ffffff;
+            border: 1px solid rgba(138, 63, 252, 0.05);
+        }
+
+        /* Icon Gradient Box */
+        .icon-gradient {
+            background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 14px;
+            font-size: 1.4rem;
+        }
+
+        /* Floating Stat Badges */
+        .stat-badge {
+            background: white;
+            border: 1px solid #eee;
+            padding: 12px 24px;
+            border-radius: 18px;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .stat-badge .label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-badge .value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            display: block;
+            margin-top: -2px;
+        }
+
+        /* Chart Legend Dots */
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            background-color: var(--purple-main);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(138, 63, 252, 0.4);
+        }
+
+        /* Top Seller Pill */
+        .top-seller-pill {
+            background-color: var(--purple-soft);
+            border-radius: 12px;
+            font-size: 0.9rem;
+        }
+
+        .text-purple {
+            color: var(--purple-main);
+        }
+
+        .text-purple-dark {
+            color: #5a189a;
+        }
+
+        .text-navy {
+            color: var(--navy);
+        }
+    

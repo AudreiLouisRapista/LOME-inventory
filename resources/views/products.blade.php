@@ -70,7 +70,6 @@
                                                                 </select>
                                                             </div>
                                                         </div>
-
                                                         <div class="col-md-6">
                                                             <label class="form-label fw-semibold"
                                                                 style="color: #475569;">Product</label>
@@ -93,6 +92,55 @@
                                                                 </datalist>
                                                             </div>
                                                         </div>
+
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-semibold"
+                                                                style="color: #475569;">Perishable Type</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text bg-light border-end-0"
+                                                                    style="border-radius: 10px 0 0 10px;">
+                                                                    <i class="bi bi-tag text-muted"></i>
+                                                                </span>
+                                                                <select id="perishable_ID_add" name="perishable_ID"
+                                                                    class="form-select bg-light border-start-0 js-category-select"
+                                                                    style="border-radius: 0 10px 10px 0; height: 45px;"
+                                                                    required>
+                                                                    <option value="">Select Perishable Type</option>
+                                                                    @foreach ($perishables as $perishable)
+                                                                        <option value="{{ $perishable->perishable_ID }}">
+                                                                            {{ $perishable->perishable_title }}</option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
+                                                        </div>
+
+
+
+                                                    </div>
+                                                </div>
+
+
+
+                                                <p class="text-muted small fw-bold text-uppercase mb-3 border-bottom pb-1">
+                                                    Bundle Size</p>
+                                                <div class="row g-3 mb-4">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label fw-semibold">Tie Size</label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text"></span>
+                                                            <input type="number" name="tie_number" class="form-control"
+                                                                step="0.01" placeholder="0.00"
+                                                                value="{{ old('tie_number') }}" required>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label fw-semibold">Tie Quantity</label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text"></span>
+                                                            <input type="number" name="tie_qty" class="form-control"
+                                                                step="0.01" placeholder="0.00"
+                                                                value="{{ old('tie_qty') }}" required>
+                                                        </div>
                                                     </div>
                                                 </div>
 
@@ -103,8 +151,8 @@
                                                         <label class="form-label fw-semibold">Cost Price</label>
                                                         <div class="input-group">
                                                             <span class="input-group-text">$</span>
-                                                            <input type="number" name="product_cost" class="form-control"
-                                                                step="0.01" placeholder="0.00"
+                                                            <input type="number" name="product_cost"
+                                                                class="form-control" step="0.01" placeholder="0.00"
                                                                 value="{{ old('product_cost') }}" required>
                                                         </div>
                                                     </div>
@@ -112,8 +160,8 @@
                                                         <label class="form-label fw-semibold">Selling Price</label>
                                                         <div class="input-group">
                                                             <span class="input-group-text">$</span>
-                                                            <input type="number" name="product_price" class="form-control"
-                                                                step="0.01" placeholder="0.00"
+                                                            <input type="number" name="product_price"
+                                                                class="form-control" step="0.01" placeholder="0.00"
                                                                 value="{{ old('product_price') }}" required>
                                                         </div>
                                                     </div>
@@ -142,6 +190,9 @@
                                             <th class="text-secondary text-uppercase small fw-bold">Product ID</th>
                                             <th class="text-secondary text-uppercase small fw-bold">Name</th>
                                             <th class="text-secondary text-uppercase small fw-bold">Category</th>
+                                            <th class="text-secondary text-uppercase small fw-bold">Perishable Type</th>
+                                            <th class="text-secondary text-uppercase small fw-bold">Tie Number</th>
+                                            <th class="text-secondary text-uppercase small fw-bold">Tie Quantity</th>
                                             <th class="text-secondary text-uppercase small fw-bold">Cost</th>
                                             <th class="text-secondary text-uppercase small fw-bold">Price</th>
                                             <th class="text-secondary text-uppercase small fw-bold">Actions</th>
@@ -219,17 +270,20 @@
     <script>
         $(document).ready(function() {
             var table = $('#example2').DataTable({
-                destroy: true, // use this to reinitialize the table if it already exists. use ths if you are using AJAX to load data and want to refresh the table with new data
-                processing: true, // This shows a loading indicator while the data is being fetched, enhancing user experience.
-                serverSide: true, // This enables the fast loading for 4k rows. instead of loading all data at once, it loads only the data needed for the current page.
+                destroy: true,
+                processing: true,
+                serverSide: true,
                 language: {
                     processing: '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Processing...</span></div>'
                 },
-                ajax: "{{ route('view_products') }}", // Ensure this matches your route name
-
+                ajax: "{{ route('view_products') }}",
                 columns: [{
                         data: 'product_ID',
-                        name: 'products.product_ID'
+                        name: 'products.product_ID',
+                        render: function(data, type, row) {
+                            // This displays "PRDCT-11" instead of just "11"
+                            return '<span class="fw-bold text-secondary">PRDCT-' + data + '</span>';
+                        }
                     },
                     {
                         data: 'product_name',
@@ -240,6 +294,18 @@
                         name: 'category.category_name'
                     },
                     {
+                        data: 'perishable_title',
+                        name: 'perishable.perishable_title'
+                    },
+                    {
+                        data: 'tie_number',
+                        name: 'products.tie_number'
+                    },
+                    {
+                        data: 'tie_qty',
+                        name: 'products.tie_qty'
+                    },
+                    {
                         data: 'product_cost',
                         name: 'products.product_cost'
                     },
@@ -247,8 +313,6 @@
                         data: 'product_price',
                         name: 'products.product_price'
                     },
-
-
                     {
                         data: 'action',
                         name: 'action',
@@ -256,14 +320,59 @@
                         searchable: false
                     },
                 ],
-                // "dom": '<"d-flex align-items-end justify-content-between mb-4"Bf>rtip',
-                // "buttons": ["excel", "pdf", "print"]
-
-
             });
 
-            $('#example2 tbody').on('click', '.edit-btn', function() {
+            // ==========================================
+            // 1. DELETE PROCESS (Soft Delete)
+            // ==========================================
+            $('#example2 tbody').on('click', '.delete-btn', function() {
+                var id = $(this).data('id');
 
+                Swal.fire({
+                    title: 'Move to Trash?',
+                    text: "Please Double Check before moving to trash.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#198754', // Matches your success/green theme
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, trash it!',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // If user clicks "Yes", run the AJAX
+                        $.ajax({
+                            url: "/admin/ProductsoftDelete/" + id,
+                            method: 'POST',
+                            data: {
+                                _token: '{{ csrf_token() }}',
+                                _method: 'POST'
+                            },
+                            success: function(response) {
+                                table.ajax.reload(null, false);
+
+                                // Show a success SweetAlert after deletion
+                                Swal.fire(
+                                    'Deleted!',
+                                    'Product has been moved to trash.',
+                                    'success'
+                                );
+                            },
+                            error: function(xhr) {
+                                Swal.fire(
+                                    'Error!',
+                                    'Could not delete the product.',
+                                    'error'
+                                );
+                            }
+                        });
+                    }
+                });
+            });
+
+            // ==========================================
+            // 2. EDIT MODAL POPULATE
+            // ==========================================
+            $('#example2 tbody').on('click', '.edit-btn', function() {
                 var id = $(this).data('id');
                 var name = $(this).data('name');
                 var catID = $(this).data('category-id');
@@ -276,15 +385,16 @@
                 $('#edit_cost').val(cost);
                 $('#edit_price').val(price);
 
-
                 $('#UpdateProductModal').modal('show');
             });
 
+            // ==========================================
+            // 3. UPDATE FORM SUBMISSION
+            // ==========================================
             $('#updateProductForm').on('submit', function(e) {
                 e.preventDefault();
 
-                var actionUrl = $(this).attr(
-                    'action'); // BEST OPTION IF THERE IS ACTION CRUD IN THE FUTURE. USUALLY USED FOR POST
+                var actionUrl = $(this).attr('action');
                 var formdata = $(this).serialize();
 
                 $.ajax({
@@ -292,44 +402,56 @@
                     method: 'POST',
                     data: formdata,
                     success: function(response) {
+                        // 1. Hide the modal immediately for a smooth UI
                         $('#UpdateProductModal').modal('hide');
-                        table.ajax.reload(null,
-                            false); // Reload the DataTable without resetting the pagination
-                        alert('Product updated successfully!');
+
+                        // 2. Trigger SweetAlert using the 'save' key from your Controller
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Product Updated',
+                            text: response.save,
+                            confirmButtonColor: '#4e73df'
+                        });
+
+                        // 3. Refresh the DataTable without resetting pagination
+                        table.ajax.reload(null, false);
                     },
                     error: function(xhr) {
-                        alert('Something went wrong!');
+                        // 3. Trigger Error Alert using 'errorMessage' or 'error' from your Controller
+                        var errorMsg = xhr.responseJSON.errorMessage || xhr.responseJSON
+                            .error || 'Something went wrong!';
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Update Failed',
+                            text: errorMsg,
+                            confirmButtonColor: '#4e73df'
+                        });
                     }
                 });
             });
 
             // ==========================================
-            // 4. DYNAMIC DROPDOWNS (Filtered Products with Batch Qty)
+            // 4. DYNAMIC DROPDOWNS
             // ==========================================
             $('#category_ID_add').on('change', function(e) {
-
                 var $productSelect = $('#product_ID_add');
                 var categorySelect = $(this).val();
 
-                // 2. Reset the product dropdown 
                 $productSelect.empty().append('<option value="">Loading....</option>');
 
                 if (categorySelect) {
                     $.ajax({
-                        // 3. Added a slash before the ID so the URL is correct
                         url: "/admin/getProductsByCategory/" + categorySelect,
                         method: "GET",
                         dataType: "json",
                         success: function(data) {
-                            // 4. Clear the "Loading" message
                             $productSelect.empty().append(
                                 '<option value="">Select Product</option>');
-
-                            // 5. Use 'value' (the variable from the function) instead of 'product'
                             $.each(data, function(key, value) {
                                 $productSelect.append('<option value="' + value
-                                    .product_ID + '">' +
-                                    value.product_name + '</option>');
+                                    .product_ID + '">' + value.product_name +
+                                    '</option>');
                             });
                         },
                         error: function() {
@@ -341,8 +463,6 @@
                     $productSelect.empty().append('<option value="">Select Category First</option>');
                 }
             });
-
-
         });
     </script>
 

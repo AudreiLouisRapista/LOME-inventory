@@ -1,0 +1,65 @@
+/* --- Dashboard Layout --- */
+.admin-header-section {
+    background-color: rgba(252, 252, 252, 0.876);
+    transition: background-color 0.3s ease;
+}
+
+.dark-mode .admin-header-section {
+    background-color: #121212 !important;
+}
+
+/* Aesthetic Improvements */
+.profile-card {
+    border-radius: 20px;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.profile-img-container {
+    position: relative;
+    display: inline-block;
+}
+
+.edit-overlay {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background: #4e73df;
+    color: white;
+    border-radius: 50%;
+    padding: 5px 10px;
+    cursor: pointer;
+    border: 3px solid #fff;
+}
+
+.info-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: #858796;
+    font-weight: 700;
+}
+
+.info-value {
+    font-size: 1.1rem;
+    color: #3a3b45;
+    font-weight: 600;
+}
+
+.activity-item {
+    border-left: 3px solid #e3e6f0;
+    padding-left: 20px;
+    position: relative;
+    padding-bottom: 15px;
+}
+
+.activity-item::before {
+    content: "";
+    position: absolute;
+    left: -8px;
+    top: 0;
+    width: 13px;
+    height: 13px;
+    background: #fff;
+    border: 3px solid #4e73df;
+    border-radius: 50%;
+}

@@ -51,15 +51,16 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     Route::get('/view_products', [MainController::class, 'view_products'])->name('view_products');
     Route::get('/view_inventory', [MainController::class, 'view_inventory'])->name('view_inventory');
     Route::get('/pos_history', [MainController::class, 'pos_history'])->name('pos_history');
-    Route::get('/product_report', [MainController::class, 'product_report'])->name('product_report');
     Route::get('/inventory_report', [MainController::class, 'inventory_report'])->name('inventory_report');
-    Route::get('/download-import/{id}', [MainController::class, 'download_import'])->name('download_import');
+    Route::get('/download-import/{id}', [MainController::class, 'download_importedFile'])->name('download_importedFile');
     Route::get('/updateTeacherStatus', [MainController::class, 'updateTeacherStatus'])->name('updateTeacherStatus');
     Route::get('/purchase_invoice', [MainController::class, 'purchase_invoice'])->name('purchase_invoice');
     Route::get('/add_invoice', [MainController::class, 'add_invoice'])->name('add_invoice');
     Route::get('/import_history', [MainController::class, 'import_history'])->name('import_history');
    Route::get('/getProductsByCategory/{id}', [MainController::class, 'getProductsByCategory'])->name('getProductsByCategory');
     Route::get('/getPaymentHistory/{id}', [MainController::class, 'getPaymentHistory'])->name('getPaymentHistory');
+    Route::get('/stockMovement', [MainController::class, 'stockMovement'])->name('stockMovement');
+
    
 
 
@@ -85,6 +86,8 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () 
     Route::post('/saveInvoiceAndItem', [MainController::class, 'saveInvoiceAndItem'])->name('saveInvoiceAndItem');
     Route::post('/save_invoice', [MainController::class, 'save_invoice'])->name('save_invoice');
     Route::post('/add_new_inventory', [MainController::class, 'add_new_inventory'])->name('add_new_inventory');
+    Route::post('/ProductsoftDelete/{id}', [MainController::class, 'ProductsoftDelete'])->name('ProductsoftDelete');
+    Route::post('/InventorysoftDelete/{id}', [MainController::class, 'InventorysoftDelete'])->name('InventorysoftDelete');
     
    // Add {id} to the URL
     Route::post('/admin-profile/{id}', [MainController::class, 'adminProfile'])->name('adminProfile');

@@ -1,0 +1,197 @@
+
+        /* Design Specific CSS */
+        .stat-card {
+            transition: transform 0.2s;
+            border: none !important;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .icon-shape {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 1.25rem;
+        }
+
+        .bg-soft-success {
+            background-color: #e8fadf;
+            color: #28a745;
+        }
+
+        .bg-soft-danger {
+            background-color: #fbe9eb;
+            color: #dc3545;
+        }
+
+        .bg-soft-primary {
+            background-color: #e7f1ff;
+            color: #0d6efd;
+        }
+
+        .bg-soft-warning {
+            background-color: #fff4e5;
+            color: #ff9800;
+        }
+
+        .table thead th {
+            background-color: #f8f9fa;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            color: #6c757d;
+            border-bottom: 1px solid #edf2f9;
+            text-align: center;
+        }
+
+        .badge-pill-custom {
+            padding: 0.5em 1em;
+            border-radius: 50px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .sku-text {
+            font-size: 0.75rem;
+            color: #95aac9;
+            display: block;
+        }
+        /* Card Container Styling */
+        .custom-stat-card {
+            border-radius: 12px;
+            background: #ffffff;
+        }
+
+        /* Icon Box Styling */
+        .stat-icon-box {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-size: 1.25rem;
+        }
+
+        /* Typography */
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 0;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            color: #2d3436;
+            margin-bottom: 0;
+        }
+
+        /* Soft Color Palette */
+        .bg-soft-success { background-color: #e8fadf; color: #28a745; }
+        .bg-soft-danger { background-color: #fbe9eb; color: #dc3545; }
+        .bg-soft-primary { background-color: #e7f1ff; color: #0d6efd; }
+        .bg-soft-warning { background-color: #fff4e5; color: #ff9800; }
+
+        /* Stacked Date/Time Styling */
+            #stockMovementTable td {
+                padding-top: 12px;
+                padding-bottom: 12px;
+                vertical-align: middle;
+                text-align: center;
+            }
+
+            .text-muted {
+                color: #95aac9 !important; /* The specific grayish-blue from the design */
+            }
+
+            .fw-semibold {
+                font-weight: 600 !important;
+        }
+
+                    /* Type Badge Pill Styling */
+            .badge-columns{
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 16px;
+                border-radius: 20px;
+                font-size: 0.85rem;
+                font-weight: 600;
+            }
+
+            /* Icons inside badges */
+            .badge-pill-custom i {
+                font-size: 1rem;
+                stroke-width: 2px; /* Makes the arrow more visible */
+            }
+
+            /* Specific Soft Colors from the design */
+            .bg-soft-success-column {
+                background-color: #d7fcc4 !important;
+                color: #28a745 !important;
+            }
+
+            .bg-soft-danger-column {
+                background-color: #fbe9eb !important;
+                color: #dc3545 !important;
+            }
+            .form-select, .form-control {
+                border-radius: 8px;
+                font-size: 0.9rem;
+                color: #2d3436;
+            }
+            
+            /* Container for the search and length menu */
+            .dataTables_wrapper .dataTables_filter {
+                float: left !important; /* Moves it to the left like the design */
+                margin-bottom: 20px;
+                width: 40%;
+            }
+
+            /* Hide the "Search:" label text but keep the input */
+            .dataTables_wrapper .dataTables_filter label {
+                font-size: 0; 
+                position: relative;
+                width: 100%;
+            }
+
+            /* Add the Search Icon using CSS */
+            .dataTables_wrapper .dataTables_filter label::after {
+                content: "\F52A"; /* Bootstrap Icon Unicode for Search */
+                font-family: "bootstrap-icons";
+                position: absolute;
+                left: 15px;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 1rem;
+                color: #95aac9;
+            }
+
+            /* Style the actual Input Box */
+            .dataTables_wrapper .dataTables_filter input {
+                background-color: #f8fbfd !important;
+                border: none !important;
+                border-radius: 10px !important;
+                padding: 10px 15px 10px 45px !important; /* Extra padding on left for icon */
+                width: 50% !important;
+                font-size: 0.9rem;
+                color: #2d3436;
+                margin-left: 0 !important;
+                box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+            }
+
+            .dataTables_wrapper .dataTables_filter input:focus {
+                outline: none;
+                background-color: #f1f3f5 !important;
+            }
+
+            
