@@ -1054,6 +1054,20 @@ public function add_invoice(Request $request)
     return view('add_invoice', compact('suppliers', 'products'));
 }
 
+public function stockMovement(Request $request)
+{
+    // 1. Fetch all movements with their related product and category data
+    // We order by ID desc so the newest "Activity" is at the top
+    $movements = DB::table('stock_movements')
+        ->join('products', 'stock_movements.product_ID', '=', 'products.product_ID')
+        ->join('purchases', 'stock_movements.purchase_id', '=', 'purchases.purchase_id')
+        ->join('batches', 'stock_movements.batch_ID', '=', 'batches.batch_ID')
+        ->join('purchase_items', 'stock_movements.purchase_item_id', '=', 'purchase_items.purchase_item_id')
+        ->select(
+            'stock_movements.*', 
+            'products.product_name', 
+            'purchases.invoice_number',
+            'batches.quantity as batch_quantity',
 
 public function stockMovement(Request $request)
 {
