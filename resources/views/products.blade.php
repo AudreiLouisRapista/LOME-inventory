@@ -393,6 +393,7 @@
             // ==========================================
             $('#updateProductForm').on('submit', function(e) {
                 e.preventDefault();
+
                 var actionUrl = $(this).attr('action');
                 var formdata = $(this).serialize();
 
@@ -401,12 +402,31 @@
                     method: 'POST',
                     data: formdata,
                     success: function(response) {
+                        // 1. Hide the modal immediately for a smooth UI
                         $('#UpdateProductModal').modal('hide');
+
+                        // 2. Trigger SweetAlert using the 'save' key from your Controller
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Product Updated',
+                            text: response.save,
+                            confirmButtonColor: '#4e73df'
+                        });
+
+                        // 3. Refresh the DataTable without resetting pagination
                         table.ajax.reload(null, false);
-                        alert('Product updated successfully!');
                     },
                     error: function(xhr) {
-                        alert('Something went wrong!');
+                        // 3. Trigger Error Alert using 'errorMessage' or 'error' from your Controller
+                        var errorMsg = xhr.responseJSON.errorMessage || xhr.responseJSON
+                            .error || 'Something went wrong!';
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Update Failed',
+                            text: errorMsg,
+                            confirmButtonColor: '#4e73df'
+                        });
                     }
                 });
             });

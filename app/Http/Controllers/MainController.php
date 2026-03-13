@@ -423,9 +423,6 @@ public function save_product(Request $request)
 
 
 public function update_product(Request $request) {
-
-
-      
     DB::table('products')
         ->where('product_ID', $request->product_ID)
         ->update([
@@ -434,13 +431,17 @@ public function update_product(Request $request) {
             'category_ID' => $request->category_ID,
             'product_price' => $request->price,
             'product_cost' => $request->cost,
+            'deleted_at' => null,
+            'updated_at' => now(),
+            
       
         ]);
-        $this->logActivity(
+        $userName = session('name');
+       $this->logActivity(
     'updated',
-    'Updated product ID ' . $request->product_ID . ' to ' . $request->product_name
- );
-   return response()->json(['success' => 'Product updated successfully.']);
+    "Updated Product ID: {$request->product_ID} | Name: {$request->product_name} | Responsible: {$userName} "
+    );
+   return response()->json(['save' => 'Product updated successfully.']);
 
 }
 
@@ -654,11 +655,12 @@ public function update_inventory(Request $request) {
             'invt_NewQuantity'    => $updatedMonthlyNew,
             'invt_remainingStock' => $totalRemaining,
             'status_ID'           => $status_ID,
+            'deleted_at'          => null,
             'updated_at'          => now(),
         ]);
 
     return response()->json([
-        'success' => 'Stock added! Formula applied: (Starting + New) - Sold',
+        'save' => 'New Quantity Added',
         'debug' => [
             'new_starting' => $inventory->invt_StartingQuantity,
             'monthly_additions' => $updatedMonthlyNew,
@@ -695,19 +697,9 @@ public function import_pos_sales(Request $request)
         'UploadedBy'  => session('urs_id') ?? 1, // Fallback to 1 for testing
         'Uploaded_At' => now()
     ]);
-
-
-
     // Now pass that ID to the Import class
     Excel::import(new POSsaleImport($importLogID), storage_path('app/public/' . $filePath));
-
-
-   
-
-    
-    
-
-    return response()->json(['success' => 'Import completed and inventory updated!']);
+    return response()->json(['save' => 'Import completed and inventory updated!']);
 }
 
 
@@ -828,19 +820,20 @@ public function inventory_rollover(Request $request) {
                 ->where('inventory_ID', $item->inventory_ID)
                 ->update([
                     'invt_StartingQuantity' => $item->invt_remainingStock ?? 0,
-                    'invt_NewQuantity'      => 0,
-                    'invt_totalSold'        => 0,
-                    'invt_remainingStock'   => 0,
+                    'invt_NewQuantity'      => null,
+                    'invt_totalSold'        => null,
+                    'invt_remainingStock'   => null,
+                    'deleted_at'            => null,
                     'updated_at'            => $timestamp
                 ]);
         }
 
         DB::commit();
-        return response()->json(['success' => 'Month closed! History saved and balances reset.']);
+        return response()->json(['save' => 'Month closed! History saved and balances reset.']);
 
     } catch (\Exception $e) {
         DB::rollBack();
-        return response()->json(['error' => 'System error: ' . $e->getMessage()], 500);
+        return response()->json(['errorMessage' => 'System error: ' . $e->getMessage()], 500);
     }
 }
 
