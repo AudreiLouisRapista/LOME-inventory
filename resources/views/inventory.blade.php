@@ -235,7 +235,7 @@
                                                                 <input id="product_cost_add" type="number"
                                                                     name="product_cost"
                                                                     class="form-control js-product-cost" step="0.01"
-                                                                    placeholder="0.00" value="" required>
+                                                                    placeholder="0.00">
                                                             </div>
                                                         </div>
                                                         <div class="col-md-4">
@@ -472,12 +472,12 @@
                         name: 'category.category_name'
                     },
                     {
-                        data: 'product_cost',
-                        name: 'products.product_cost'
+                        data: 'unit_price',
+                        name: 'purchase_items.unit_price'
                     },
                     {
-                        data: 'product_price',
-                        name: 'products.product_price'
+                        data: 'invt_sellingPrice',
+                        name: 'inventory.invt_sellingPrice'
                     },
                     {
                         data: 'invt_StartingQuantity',
@@ -668,13 +668,24 @@
                 productSelect.empty().append('<option value="' + defaultValue + '">' + defaultText + '</option>');
 
                 $.each(data, function(key, value) {
-                    // We added data-qty here to capture the Batch Quantity
+                    var qty = parseInt(value.batch_quantity) || 0;
+
+                    // Only show the quantity label if it is NOT being used as a filter
+                    var statusLabel = "";
+                    if (!isFilter) {
+                        statusLabel = (qty > 0) ? ` (${qty} available)` : ` (No available product)`;
+                    }
+
+                    // Disable selection in the Add Modal if qty is 0
+                    // We keep it enabled for the filter so you can still search for out-of-stock items
+                    var isDisabled = (!isFilter && qty <= 0) ? 'disabled style="color: #adb5bd;"' : '';
+
                     productSelect.append(
                         `<option value="${value.product_ID}" 
-                     data-cost="${value.product_cost}" 
-                     data-price="${value.product_price}" 
-                     data-qty="${value.batch_quantity}">
-                ${value.product_name}
+                data-unit-cost="${value.unit_cost}" 
+                data-qty="${qty}" 
+                ${isDisabled}>
+                ${value.product_name}${statusLabel}
             </option>`
                     );
                 });
@@ -692,7 +703,6 @@
 
                     var form = $(this).closest('form');
                     form.find('.js-product-cost').val('');
-                    form.find('.js-product-price').val('');
                     form.find('.js-product-qty').val(''); // Clear quantity too
 
                 }
@@ -729,13 +739,10 @@
                 var selected = $(this).find('option:selected');
                 var form = $(this).closest('form');
 
-                var cost = selected.data('cost');
-                var price = selected.data('price');
-
+                var cost = selected.data('unit-cost');
                 var batchQty = selected.data('qty'); // Get quantity from the new data attribute
 
                 form.find('.js-product-cost').val(cost === undefined ? '' : cost);
-                form.find('.js-product-price').val(price === undefined ? '' : price);
 
                 // This is the specific part you wanted: Auto-filling the quantity from the batch
                 form.find('.js-product-qty').val(batchQty === undefined ? '' : batchQty);

@@ -125,7 +125,7 @@
                                                     Bundle Size</p>
                                                 <div class="row g-3 mb-4">
                                                     <div class="col-md-4">
-                                                        <label class="form-label fw-semibold">Tie Size</label>
+                                                        <label class="form-label fw-semibold">Bundle Quantity</label>
                                                         <div class="input-group">
                                                             <span class="input-group-text"></span>
                                                             <input type="number" name="tie_number" class="form-control"
@@ -134,7 +134,7 @@
                                                         </div>
                                                     </div>
                                                     <div class="col-md-4">
-                                                        <label class="form-label fw-semibold">Tie Quantity</label>
+                                                        <label class="form-label fw-semibold">Pack Size</label>
                                                         <div class="input-group">
                                                             <span class="input-group-text"></span>
                                                             <input type="number" name="tie_qty" class="form-control"
@@ -144,28 +144,7 @@
                                                     </div>
                                                 </div>
 
-                                                <p class="text-muted small fw-bold text-uppercase mb-3 border-bottom pb-1">
-                                                    Pricing</p>
-                                                <div class="row g-3 mb-4">
-                                                    <div class="col-md-4">
-                                                        <label class="form-label fw-semibold">Cost Price</label>
-                                                        <div class="input-group">
-                                                            <span class="input-group-text">$</span>
-                                                            <input type="number" name="product_cost"
-                                                                class="form-control" step="0.01" placeholder="0.00"
-                                                                value="{{ old('product_cost') }}" required>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <label class="form-label fw-semibold">Selling Price</label>
-                                                        <div class="input-group">
-                                                            <span class="input-group-text">$</span>
-                                                            <input type="number" name="product_price"
-                                                                class="form-control" step="0.01" placeholder="0.00"
-                                                                value="{{ old('product_price') }}" required>
-                                                        </div>
-                                                    </div>
-                                                </div>
+
 
                                                 <div class="d-flex justify-content-end gap-2 mt-4">
                                                     <button type="button" class="btn btn-light px-4"
@@ -191,10 +170,8 @@
                                             <th class="text-secondary text-uppercase small fw-bold">Name</th>
                                             <th class="text-secondary text-uppercase small fw-bold">Category</th>
                                             <th class="text-secondary text-uppercase small fw-bold">Perishable Type</th>
-                                            <th class="text-secondary text-uppercase small fw-bold">Tie Number</th>
-                                            <th class="text-secondary text-uppercase small fw-bold">Tie Quantity</th>
-                                            <th class="text-secondary text-uppercase small fw-bold">Cost</th>
-                                            <th class="text-secondary text-uppercase small fw-bold">Price</th>
+                                            <th class="text-secondary text-uppercase small fw-bold">Bundle Quantity</th>
+                                            <th class="text-secondary text-uppercase small fw-bold">Pack Size</th>
                                             <th class="text-secondary text-uppercase small fw-bold">Actions</th>
                                         </tr>
                                     </thead>
@@ -306,14 +283,6 @@
                         name: 'products.tie_qty'
                     },
                     {
-                        data: 'product_cost',
-                        name: 'products.product_cost'
-                    },
-                    {
-                        data: 'product_price',
-                        name: 'products.product_price'
-                    },
-                    {
                         data: 'action',
                         name: 'action',
                         orderable: false,
@@ -376,14 +345,12 @@
                 var id = $(this).data('id');
                 var name = $(this).data('name');
                 var catID = $(this).data('category-id');
-                var price = $(this).data('price');
-                var cost = $(this).data('cost');
+
 
                 $('#edit_id').val(id);
                 $('#edit_name').val(name);
                 $('#edit_category').val(catID);
-                $('#edit_cost').val(cost);
-                $('#edit_price').val(price);
+
 
                 $('#UpdateProductModal').modal('show');
             });

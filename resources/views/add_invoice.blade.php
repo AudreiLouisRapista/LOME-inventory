@@ -36,7 +36,7 @@
                             <div class="col-md-4">
                                 <label class="form-label small fw-bold text-muted">Invoice Number</label>
                                 <input type="text" name="invoice_number" class="form-control form-control-lg bg-light"
-                                    placeholder="e.g. INV-10023" required>
+                                    placeholder="e.g. 10023" maxlength="12" required>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label small fw-bold text-muted">Invoice Date</label>
@@ -101,9 +101,9 @@
                                         <td><input type="text" name="product_name[]" list="productData"
                                                 class="form-control product-input" required></td>
                                         <td><input type="number" name="tie_number[]" class="form-control tie_number"
-                                                value="0"></td>
+                                                value="0" readonly></td>
                                         <td><input type="number" name="tie_qty[]" class="form-control tie_qty"
-                                                value="1"></td>
+                                                value="1" readonly></td>
                                         <td>
                                             <input type="text" name="perishable_type[]"
                                                 class="form-control type-input bg-light" readonly placeholder="-">
@@ -175,8 +175,8 @@
                 <tr class="item-row">
                     <td><input type="number" name="quantity[]" class="form-control qty" value="1"></td>
                     <td><input type="text" name="product_name[]" list="productData" class="form-control product-input" required></td>
-                    <td><input type="number" name="tie_number[]" class="form-control tie_number" value="0"></td>
-                    <td><input type="number" name="tie_qty[]" class="form-control tie_qty" value="1"></td>
+                    <td><input type="number" name="tie_number[]" class="form-control tie_number" value="0" readonly></td>
+                    <td><input type="number" name="tie_qty[]" class="form-control tie_qty" value="1" readonly></td>
                     <td><input type="text" name="perishable_type[]" class="form-control type-input bg-light" readonly placeholder="-"></td>
                     <td class="expiry-column" style="display: none;">
                         <div class="expiry-wrapper" style="display: none;">

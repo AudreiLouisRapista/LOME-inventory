@@ -312,8 +312,6 @@ public function view_products(Request $request) {
                 'products.product_name',
                 'products.tie_number',
                 'products.tie_qty', 
-                'products.product_price',
-                'products.product_cost',
                 'products.category_ID',
                 'category.category_name as name',
                 'products.perishable_ID',
@@ -331,9 +329,7 @@ public function view_products(Request $request) {
                                 data-tie_qty="'.$row->tie_qty.'"
                                 data-category-ID="'.$row->category_ID.'"
                                 data-perishable_title="'.$row->perishable_title.'"
-                                data-perishable_ID="'.$row->perishable_ID.'"
-                                data-cost="'.$row->product_cost.'"
-                                data-price="'.$row->product_price.'">
+                                data-perishable_ID="'.$row->perishable_ID.'">
                                 <i class="bi bi-pen"></i>
                             </button>
                            <button class="btn btn-sm btn-outline-danger delete-btn"
@@ -447,59 +443,7 @@ public function update_product(Request $request) {
 
 
 
-public function save_inventory(Request $request){
-    $inventory_ID = $request->inventory_ID;
-    $product_ID = $request->product_ID; 
-    $category_ID = $request->category_ID;
-    $StartingQuantity = $request->product_StartingQuantity;
-   
-  
-
-    // Step 2: HIGHEST PRIORITY - Check for an EXACT duplicate 
-    $duplicate = DB::table('inventory')
-        ->where('category_ID', $category_ID)
-        ->where('product_ID', $product_ID)
-        ->where('invt_StartingQuantity', $StartingQuantity)
-        ->whereNull('deleted_at')
-        ->exists();
-    if ($duplicate) {
-        // NEED EDIT THE NAME 
-        return back()->with('duplicate', 'Product with the same category already exists.');
-    }
-
-    $status_ID = 1; // Assuming new inventory is always "In Stock"
-    if($StartingQuantity <= 5){
-        $status_ID = 2; // "Low Stock"
-    } elseif($StartingQuantity == 0){
-        $status_ID = 3; // "Out of Stock"
-    } elseif($StartingQuantity > 5){
-        $status_ID = 1; // "In Stock"
-    }
-
-
-    DB::table('inventory')
-    ->insert([
-        'product_ID' => $product_ID,
-        'category_ID' => $category_ID,
-        'invt_StartingQuantity' => $StartingQuantity,
-        'status_ID' => $status_ID
-    ]);
-
-  
-
-  
-    $products = DB::table('products')->where('product_ID', $product_ID)->first();
-    $categories = DB::table('category')->where('category_ID', $category_ID)->first();
-   
-
-    $this->logActivity(
-        'added',
-        'Added inventory for product ID ' . $product_ID . ', category name ' . $categories->category_name
-    );
-  
-    session()->flash('save', 'Inventory saved successfully!');
-    return redirect()->back();
-}
+// 
 
 
 public function InventorysoftDelete($id)
@@ -512,68 +456,63 @@ public function InventorysoftDelete($id)
     return response()->json(['success' => 'Inventory moved to trash!']);
 }
 
-   
-        // VIEW INVENTORY
-
 public function view_inventory(Request $request) {
+
     // 1. Handle DataTable AJAX (Refresh only the table)
     if ($request->ajax() && !$request->has('get_chart')) {
         $data = DB::table('inventory')
-            ->Join('products', 'inventory.product_ID', '=', 'products.product_ID')
-            ->Join('category', 'products.category_ID', '=', 'category.category_ID')
-              ->whereNull('inventory.deleted_at');
-        
-                                // FILTERS:
-                    if ($request->category_id_table && $request->category_id_table != 'all') {
-                        $data->where('category.category_ID', $request->category_id_table);
-                    }
+            ->leftJoin('products', 'inventory.product_ID', '=', 'products.product_ID')
+            ->leftJoin('category', 'products.category_ID', '=', 'category.category_ID')
+            ->whereNull('inventory.deleted_at');
 
-                    if ($request->product_id_table && $request->product_id_table != 'all') {
-                        $data->where('products.product_ID', $request->product_id_table);
-                    }
-            $data->select([
-                'inventory.inventory_ID',
-                'products.product_name as product_name', 
-                'category.category_name as name',
-                'products.product_price',
-                'products.product_cost',
-                'inventory.invt_NewQuantity',
-                'inventory.invt_StartingQuantity',
-                'inventory.invt_remainingStock',
-                'inventory.invt_totalSold',
-                'inventory.status_ID',
-                'inventory.product_ID',
-                'inventory.category_ID',
+        if ($request->category_id_table && $request->category_id_table != 'all') {
+            $data->where('category.category_ID', $request->category_id_table);
+        }
+        if ($request->product_id_table && $request->product_id_table != 'all') {
+            $data->where('products.product_ID', $request->product_id_table);
+        }
 
+        $data->select([
+            'inventory.inventory_ID',
+            'products.product_name as product_name',
+            'inventory.invt_unitCost as unit_price', 
+            'category.category_name as name',
+            'inventory.invt_NewQuantity',
+            'inventory.invt_StartingQuantity',
+            'inventory.invt_remainingStock',
+            'inventory.invt_totalSold',
+            'inventory.invt_sellingPrice',
+            'inventory.status_ID',
+            'inventory.product_ID',
+            'inventory.category_ID',
+        ]);
 
-            ]);
         return DataTables::of($data)
-           ->addColumn('action', function($row){
-                        return '<div class="d-flex justify-content-center gap-2">
-                                    <button class="btn btn-sm btn-outline-success edit-btn"
-                                    data-inventory-id="'.$row->inventory_ID.'"
-                                    data-product-id="'.$row->product_ID.'"
-                                    data-product-name="'.$row->product_name.'"
-                                    data-category="'.$row->name.'"
-                                    data-category-ID="'.$row->category_ID.'"
-                                    data-cost="'.$row->product_cost.'"
-                                    data-price="'.$row->product_price.'"
-                                    data-update_NewQuantity="'.$row->invt_NewQuantity.'"
-                                    data-update_remainingstock="'.$row->invt_remainingStock.'">
-                                    <i class="bi bi-pen"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger delete-btn"
-                                            data-id="'.$row->inventory_ID.'">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>';
-                    })
+            ->addColumn('action', function($row){
+                return '<div class="d-flex justify-content-center gap-2">
+                            <button class="btn btn-sm btn-outline-success edit-btn"
+                            data-inventory-id="'.$row->inventory_ID.'"
+                            data-product-id="'.$row->product_ID.'"
+                            data-unit-cost="' .$row->unit_price.'"
+                            data-sellingPrice="'.$row->invt_sellingPrice.'"
+                            data-product-name="'.$row->product_name.'"
+                            data-category="'.$row->name.'"
+                            data-category-ID="'.$row->category_ID.'"
+                            data-cost="'.$row->unit_price.'"
+                            data-update_NewQuantity="'.$row->invt_NewQuantity.'"
+                            data-update_remainingstock="'.$row->invt_remainingStock.'">
+                            <i class="bi bi-pen"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger delete-btn"
+                                    data-id="'.$row->inventory_ID.'">
+                              <i class="bi bi-trash"></i>
+                            </button>
+                        </div>';
+            })
             ->rawColumns(['action'])
             ->make(true);
-                }
-
-
-    // Handle Chart AJAX ONLY (Refresh only the chart)
+    }
+    // 2. Handle Chart AJAX ONLY (Refresh only the chart)
     if ($request->ajax() && $request->has('get_chart')) {
         $query = DB::table('inventory')
             ->join('products', 'inventory.product_ID', '=', 'products.product_ID')
@@ -588,11 +527,17 @@ public function view_inventory(Request $request) {
     }
 
     // 3. NORMAL PAGE LOAD (Initial data)
-    $categories = DB::table('category')->orderBy('category_name', 'ASC')->get(); 
-    $products = DB::table('products')->orderBy('product_name', 'ASC')->get(); 
-    $selectedCategory = $request->query('category_id', 'all');
+    $categories = DB::table('category')->orderBy('category_name', 'ASC')->get();
 
- 
+    // This query finds products that have at least one batch with is_added = 0
+    $products = DB::table('batches')
+        ->join('products', 'batches.product_id', '=', 'products.product_ID')
+        ->select('products.product_ID', 'products.product_name')
+        ->where('batches.is_added', 0) // Only show new batches
+        ->groupBy('products.product_ID', 'products.product_name') 
+        ->orderBy('products.product_name', 'ASC')
+        ->get();
+    $selectedCategory = $request->query('category_id', 'all');
 
     // Summary Stats for Cards
     $totalProducts = DB::table('inventory')->count();  
@@ -601,21 +546,21 @@ public function view_inventory(Request $request) {
     $instockProducts = DB::table('inventory')->where('status_ID', 1)->count();
     $lowStockProducts = DB::table('inventory')->where('status_ID', 2)->count();
     $outOfStock = DB::table('inventory')->where('status_ID', 3)->count();
- 
 
     return view('inventory', compact(
-        'categories', 
-        'totalProducts', 
-        'instockProducts', 
-        'lowStockProducts', 
-        'outOfStock', 
-        'totalQuantity', 
+        'categories',
+        'totalProducts',
+        'instockProducts',
+        'lowStockProducts',
+        'outOfStock',
+        'totalQuantity',
         'selectedCategory',
         'products',
-        'totalSold'
-        
+        'totalSold'   
     ));
 }
+
+ 
   
     
 public function update_inventory(Request $request) {
@@ -703,94 +648,90 @@ public function import_pos_sales(Request $request)
 }
 
 
-
 public function getProductsByCategory($id) {
-
-        $products = DB::table('products')
-        ->leftJoin('inventory', 'products.product_ID', '=', 'inventory.product_ID')
-            ->leftJoin('batches', 'products.product_ID', '=', 'batches.product_ID')
-            ->where('products.category_ID', $id)
-            ->select([
-                'products.product_ID', 
-                'products.product_name', 
-                'products.product_price',
-                'products.product_cost',
-                'batches.quantity as batch_quantity',
-                DB::raw('IFNULL(inventory.invt_StartingQuantity, 0) as current_stock'),
-            ])
+    $products = DB::table('products')
+        ->where('products.category_ID', $id)
+        ->select([
+            'products.product_ID', 
+            'products.product_name',
+            // Subquery for Quantity: Sum only unprocessed batches
+            DB::raw("(SELECT IFNULL(SUM(quantity), 0) FROM batches 
+                      WHERE product_ID = products.product_ID 
+                      AND is_added = 0) as batch_quantity"),
             
-            ->get();
+            // Subquery for Cost: Get unit_price from the latest unprocessed batch
+            DB::raw("(SELECT IFNULL(pi.unit_price, 0) 
+                      FROM batches b
+                      JOIN purchase_items pi ON b.purchase_item_id = pi.purchase_item_id
+                      WHERE b.product_ID = products.product_ID 
+                      AND b.is_added = 0 
+                      ORDER BY b.batch_ID DESC LIMIT 1) as unit_cost")
+        ])
+        ->get();
 
-            
-        return response()->json($products);
+    return response()->json($products);
 }
 
 public function add_new_inventory(Request $request)
-        {
-            $validated = $request->validate([
-                'product_ID' => ['required', 'integer'],
-             
-                'batch_quantity' => ['required', 'integer', 'min:1'],
-             
+{
+    DB::beginTransaction();
+    try {
+        $product_ID = $request->product_ID;
+        
+        // Sum all batches for this product that haven't been processed yet (is_added = 0)
+        $incomingQty = DB::table('batches')
+            ->where('product_id', $product_ID)
+            ->where('is_added', 0)
+            ->sum('quantity');
+
+        if ($incomingQty <= 0) {
+            return back()->with('errorMessage', 'No new batch quantity found for this product.');
+        }
+
+        $inventory = DB::table('inventory')->where('product_ID', $product_ID)->first();
+
+        if (!$inventory) {
+            // Create new record
+            DB::table('inventory')->insert([
+                'product_ID'            => $product_ID,
+                'category_ID'           => $request->category_ID,
+                'invt_unitCost'         => $request->product_cost,
+                'invt_sellingPrice'     => $request->product_price, // Fixed variable name
+                'invt_StartingQuantity' => $incomingQty,
+                'invt_remainingStock'   => $incomingQty,
+                'status_ID'             => 1, // Set to In Stock
+                'created_at'            => now(),
+                'updated_at'            => now()
+            ]);
+        } else {
+            // Update existing record
+            DB::table('inventory')->where('product_ID', $product_ID)->update([
+                'invt_unitCost'       => $request->product_cost,
+                'invt_sellingPrice'   => $request->product_price, // Fixed variable name
+                'invt_NewQuantity'    => $incomingQty, 
+                'invt_remainingStock' => $inventory->invt_remainingStock + $incomingQty,
+                'status_ID'           => 1, // Ensure it is marked as In Stock (1)
+                'updated_at'          => now(),
+                'deleted_at'          => null
+            ]);
+        }
+
+        // Mark batches as processed
+        DB::table('batches')
+            ->where('product_id', $product_ID)
+            ->where('is_added', 0)
+            ->update([
+                'is_added' => 1,
+                'updated_at' => now()
             ]);
 
-            $product_ID = (int) $validated['product_ID'];
-           
-            $incomingQty = (int) $validated['batch_quantity'];
+        DB::commit();
+        return back()->with('save', 'Inventory updated successfully!');
 
-            DB::beginTransaction();
-
-            try {
-                $product = DB::table('products')->where('product_ID', $product_ID)->lockForUpdate()->first();
-                if (!$product) {
-                    DB::rollBack();
-                    return back()->with('error', 'Product not found.');
-                }
-
-                // 2) INVENTORY UPDATE
-                $inventory = DB::table('inventory')->where('product_ID', $product_ID)->lockForUpdate()->first();
-                
-              
-
-                if (!$inventory) {
-                    DB::table('inventory')->insert([
-                        'product_ID'            => $product_ID,
-                        'category_ID'           => $product->category_ID,
-                        'invt_StartingQuantity' => $incomingQty, 
-                        'invt_NewQuantity'      => 0,
-                        'invt_totalSold'        => 0,
-                        'invt_remainingStock'   => 0,
-                        'status_ID'             => 1,
-                        'created_at'            => now(),
-                        'updated_at'            => now(),
-                    ]);
-                } elseif ($incomingQty > 0){
-                    DB::table('inventory')->where('product_ID', $product_ID)->update([
-                        'invt_NewQuantity' => $incomingQty,
-                        'updated_at' => now(),
-                    ]);
-                } else {
-                    $currentSold = (int) ($inventory->invt_totalSold ?? 0);
-                    $currentNew  = (int) ($inventory->invt_NewQuantity ?? 0);
-                    
-                    $totalRemaining = ($incomingQty + $currentNew) - $currentSold;
-
-                    DB::table('inventory')
-                        ->where('product_ID', $product_ID)
-                        ->update([
-                            'invt_StartingQuantity' => $incomingQty, 
-                            'invt_remainingStock'   => $totalRemaining,
-                            'updated_at'            => now(),
-                        ]);
-                }
-
-                DB::commit();
-                return back()->with('save', 'Inventory updated successfully.');
-
-            } catch (\Throwable $e) {
-                DB::rollBack();
-                return back()->with('errorMessage', 'Error: ' . $e->getMessage());
-            }
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return back()->with('errorMessage', 'Error: ' . $e->getMessage());
+    }
 }
 
 public function inventory_rollover(Request $request) {
@@ -890,52 +831,66 @@ public function getPaymentHistory($id)
 
 public function storePayment(Request $request) 
 {
-    // $request->validate([
-    //     'purchase_id' => 'required',
-    //     'amount_paid' => 'required|numeric|min:0',
-    //     'payment_date' => 'required|date',
-    //     'payment_method' => 'required'
-    // ]);
+    // 1. Validate the request and check for duplicate reference numbers
+    // This is the most professional way to catch duplicates before they hit the DB
+    $request->validate([
+        
+        'purchase_id'      => 'required',
+        'amount_paid'      => 'required|numeric|min:0',
+        'payment_date'     => 'required|date',
+        'payment_method'   => 'required'
+    ]);
 
-    // Use a transaction to ensure both tables update or neither does
-    DB::transaction(function () use ($request) {
-        // 1. Log payment
-        DB::table('payments')->insert([
-            'purchase_id' => $request->purchase_id,
-            'amount_paid' => $request->amount_paid,
-            'payment_date' => $request->payment_date,
-            'payment_method' => $request->payment_method,
-            'old_remaining_balance'=> $request->old_remaining_balance,
-            'reference_number' => $request->reference_number,
-            'created_at' => now()
-        ]);
+    try {
+        DB::transaction(function () use ($request) {
+            // 2. Log payment
+            DB::table('payments')->insert([
+                'purchase_id'           => $request->purchase_id,
+                'amount_paid'           => $request->amount_paid,
+                'payment_date'          => $request->payment_date,
+                'payment_method'        => $request->payment_method,
+                'old_remaining_balance' => $request->old_remaining_balance,
+                'reference_number'      => $request->reference_number,
+                'created_at'            => now()
+            ]);
 
-        // 2. Update purchase
-        $p = DB::table('purchases')->where('purchase_id', $request->purchase_id)->first();
-        $totalPaid = ($p->total_paid_sum ?? 0) + $request->amount_paid;
-        $status = ($totalPaid >= $p->net_amount) ? 'Paid' : 'Partial';
+            // 3. Update purchase
+            $p = DB::table('purchases')->where('purchase_id', $request->purchase_id)->first();
+            $totalPaid = ($p->total_paid ?? 0) + $request->amount_paid;
+            $status = ($totalPaid >= $p->net_amount) ? 'Paid' : 'Partial';
 
-        DB::table('purchases')->where('purchase_id', $request->purchase_id)->update([
-            'total_paid' => $totalPaid,
-            'status' => $status
-        ]);
-    });
+            DB::table('purchases')->where('purchase_id', $request->purchase_id)->update([
+                'total_paid' => $totalPaid,
+                'status'     => $status
+            ]);
+        });
 
-    return redirect()->back()->with('save', 'Payment recorded!');
+        return redirect()->back()->with('save', 'Payment recorded successfully!');
+
+    } catch (\Illuminate\Database\QueryException $e) {
+        // Catch-all for database integrity issues
+        if ($e->errorInfo[1] == 1062) {
+            return redirect()->back()->with('errorMessage', 'Duplicate Entry: This reference number already exists.');
+        }
+
+        return redirect()->back()->with('errorMessage', 'An unexpected database error occurred.');
+    }
 }
+
+
+
 
 public function saveInvoiceAndItem(Request $request)
 {   
     DB::beginTransaction();
 
     try {
-        // STEP 1: Insert the main invoice record first
-        // We need this ID to link all items, batches, and movements back to this purchase
+        // STEP 1: Insert the main invoice record
         $invoiceId = DB::table('purchases')->insertGetId([
             'supplier_id'    => $request->supplier_id,
             'invoice_number' => $request->invoice_number,
             'invoice_date'   => $request->invoice_date,
-            'gross_amount'   => $request->gross_total_raw, // Raw numbers for DB accuracy
+            'gross_amount'   => $request->gross_total_raw,
             'vat_amount'     => $request->vat_amount_raw,
             'net_amount'     => $request->grand_total_raw,
             'due_date'       => $request->due_date,
@@ -943,10 +898,9 @@ public function saveInvoiceAndItem(Request $request)
             'updated_at'     => now(),
         ]);
 
-        // STEP 2: Loop through each row submitted from the table
         foreach ($request->product_name as $key => $name) {
             
-            // Check if product exists; if not, create it on the fly
+            // STEP 2: Product Check/Creation
             $product = DB::table('products')->where('product_name', $name)->first();
 
             if (!$product) {
@@ -959,8 +913,7 @@ public function saveInvoiceAndItem(Request $request)
                 $productId = $product->product_ID; 
             }
 
-            // STEP 3: Save the individual line item (Purchase Item)
-            // Logic: Total Price = Qty * (Qty per Tie * Tie Number * Unit Price)
+            // STEP 3: Save Purchase Item
             $purchaseItemID = DB::table('purchase_items')->insertGetId([
                 'purchase_id' => $invoiceId,
                 'product_id'  => $productId,
@@ -970,20 +923,19 @@ public function saveInvoiceAndItem(Request $request)
                 'updated_at'  => now(),
             ]);
 
-            // STEP 4: Save the Batch Information (Moving Expiry here)
-            // We use the $key to get the specific expiry date for THIS row only
+            // STEP 4: Save Batch (This is your "Loading Dock")
+            $batchQty = (int)($request->tie_qty[$key] * $request->tie_number[$key]);
             $batchId = DB::table('batches')->insertGetId([
                 'purchase_item_id' => $purchaseItemID,
                 'product_id'       => $productId,
-                // If the user selected 'non-perishable', this will save as NULL
                 'expiration_date'  => ($request->perishable_type[$key] === 'perishable') ? $request->exp_date[$key] : null,
-                'quantity'         => $request->tie_qty[$key] * $request->tie_number[$key],
+                'quantity'         => $batchQty,
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ]);
 
-            // STEP 5: Record the 'IN' movement for stock history
-            $stockMovement = DB::table('stock_movements')->insert([
+            // STEP 5: Record Movement
+            DB::table('stock_movements')->insert([
                 'product_ID'       => $productId,
                 'purchase_item_id' => $purchaseItemID,
                 'purchase_id'      => $invoiceId,
@@ -993,22 +945,22 @@ public function saveInvoiceAndItem(Request $request)
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ]);
+
+            // STEP 6: REMOVED
+            // We no longer sync to inventory here. 
+            // The admin will do this manually in the Inventory module.
         }
 
-     DB::commit(); 
-        return redirect()->route('add_invoice')->with('save', 'Invoice saved successfully!');
+        DB::commit(); 
+        return redirect()->route('add_invoice')->with('save', 'Invoice saved! Go to Inventory to receive items.');
 
     } catch (\Illuminate\Database\QueryException $e) {
         DB::rollback();
-        
-        // Check if the error is a "Duplicate Entry" (MySQL error code 1062)
+        // Exception handling for unique constraints (Invoice Number) remains...
         if ($e->errorInfo[1] == 1062) {
-            return back()->withInput()->with('duplicate', 'DUPLICATED INVOICE NUMBER');
+             return back()->withInput()->with('errorMessage', 'Duplicate Entry: ' . $e->getMessage());
         }
-
-        // For any other database errors
         return back()->withInput()->with('errorMessage', 'Database Error: ' . $e->getMessage());
-
     } catch (\Exception $e) {
         DB::rollback();
         return back()->withInput()->with('errorMessage', 'General Error: ' . $e->getMessage());
