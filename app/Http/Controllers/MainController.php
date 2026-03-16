@@ -364,58 +364,68 @@ public function view_products(Request $request) {
 
 public function save_product(Request $request)
 {
+    // 1. Validation (CRITICAL for Professional Documentation)
+    // This ensures no null values hit your database
+    $request->validate([
+        'product_name'  => 'required|string|max:255',
+        'category_ID'   => 'required|integer',
+        'perishable_ID' => 'required|integer',
+        'tie_number'    => 'required|numeric|min:0',
+        'tie_qty'       => 'required|numeric|min:0',
+    ]);
 
-    // dd($request->all());
-            //  // 1. Validate the input
-                // $request->validate([
-                //     'product_name'  => 'required|string',
-                //     'category_ID'   => 'required|integer',
-                //     'product_cost'  => 'required|numeric',
-
-                //     'product_price' => 'required|numeric',
-                //     'perishable_ID' => 'required|integer'
-                // ]);
-
-    $product = $request->product_name;
-    $category = $request->category_ID;
+    $product    = $request->product_name;
+    $category   = $request->category_ID;
     $perishable = $request->perishable_ID;
     $tie_number = $request->tie_number;
-    $tie_qty = $request->tie_qty;
-    $cost = $request->product_cost;
-    $price = $request->product_price;
+    $tie_qty    = $request->tie_qty;
 
-
-        $duplicate = DB::table('products')
+    // 2. Check for Duplicates (Excluding Soft-Deleted items)
+    $duplicate = DB::table('products')
         ->where('category_ID', $category)
         ->where('product_name', $product)
-         ->whereNull('deleted_at')
+        ->where('perishable_ID', $perishable)
+        ->where('tie_number', $tie_number)
+        ->where('tie_qty', $tie_qty)
+        ->whereNull('deleted_at')
         ->exists();
+
     if ($duplicate) {
-        // NEED EDIT THE NAME 
-        return back()->with('duplicate', 'The product ' . $request->product_name .'already exists in this category.');
+        return response()->json([
+            'duplicate' => "The product '$product' with these specific bundle details already exists."
+        ], 422); // 422 is the standard code for validation/logic errors
     }
-        else{
-            DB::table('products')
-            ->insert([
-                'product_name' => $product,
-                'category_ID' => $category,
+
+    // 3. Execution with Transaction
+    try {
+        DB::transaction(function () use ($request, $product, $category, $perishable, $tie_number, $tie_qty) {
+            // Insert Product
+            DB::table('products')->insert([
+                'product_name'  => $product,
+                'category_ID'   => $category,
                 'perishable_ID' => $perishable,
-                'tie_number' => $tie_number,
-                'tie_qty' => $tie_qty,
-                'product_cost' => $cost,
-                'product_price' => $price,
-                'created_at' => now(),
-                'updated_at' => now()
+                'tie_number'    => $tie_number,
+                'tie_qty'       => $tie_qty,
+                'created_at'    => now(),
+                'updated_at'    => now()
             ]);
 
-            // 5. Create Activity Log
-            $this->logActivity('added', 'Added Product for Name: ' . $request->product_name);
-            // 6. Success Feedback
-            session()->flash('save', 'Product added successfully!');
-            return redirect()->back();
-        }
-}
+            // Create Activity Log
+            $this->logActivity('added', 'Added Product: ' . $product);
+        });
 
+        // 4. Success Response
+        return response()->json([
+            'save' => 'Product added successfully!'
+        ], 200);
+
+    } catch (\Exception $e) {
+        // 5. Error Handling
+        return response()->json([
+            'error' => 'An error occurred while saving the product. Please try again.'
+        ], 500);
+    }
+}
 
 
 public function update_product(Request $request) {
@@ -1006,20 +1016,6 @@ public function add_invoice(Request $request)
     return view('add_invoice', compact('suppliers', 'products'));
 }
 
-public function stockMovement(Request $request)
-{
-    // 1. Fetch all movements with their related product and category data
-    // We order by ID desc so the newest "Activity" is at the top
-    $movements = DB::table('stock_movements')
-        ->join('products', 'stock_movements.product_ID', '=', 'products.product_ID')
-        ->join('purchases', 'stock_movements.purchase_id', '=', 'purchases.purchase_id')
-        ->join('batches', 'stock_movements.batch_ID', '=', 'batches.batch_ID')
-        ->join('purchase_items', 'stock_movements.purchase_item_id', '=', 'purchase_items.purchase_item_id')
-        ->select(
-            'stock_movements.*', 
-            'products.product_name', 
-            'purchases.invoice_number',
-            'batches.quantity as batch_quantity',
 
 public function stockMovement(Request $request)
 {

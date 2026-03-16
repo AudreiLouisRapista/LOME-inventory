@@ -42,7 +42,7 @@
                                         <div class="modal-body p-4">
                                             @include('layout.partials.alerts')
 
-                                            <form method="POST" action="{{ route('save_product') }}"
+                                            <form id="addProductForm" method="POST" action="{{ route('save_product') }}"
                                                 enctype="multipart/form-data">
                                                 @csrf
                                                 <div class="mb-4">
@@ -78,18 +78,11 @@
                                                                     style="border-radius: 10px 0 0 10px;">
                                                                     <i class="bi bi-box-seam text-muted"></i>
                                                                 </span>
-                                                                <input type="text" name="product_name" list="productData"
-                                                                    id="product_input"
+                                                                <input type="text" name="product_name" id="product_input"
                                                                     class="form-control bg-light border-start-0 shadow-none"
-                                                                    placeholder="Search or enter product..."
+                                                                    placeholder="Enter product name..."
                                                                     style="border-radius: 0 10px 10px 0; height: 45px;"
                                                                     required>
-
-                                                                <datalist id="productData">
-                                                                    @foreach ($products as $product)
-                                                                        <option value="{{ $product->product_name }}">
-                                                                    @endforeach
-                                                                </datalist>
                                                             </div>
                                                         </div>
 
@@ -429,6 +422,86 @@
                 } else {
                     $productSelect.empty().append('<option value="">Select Category First</option>');
                 }
+            });
+            // ==========================================
+            // 5. ADD PRODUCT (Full AJAX Submission)
+            // ==========================================
+            $('#addProductForm').on('submit', function(e) {
+                e.preventDefault(); // This stops the "Black Page" from happening
+
+                var form = $(this);
+                var actionUrl = form.attr('action');
+                var formData = new FormData(this); // FormData is best if you have files/images
+
+                // 1. Show Confirmation Modal
+                Swal.fire({
+                    title: 'Review Product Details',
+                    html: `
+                        <div style="text-align: left; font-size: 0.9rem; line-height: 1.6; overflow-x: hidden;">
+                            <div class="mb-2"><strong>Category:</strong> <span class="text-primary">${$('#category_ID_add option:selected').text()}</span></div>
+                            <div class="mb-2"><strong>Product:</strong> ${$('#product_input').val()}</div>
+                            <hr>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span><strong>Bundle Qty:</strong> ${$('input[name="tie_number"]').val()}</span>
+                                <span><strong>Pack Size:</strong> ${$('input[name="tie_qty"]').val()}</span>
+                            </div>
+                        </div>
+                    `,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonColor: '#0d6efd',
+                    confirmButtonText: 'Confirm and Save',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+
+                        // 2. Perform the AJAX request
+                        $.ajax({
+                            url: actionUrl,
+                            method: 'POST',
+                            data: formData,
+                            processData: false, // Required for FormData
+                            contentType: false, // Required for FormData
+                            beforeSend: function() {
+                                Swal.fire({
+                                    title: 'Saving...',
+                                    allowOutsideClick: false,
+                                    didOpen: () => {
+                                        Swal.showLoading();
+                                    }
+                                });
+                            },
+                            success: function(response) {
+                                // 3. Success Actions
+                                $('#AddProductModal').modal(
+                                    'hide'); // Close your "Add" modal
+                                form[0].reset(); // Clear the form fields
+
+                                // Reload your DataTable (variable 'table' from your earlier script)
+                                if ($.fn.DataTable.isDataTable('#example2')) {
+                                    $('#example2').DataTable().ajax.reload(null, false);
+                                }
+
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Success!',
+                                    text: response.save,
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            },
+                            error: function(xhr) {
+                                // 4. Handle Errors
+                                var errorMsg = (xhr.responseJSON && xhr.responseJSON
+                                        .duplicate) ?
+                                    xhr.responseJSON.duplicate :
+                                    'Something went wrong.';
+
+                                Swal.fire('Error', errorMsg, 'error');
+                            }
+                        });
+                    }
+                });
             });
         });
     </script>
