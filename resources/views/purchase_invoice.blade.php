@@ -445,7 +445,7 @@
                                 rows += `
                         <tr>
                             <td class="small text-muted">${payment.payment_date}</td>
-                            <td class="fw-semibold">${payment.reference_number}</td>
+                            <td class="fw-semibold">${payment.reference_number ?? 'N/A'}</td>
                             <td><span class="badge bg-light text-dark border">${payment.payment_method}</span></td>
                             <td class="text-end fw-bold">₱ ${amt.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                         </tr>

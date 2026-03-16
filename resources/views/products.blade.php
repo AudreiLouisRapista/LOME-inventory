@@ -42,7 +42,7 @@
                                         <div class="modal-body p-4">
                                             @include('layout.partials.alerts')
 
-                                            <form method="POST" action="{{ route('save_product') }}"
+                                            <form id="addProductForm" method="POST" action="{{ route('save_product') }}"
                                                 enctype="multipart/form-data">
                                                 @csrf
                                                 <div class="mb-4">
@@ -78,18 +78,11 @@
                                                                     style="border-radius: 10px 0 0 10px;">
                                                                     <i class="bi bi-box-seam text-muted"></i>
                                                                 </span>
-                                                                <input type="text" name="product_name" list="productData"
-                                                                    id="product_input"
+                                                                <input type="text" name="product_name" id="product_input"
                                                                     class="form-control bg-light border-start-0 shadow-none"
-                                                                    placeholder="Search or enter product..."
+                                                                    placeholder="Enter product name..."
                                                                     style="border-radius: 0 10px 10px 0; height: 45px;"
                                                                     required>
-
-                                                                <datalist id="productData">
-                                                                    @foreach ($products as $product)
-                                                                        <option value="{{ $product->product_name }}">
-                                                                    @endforeach
-                                                                </datalist>
                                                             </div>
                                                         </div>
 
@@ -125,7 +118,7 @@
                                                     Bundle Size</p>
                                                 <div class="row g-3 mb-4">
                                                     <div class="col-md-4">
-                                                        <label class="form-label fw-semibold">Tie Size</label>
+                                                        <label class="form-label fw-semibold">Bundle Quantity</label>
                                                         <div class="input-group">
                                                             <span class="input-group-text"></span>
                                                             <input type="number" name="tie_number" class="form-control"
@@ -134,7 +127,7 @@
                                                         </div>
                                                     </div>
                                                     <div class="col-md-4">
-                                                        <label class="form-label fw-semibold">Tie Quantity</label>
+                                                        <label class="form-label fw-semibold">Pack Size</label>
                                                         <div class="input-group">
                                                             <span class="input-group-text"></span>
                                                             <input type="number" name="tie_qty" class="form-control"
@@ -144,28 +137,7 @@
                                                     </div>
                                                 </div>
 
-                                                <p class="text-muted small fw-bold text-uppercase mb-3 border-bottom pb-1">
-                                                    Pricing</p>
-                                                <div class="row g-3 mb-4">
-                                                    <div class="col-md-4">
-                                                        <label class="form-label fw-semibold">Cost Price</label>
-                                                        <div class="input-group">
-                                                            <span class="input-group-text">$</span>
-                                                            <input type="number" name="product_cost"
-                                                                class="form-control" step="0.01" placeholder="0.00"
-                                                                value="{{ old('product_cost') }}" required>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <label class="form-label fw-semibold">Selling Price</label>
-                                                        <div class="input-group">
-                                                            <span class="input-group-text">$</span>
-                                                            <input type="number" name="product_price"
-                                                                class="form-control" step="0.01" placeholder="0.00"
-                                                                value="{{ old('product_price') }}" required>
-                                                        </div>
-                                                    </div>
-                                                </div>
+
 
                                                 <div class="d-flex justify-content-end gap-2 mt-4">
                                                     <button type="button" class="btn btn-light px-4"
@@ -191,10 +163,8 @@
                                             <th class="text-secondary text-uppercase small fw-bold">Name</th>
                                             <th class="text-secondary text-uppercase small fw-bold">Category</th>
                                             <th class="text-secondary text-uppercase small fw-bold">Perishable Type</th>
-                                            <th class="text-secondary text-uppercase small fw-bold">Tie Number</th>
-                                            <th class="text-secondary text-uppercase small fw-bold">Tie Quantity</th>
-                                            <th class="text-secondary text-uppercase small fw-bold">Cost</th>
-                                            <th class="text-secondary text-uppercase small fw-bold">Price</th>
+                                            <th class="text-secondary text-uppercase small fw-bold">Bundle Quantity</th>
+                                            <th class="text-secondary text-uppercase small fw-bold">Pack Size</th>
                                             <th class="text-secondary text-uppercase small fw-bold">Actions</th>
                                         </tr>
                                     </thead>
@@ -306,14 +276,6 @@
                         name: 'products.tie_qty'
                     },
                     {
-                        data: 'product_cost',
-                        name: 'products.product_cost'
-                    },
-                    {
-                        data: 'product_price',
-                        name: 'products.product_price'
-                    },
-                    {
                         data: 'action',
                         name: 'action',
                         orderable: false,
@@ -376,14 +338,11 @@
                 var id = $(this).data('id');
                 var name = $(this).data('name');
                 var catID = $(this).data('category-id');
-                var price = $(this).data('price');
-                var cost = $(this).data('cost');
+
 
                 $('#edit_id').val(id);
                 $('#edit_name').val(name);
                 $('#edit_category').val(catID);
-                $('#edit_cost').val(cost);
-                $('#edit_price').val(price);
 
                 $('#UpdateProductModal').modal('show');
             });
@@ -462,6 +421,86 @@
                 } else {
                     $productSelect.empty().append('<option value="">Select Category First</option>');
                 }
+            });
+            // ==========================================
+            // 5. ADD PRODUCT (Full AJAX Submission)
+            // ==========================================
+            $('#addProductForm').on('submit', function(e) {
+                e.preventDefault(); // This stops the "Black Page" from happening
+
+                var form = $(this);
+                var actionUrl = form.attr('action');
+                var formData = new FormData(this); // FormData is best if you have files/images
+
+                // 1. Show Confirmation Modal
+                Swal.fire({
+                    title: 'Review Product Details',
+                    html: `
+                        <div style="text-align: left; font-size: 0.9rem; line-height: 1.6; overflow-x: hidden;">
+                            <div class="mb-2"><strong>Category:</strong> <span class="text-primary">${$('#category_ID_add option:selected').text()}</span></div>
+                            <div class="mb-2"><strong>Product:</strong> ${$('#product_input').val()}</div>
+                            <hr>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span><strong>Bundle Qty:</strong> ${$('input[name="tie_number"]').val()}</span>
+                                <span><strong>Pack Size:</strong> ${$('input[name="tie_qty"]').val()}</span>
+                            </div>
+                        </div>
+                    `,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonColor: '#0d6efd',
+                    confirmButtonText: 'Confirm and Save',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+
+                        // 2. Perform the AJAX request
+                        $.ajax({
+                            url: actionUrl,
+                            method: 'POST',
+                            data: formData,
+                            processData: false, // Required for FormData
+                            contentType: false, // Required for FormData
+                            beforeSend: function() {
+                                Swal.fire({
+                                    title: 'Saving...',
+                                    allowOutsideClick: false,
+                                    didOpen: () => {
+                                        Swal.showLoading();
+                                    }
+                                });
+                            },
+                            success: function(response) {
+                                // 3. Success Actions
+                                $('#AddProductModal').modal(
+                                    'hide'); // Close your "Add" modal
+                                form[0].reset(); // Clear the form fields
+
+                                // Reload your DataTable (variable 'table' from your earlier script)
+                                if ($.fn.DataTable.isDataTable('#example2')) {
+                                    $('#example2').DataTable().ajax.reload(null, false);
+                                }
+
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Success!',
+                                    text: response.save,
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            },
+                            error: function(xhr) {
+                                // 4. Handle Errors
+                                var errorMsg = (xhr.responseJSON && xhr.responseJSON
+                                        .duplicate) ?
+                                    xhr.responseJSON.duplicate :
+                                    'Something went wrong.';
+
+                                Swal.fire('Error', errorMsg, 'error');
+                            }
+                        });
+                    }
+                });
             });
         });
     </script>

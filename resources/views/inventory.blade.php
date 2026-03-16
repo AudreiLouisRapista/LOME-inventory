@@ -169,8 +169,8 @@
                                         <div class="modal-body px-4 pb-4">
                                             @include('layout.partials.alerts')
 
-                                            <form method="POST" action="{{ route('add_new_inventory') }}"
-                                                enctype="multipart/form-data">
+                                            <form id="addInventoryForm" method="POST"
+                                                action="{{ route('add_new_inventory') }}" enctype="multipart/form-data">
                                                 @csrf
 
                                                 <div class="mb-4">
@@ -235,7 +235,7 @@
                                                                 <input id="product_cost_add" type="number"
                                                                     name="product_cost"
                                                                     class="form-control js-product-cost" step="0.01"
-                                                                    placeholder="0.00" value="" required>
+                                                                    placeholder="0.00">
                                                             </div>
                                                         </div>
                                                         <div class="col-md-4">
@@ -472,12 +472,12 @@
                         name: 'category.category_name'
                     },
                     {
-                        data: 'product_cost',
-                        name: 'products.product_cost'
+                        data: 'unit_price',
+                        name: 'purchase_items.unit_price'
                     },
                     {
-                        data: 'product_price',
-                        name: 'products.product_price'
+                        data: 'invt_sellingPrice',
+                        name: 'inventory.invt_sellingPrice'
                     },
                     {
                         data: 'invt_StartingQuantity',
@@ -668,13 +668,24 @@
                 productSelect.empty().append('<option value="' + defaultValue + '">' + defaultText + '</option>');
 
                 $.each(data, function(key, value) {
-                    // We added data-qty here to capture the Batch Quantity
+                    var qty = parseInt(value.batch_quantity) || 0;
+
+                    // Only show the quantity label if it is NOT being used as a filter
+                    var statusLabel = "";
+                    if (!isFilter) {
+                        statusLabel = (qty > 0) ? ` (${qty} available)` : ` (No available product)`;
+                    }
+
+                    // Disable selection in the Add Modal if qty is 0
+                    // We keep it enabled for the filter so you can still search for out-of-stock items
+                    var isDisabled = (!isFilter && qty <= 0) ? 'disabled style="color: #adb5bd;"' : '';
+
                     productSelect.append(
                         `<option value="${value.product_ID}" 
-                     data-cost="${value.product_cost}" 
-                     data-price="${value.product_price}" 
-                     data-qty="${value.batch_quantity}">
-                ${value.product_name}
+                data-unit-cost="${value.unit_cost}" 
+                data-qty="${qty}" 
+                ${isDisabled}>
+                ${value.product_name}${statusLabel}
             </option>`
                     );
                 });
@@ -692,7 +703,6 @@
 
                     var form = $(this).closest('form');
                     form.find('.js-product-cost').val('');
-                    form.find('.js-product-price').val('');
                     form.find('.js-product-qty').val(''); // Clear quantity too
 
                 }
@@ -729,13 +739,10 @@
                 var selected = $(this).find('option:selected');
                 var form = $(this).closest('form');
 
-                var cost = selected.data('cost');
-                var price = selected.data('price');
-
+                var cost = selected.data('unit-cost');
                 var batchQty = selected.data('qty'); // Get quantity from the new data attribute
 
                 form.find('.js-product-cost').val(cost === undefined ? '' : cost);
-                form.find('.js-product-price').val(price === undefined ? '' : price);
 
                 // This is the specific part you wanted: Auto-filling the quantity from the batch
                 form.find('.js-product-qty').val(batchQty === undefined ? '' : batchQty);
@@ -788,6 +795,86 @@
                         btn.prop('disabled', false).html(
                             '<i class="bi bi-cloud-arrow-up-fill me-1"></i> POS SALE'
                         );
+                    }
+                });
+            });
+            // ==========================================
+            // ADD INVENTORY (With Review Confirmation)
+            // ==========================================
+            $('#addInventoryForm').on('submit', function(e) {
+                e.preventDefault();
+
+                var form = $(this);
+                var actionUrl = form.attr('action');
+
+                // Capture values for the Review Modal
+                // Change this line:
+                var productName = $('#product_ID_add').find(' option:selected').text().split('(')[0].trim();
+                var categoryName = $('.js-category-select option:selected').text();
+                var cost = form.find('.js-product-cost').val();
+                var qty = form.find('.js-product-qty').val();
+
+                // 1. Show the Professional Review Modal
+                Swal.fire({
+                    title: 'Confirm Stock Entry',
+                    html: `
+            <div style="text-align: left; font-size: 0.9rem; line-height: 1.6; overflow-x: hidden;">
+                <div class="mb-2"><strong>Category:</strong> <span class="text-primary">${categoryName}</span></div>
+                <div class="mb-2"><strong>Product:</strong> ${productName}</div>
+                <hr>
+                <div class="row mx-0">
+                    <div class="col-6 px-0"><strong>Unit Cost:</strong> ₱${cost}</div>
+                    <div class="col-6 px-0 text-end"><strong>Quantity:</strong> ${qty}</div>
+                </div>
+            </div>
+        `,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonColor: '#0d6efd',
+                    confirmButtonText: 'Confirm and Save',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+
+                        // 2. Perform the AJAX request
+                        $.ajax({
+                            url: actionUrl,
+                            method: 'POST',
+                            data: form.serialize(),
+                            beforeSend: function() {
+                                Swal.fire({
+                                    title: 'Saving Entry...',
+                                    allowOutsideClick: false,
+                                    didOpen: () => {
+                                        Swal.showLoading();
+                                    }
+                                });
+                            },
+                            success: function(response) {
+                                // Hide your Add Inventory Modal
+                                $('#AddInventoryModal').modal('hide');
+                                form[0].reset();
+
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Stock Added!',
+                                    text: response.save,
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+
+                                // Refresh Table and Chart
+                                if ($.fn.DataTable.isDataTable('#example2')) {
+                                    $('#example2').DataTable().ajax.reload(null, false);
+                                }
+                                refreshChartOnly();
+                            },
+                            error: function(xhr) {
+                                var errorMsg = xhr.responseJSON?.error ||
+                                    'Something went wrong.';
+                                Swal.fire('Error', errorMsg, 'error');
+                            }
+                        });
                     }
                 });
             });

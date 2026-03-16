@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id("purchase_id");
             $table->unsignedBigInteger('supplier_id');
             $table->string('invoice_number')->unique();
-            $table->string('invoice_date');
+            $table->date('invoice_date');
             $table->date('due_date');
             $table->decimal('gross_amount', 18, 2);
             $table->decimal('vat_amount', 18, 2);
