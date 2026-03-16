@@ -908,6 +908,7 @@ public function saveInvoiceAndItem(Request $request)
             'updated_at'     => now(),
         ]);
 
+        // STEP 2: Loop through each row submitted from the table
         foreach ($request->product_name as $key => $name) {
             
             // STEP 2: Product Check/Creation
