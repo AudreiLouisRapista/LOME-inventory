@@ -16,35 +16,37 @@
                 <div class="stat-card-modern">
                     <div class="pill-icon pill-green"><i class="fas fa-box"></i></div>
                     <div class="stat-info">
-                        <div class="stat-val">5,483</div>
+                        <div class="stat-val">{{ number_format($totalProducts ?? 0) }}</div>
                         <div class="stat-label">Total Products</div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="stat-card-modern">
-                    <div class="pill-icon pill-blue"><i class="fas fa-shopping-cart"></i></div>
-                    <div class="stat-info">
-                        <div class="stat-val">2,859</div>
-                        <div class="stat-label">Orders</div>
-                    </div>
-                </div>
-            </div>
+            
             <div class="col-md-3">
                 <div class="stat-card-modern">
                     <div class="pill-icon pill-purple"><i class="fas fa-chart-line"></i></div>
                     <div class="stat-info">
-                        <div class="stat-val">5,483</div>
+                        <div class="stat-val">{{ number_format($totalQuantity ?? 0) }}</div>
                         <div class="stat-label">Total Stock</div>
                     </div>
+                    
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-card-modern">
                     <div class="pill-icon pill-orange"><i class="fas fa-exclamation-triangle"></i></div>
                     <div class="stat-info">
-                        <div class="stat-val">38</div>
+                        <div class="stat-val">{{ number_format($outOfStock ?? 0) }}</div>
                         <div class="stat-label">Out of Stock</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card-modern">
+                    <div class="pill-icon pill-blue"><i class="fas fa-file-invoice-dollar" style="color: red"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-val" style="color: red">₱{{ number_format($unpaidInvoiceTotal ?? 0, 2) }}</div>
+                        <div class="stat-label">Invoice Balance</div>
                     </div>
                 </div>
             </div>
@@ -65,26 +67,21 @@
                     <div class="card-head">
                         <h3>Top Sales Product</h3>
                     </div>
-                    @php
-                        $prods = [
-                            ['Wireless Mouse', 92],
-                            ['USB-C Cable', 85],
-                            ['Laptop Stand', 78],
-                            ['Mechanical Keyboard', 71],
-                            ['Desk Lamp', 65],
-                        ];
-                    @endphp
-                    @foreach ($prods as $p)
-                        <div class="sales-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="small font-weight-bold">{{ $p[0] }}</span>
-                                <span class="small text-muted">{{ $p[1] }}%</span>
+                    <div id="topSalesList">
+                        @forelse (($topSalesProducts ?? []) as $p)
+                            <div class="sales-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="small font-weight-bold">{{ $p['name'] }}</span>
+                                    <span class="small text-muted">{{ $p['percent'] }}%</span>
+                                </div>
+                                <div class="progress-track">
+                                    <div class="progress-fill" style="width: {{ $p['percent'] }}%"></div>
+                                </div>
                             </div>
-                            <div class="progress-track">
-                                <div class="progress-fill" style="width: {{ $p[1] }}%"></div>
-                            </div>
-                        </div>
-                    @endforeach
+                        @empty
+                            <div class="text-muted small">No sales data.</div>
+                        @endforelse
+                    </div>
                 </div>
             </div>
         </div>
@@ -108,19 +105,19 @@
                         <div class="pill-icon pill-orange" style="width: 60px; height: 60px;"><i
                                 class="fas fa-hourglass-half"></i></div>
                         <div>
-                            <h2 class="m-0" style="font-size: 32px; font-weight: 800;">127</h2>
+                            <h2 class="m-0" style="font-size: 32px; font-weight: 800;">{{ $itemsNearExpiry ?? 0 }}</h2>
                             <span class="small text-muted">Items Near Expiry</span>
                         </div>
                     </div>
 
                     <button class="exp-btn" data-toggle="modal" data-target="#crit7Modal">
                         <span class="small font-weight-bold">Critical (7 Days)</span>
-                        <span class="text-crit">23 items <i class="fas fa-chevron-right ml-2"></i></span>
+                        <span class="text-crit">{{ $criticalExpiryCount ?? 0 }} items <i class="fas fa-chevron-right ml-2"></i></span>
                     </button>
 
                     <button class="exp-btn" data-toggle="modal" data-target="#warn30Modal">
                         <span class="small font-weight-bold">Warning (30 Days)</span>
-                        <span class="text-warn">104 items <i class="fas fa-chevron-right ml-2"></i></span>
+                        <span class="text-warn">{{ $warningExpiryCount ?? 0 }} items <i class="fas fa-chevron-right ml-2"></i></span>
                     </button>
                 </div>
             </div>
@@ -131,27 +128,27 @@
                         <h6 class="fw-bold mb-4"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Reorder
                             Required</h6>
 
-                        <div class="reorder-item p-3 rounded-4 mb-3 border bg-light-danger">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="fw-bold">USB Cable</span>
-                                <span class="badge bg-danger rounded-pill">Urgent</span>
+                        @forelse(($reorderRequired ?? []) as $item)
+                            @php
+                                $isUrgent = ($item['level'] ?? '') === 'urgent';
+                                $badgeClass = $isUrgent ? 'bg-danger' : 'bg-warning';
+                                $itemBgClass = $isUrgent ? 'bg-light-danger' : 'bg-light-warning';
+                                $label = $isUrgent ? 'Urgent' : 'Soon';
+                                $percent = (int) ($item['percent'] ?? 0);
+                            @endphp
+                            <div class="reorder-item p-3 rounded-4 mb-3 border {{ $itemBgClass }}">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="fw-bold">{{ $item['name'] ?? 'Unknown' }}</span>
+                                    <span class="badge {{ $badgeClass }} rounded-pill">{{ $label }}</span>
+                                </div>
+                                <p class="small text-muted mb-2">Current: {{ $item['current'] ?? 0 }} | Reorder: {{ $item['reorder_to'] ?? 0 }}</p>
+                                <div class="progress rounded-pill" style="height: 6px;">
+                                    <div class="progress-bar {{ $badgeClass }}" style="width: {{ $percent }}%"></div>
+                                </div>
                             </div>
-                            <p class="small text-muted mb-2">Current: 12 | Reorder: 50</p>
-                            <div class="progress rounded-pill" style="height: 6px;">
-                                <div class="progress-bar bg-danger" style="width: 24%"></div>
-                            </div>
-                        </div>
-
-                        <div class="reorder-item p-3 rounded-4 mb-3 border bg-light-warning">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="fw-bold">Notebook</span>
-                                <span class="badge bg-warning rounded-pill">Soon</span>
-                            </div>
-                            <p class="small text-muted mb-2">Current: 45 | Reorder: 100</p>
-                            <div class="progress rounded-pill" style="height: 6px;">
-                                <div class="progress-bar bg-warning" style="width: 45%"></div>
-                            </div>
-                        </div>
+                        @empty
+                            <div class="text-muted small">No items need reordering.</div>
+                        @endforelse
                     </div>
                 </div>
             </div>
@@ -212,7 +209,7 @@
                                     <span class="text-purple-dark fw-bold small">
                                         Top Seller:
                                         <span id="topSellerName"
-                                            class="text-navy">{{ $bestSellerName->product_name ?? 'No Sales' }}</span>
+                                            class="text-navy">{{ $bestSellerName ?? 'No Sales' }}</span>
                                         <span id="topSellerValue" class="text-muted ms-1">
                                             ({{ $bestSellerRecord ? '₱' . number_format($bestSellerRecord->TotalSalesPerQty / 1000, 1) : 'No Sales' }})
                                         </span>
@@ -250,11 +247,19 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td>Sample Item A</td>
-                                    <td>#12345</td>
-                                    <td class="text-danger font-weight-bold">Mar 14, 2026</td>
-                                </tr>
+                                @forelse(($criticalExpiryItems ?? []) as $row)
+                                    <tr>
+                                        <td>{{ $row->product_name ?? 'Unknown' }}</td>
+                                        <td>#{{ $row->product_ID ?? '' }}</td>
+                                        <td class="text-danger font-weight-bold">
+                                            {{ $row->expiration_date ? \Carbon\Carbon::parse($row->expiration_date)->format('M d, Y') : 'N/A' }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="3" class="text-muted small">No critical expirations.</td>
+                                    </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
@@ -271,7 +276,32 @@
                     <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted">Filtering products expiring within 30 days...</p>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead class="text-muted small">
+                                <tr>
+                                    <th>PRODUCT</th>
+                                    <th>SKU</th>
+                                    <th>EXPIRY</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse(($warningExpiryItems ?? []) as $row)
+                                    <tr>
+                                        <td>{{ $row->product_name ?? 'Unknown' }}</td>
+                                        <td>#{{ $row->product_ID ?? '' }}</td>
+                                        <td class="text-warning font-weight-bold">
+                                            {{ $row->expiration_date ? \Carbon\Carbon::parse($row->expiration_date)->format('M d, Y') : 'N/A' }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="3" class="text-muted small">No items expiring in the next 30 days.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -291,10 +321,10 @@
             new Chart(document.getElementById('expenseChart'), {
                 type: 'line',
                 data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    labels: {!! json_encode($expenseProfitLabels ?? []) !!},
                     datasets: [{
                             label: 'Profit',
-                            data: [35, 42, 38, 55, 48, 62],
+                            data: {!! json_encode($profitSeries ?? []) !!},
                             borderColor: '#6366f1',
                             backgroundColor: 'rgba(99, 102, 241, 0.05)',
                             fill: true,
@@ -304,8 +334,8 @@
                             pointBorderWidth: 2
                         },
                         {
-                            label: 'Expenses',
-                            data: [20, 25, 30, 28, 35, 30], // Example data for expenses
+                            label: 'Expense',
+                            data: {!! json_encode($expenseSeries ?? []) !!},
                             borderColor: '#ef4444', // Professional Red
                             backgroundColor: 'transparent', // Keep it clean to avoid overlap
                             fill: false,
@@ -377,18 +407,18 @@
             // Modern Combo Chart (Inventory vs Sales)
             new Chart(document.getElementById('comboChart'), {
                 data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    labels: {!! json_encode($inventorySalesLabels ?? []) !!},
                     datasets: [{
                         type: 'bar',
                         label: 'Items Sold',
-                        data: [440, 510, 470, 590, 630, 680],
+                        data: {!! json_encode($itemsSoldSeries ?? []) !!},
                         backgroundColor: '#6366f1',
                         borderRadius: 8,
                         barThickness: 22
                     }, {
                         type: 'line',
                         label: 'Stock Level',
-                        data: [700, 850, 720, 950, 880, 1020],
+                        data: {!! json_encode($stockLevelSeries ?? []) !!},
                         borderColor: '#10b981',
                         borderWidth: 3,
                         tension: 0,
@@ -521,6 +551,52 @@
                             if (document.getElementById('topSellerName')) {
                                 document.getElementById('topSellerName').innerText = data
                                     .bestSellerName;
+                            }
+
+                            // 3. Update Top Sales Product list
+                            const topSalesList = document.getElementById('topSalesList');
+                            if (topSalesList && Array.isArray(data.topSalesProducts)) {
+                                topSalesList.innerHTML = '';
+
+                                if (data.topSalesProducts.length === 0) {
+                                    const empty = document.createElement('div');
+                                    empty.className = 'text-muted small';
+                                    empty.textContent = 'No sales data.';
+                                    topSalesList.appendChild(empty);
+                                } else {
+                                    data.topSalesProducts.forEach((p) => {
+                                        const item = document.createElement('div');
+                                        item.className = 'sales-item';
+
+                                        const header = document.createElement('div');
+                                        header.className = 'd-flex justify-content-between align-items-center';
+
+                                        const name = document.createElement('span');
+                                        name.className = 'small font-weight-bold';
+                                        name.textContent = p.name ?? '';
+
+                                        const pct = document.createElement('span');
+                                        pct.className = 'small text-muted';
+                                        pct.textContent = `${p.percent ?? 0}%`;
+
+                                        header.appendChild(name);
+                                        header.appendChild(pct);
+
+                                        const track = document.createElement('div');
+                                        track.className = 'progress-track';
+
+                                        const fill = document.createElement('div');
+                                        fill.className = 'progress-fill';
+                                        fill.style.width = `${p.percent ?? 0}%`;
+
+                                        track.appendChild(fill);
+
+                                        item.appendChild(header);
+                                        item.appendChild(track);
+
+                                        topSalesList.appendChild(item);
+                                    });
+                                }
                             }
                         })
                         .catch(error => console.error('Error fetching filtered data:', error));
