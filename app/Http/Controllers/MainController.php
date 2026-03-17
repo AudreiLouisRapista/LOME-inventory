@@ -370,8 +370,13 @@ public function save_product(Request $request)
         'product_name'  => 'required|string|max:255',
         'category_ID'   => 'required|integer',
         'perishable_ID' => 'required|integer',
+<<<<<<< HEAD
         'tie_number'    => 'required|numeric|min:0',
         'tie_qty'       => 'required|numeric|min:0',
+=======
+        'tie_number'    => 'required|integer|min:0',
+        'tie_qty'       => 'required|integer|min:0',
+>>>>>>> fdb06633d815978023551c40a34d6f98f7684fa7
     ]);
 
     $product    = $request->product_name;
@@ -417,7 +422,11 @@ public function save_product(Request $request)
         // 4. Success Response
         return response()->json([
             'save' => 'Product added successfully!'
+<<<<<<< HEAD
         ], 200);
+=======
+        ], 201);
+>>>>>>> fdb06633d815978023551c40a34d6f98f7684fa7
 
     } catch (\Exception $e) {
         // 5. Error Handling

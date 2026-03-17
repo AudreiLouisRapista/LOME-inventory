@@ -157,6 +157,7 @@
                                     <div class="modal-content border-0"
                                         style="border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
 
+<<<<<<< HEAD
                                         <div class="modal-header bg-dark text-white py-3">
                                             <h5 class="modal-title fw-bold" id="addTeacherModalLabel">
                                                 <i class="fas fa-box-open me-2"></i> Inventory
@@ -198,6 +199,33 @@
                                                                     @endforeach
                                                                 </select>
                                                             </div>
+=======
+                                            {{-- Basic Information Section --}}
+                                            <div class="mb-4">
+                                                <label class="text-uppercase text-muted fw-bold mb-3"
+                                                    style="font-size: 11px; letter-spacing: 1px;">Basic
+                                                    Information</label>
+                                                <hr class="mt-0 mb-4" style="opacity: 0.1;">
+                                                <div class="row g-3">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-semibold"
+                                                            style="color: #475569;">Category</label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text bg-light border-end-0"
+                                                                style="border-radius: 10px 0 0 10px;">
+                                                                <i class="bi bi-tag text-muted"></i>
+                                                            </span>
+                                                            <select id="category_ID_add" name="category_ID"
+                                                                class="form-select bg-light border-start-0 js-category-select"
+                                                                style="border-radius: 0 10px 10px 0; height: 45px;"
+                                                                required>
+                                                                <option value="">Select Category</option>
+                                                                @foreach ($categories as $cat)
+                                                                    <option value="{{ $cat->category_ID }}">
+                                                                        {{ $cat->category_name }}</option>
+                                                                @endforeach
+                                                            </select>
+>>>>>>> fdb06633d815978023551c40a34d6f98f7684fa7
                                                         </div>
                                                         <div class="col-md-6">
                                                             <label class="form-label fw-semibold"
@@ -220,6 +248,7 @@
                                                 </div>
 
 
+<<<<<<< HEAD
                                                 <div class="mb-4">
                                                     <label class="text-uppercase text-muted fw-bold mb-3"
                                                         style="font-size: 11px; letter-spacing: 1px;">Stock
@@ -237,6 +266,16 @@
                                                                     class="form-control js-product-cost" step="0.01"
                                                                     placeholder="0.00">
                                                             </div>
+=======
+                                                <div class="row g-3">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label fw-semibold">Cost Price</label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text">$</span>
+                                                            <input id="product_cost_add" type="number"
+                                                                name="product_cost" class="form-control js-product-cost"
+                                                                step="0.01" placeholder="0.00">
+>>>>>>> fdb06633d815978023551c40a34d6f98f7684fa7
                                                         </div>
                                                         <div class="col-md-4">
                                                             <label class="form-label fw-semibold">Selling Price</label>
