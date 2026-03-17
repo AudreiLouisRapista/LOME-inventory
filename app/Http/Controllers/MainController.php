@@ -1661,11 +1661,8 @@ public function add_invoice(Request $request)
 
     return view('add_invoice', compact('suppliers', 'products'));
 }
-<<<<<<< Updated upstream
 
 
-=======
->>>>>>> Stashed changes
 public function stockMovement(Request $request)
 {
     // 1. Get Inbound (Stock Adjustments/Purchases)
