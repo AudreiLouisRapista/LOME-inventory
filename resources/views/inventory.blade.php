@@ -13,9 +13,6 @@
 
 @section('content')
     <link rel="stylesheet" href="{{ asset('css/pages/inventory_style.css') }}">
-    {{-- ==========================================
-         3. DASHBOARD STATISTICS CARDS
-         ========================================== --}}
     <div class="row mb-4 g-3" style="font-family: 'Inter', sans-serif;">
         <div class="col-lg-3 col-md-4 col-6 col-5-custom">
             <div class="dash-stat-card">
@@ -114,21 +111,15 @@
         </div>
     </div>
 
-    {{-- ==========================================
-         4. MAIN INVENTORY MANAGEMENT SECTION
-         ========================================== --}}
     <section class="content">
         <div class="container-fluid"
             style="max-width: 100%; display: block; margin-left: 5px; margin-right: 5px; margin-top: 20px;">
             <div class="row">
                 <div class="col-12">
                     <div class="card" style=" display: block; background:#fff; padding:20px">
-                        {{-- ==========================================
-                             4.1 INVENTORY LIST HEADER WITH IMPORT AND ADD BUTTONS
-                             ========================================== --}}
                         <div class="d-flex justify-content-between align-items-center bg-white p-3  rounded shadow-sm mb-4">
                             <h5 class="card-title fs-4 fw-bold m-0">Inventory List</h5>
-                            {{-- POS Sale Import Form --}}
+                            <!-- Button trigger modal -->
                             <div class="import-container">
                                 <form action="{{ route('import_pos_sales') }}" method="POST" enctype="multipart/form-data"
                                     class="m-0">
@@ -146,143 +137,147 @@
                                 </form>
                             </div>
 
-                            {{-- Add Inventory Button --}}
                             <div class="d-flex gap-2">
+
+
                                 <button type="button" class="btn-inventory" data-bs-toggle="modal"
                                     data-bs-target="#addInventoryModal">
                                     <i class="bi bi-plus-lg"></i>
                                     Add Inventory
                                 </button>
                             </div>
-                        </div>
 
-                        {{-- ==========================================
-                             4.2 ADD INVENTORY MODAL
-                             ========================================== --}}
-                        <div class="modal fade" id="addInventoryModal" tabindex="-1" aria-labelledby="addInventoryModal"
-                            aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered modal-lg">
-                                <div class="modal-content border-0"
-                                    style="border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                            <!-- Modal -->
 
-                                    <div class="modal-header bg-dark text-white py-3">
-                                        <h5 class="modal-title fw-bold" id="addTeacherModalLabel">
-                                            <i class="fas fa-box-open me-2"></i> Inventory
-                                        </h5>
-                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                                            aria-label="Close"></button>
-                                    </div>
 
-                                    <div class="modal-body px-4 pb-4">
-                                        @include('layout.partials.alerts')
 
-                                        <form id="addInventoryForm" method="POST" action="{{ route('add_new_inventory') }}"
-                                            enctype="multipart/form-data">
-                                            @csrf
+                            <div class="modal fade" id="addInventoryModal" tabindex="-1"
+                                aria-labelledby="addInventoryModal" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered modal-lg">
+                                    <div class="modal-content border-0"
+                                        style="border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
 
-                                            {{-- Basic Information Section --}}
-                                            <div class="mb-4">
-                                                <label class="text-uppercase text-muted fw-bold mb-3"
-                                                    style="font-size: 11px; letter-spacing: 1px;">Basic
-                                                    Information</label>
-                                                <hr class="mt-0 mb-4" style="opacity: 0.1;">
-                                                <div class="row g-3">
-                                                    <div class="col-md-6">
-                                                        <label class="form-label fw-semibold"
-                                                            style="color: #475569;">Category</label>
-                                                        <div class="input-group">
-                                                            <span class="input-group-text bg-light border-end-0"
-                                                                style="border-radius: 10px 0 0 10px;">
-                                                                <i class="bi bi-tag text-muted"></i>
-                                                            </span>
-                                                            <select id="category_ID_add" name="category_ID"
-                                                                class="form-select bg-light border-start-0 js-category-select"
-                                                                style="border-radius: 0 10px 10px 0; height: 45px;"
-                                                                required>
-                                                                <option value="">Select Category</option>
-                                                                @foreach ($categories as $cat)
-                                                                    <option value="{{ $cat->category_ID }}">
-                                                                        {{ $cat->category_name }}</option>
-                                                                @endforeach
-                                                            </select>
+                                        <div class="modal-header bg-dark text-white py-3">
+                                            <h5 class="modal-title fw-bold" id="addTeacherModalLabel">
+                                                <i class="fas fa-box-open me-2"></i> Inventory
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
+                                        </div>
+
+
+                                        <div class="modal-body px-4 pb-4">
+                                            @include('layout.partials.alerts')
+
+                                            <form id="addInventoryForm" method="POST"
+                                                action="{{ route('add_new_inventory') }}" enctype="multipart/form-data">
+                                                @csrf
+
+                                                <div class="mb-4">
+                                                    <label class="text-uppercase text-muted fw-bold mb-3"
+                                                        style="font-size: 11px; letter-spacing: 1px;">Basic
+                                                        Information</label>
+                                                    <hr class="mt-0 mb-4" style="opacity: 0.1;">
+                                                    <div class="row g-3">
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-semibold"
+                                                                style="color: #475569;">Category</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text bg-light border-end-0"
+                                                                    style="border-radius: 10px 0 0 10px;">
+                                                                    <i class="bi bi-tag text-muted"></i>
+                                                                </span>
+                                                                <select id="category_ID_add" name="category_ID"
+                                                                    class="form-select bg-light border-start-0 js-category-select"
+                                                                    style="border-radius: 0 10px 10px 0; height: 45px;"
+                                                                    required>
+                                                                    <option value="">Select Category</option>
+                                                                    @foreach ($categories as $cat)
+                                                                        <option value="{{ $cat->category_ID }}">
+                                                                            {{ $cat->category_name }}</option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <label class="form-label fw-semibold"
-                                                            style="color: #475569;">Product</label>
-                                                        <div class="input-group">
-                                                            <span class="input-group-text bg-light border-end-0"
-                                                                style="border-radius: 10px 0 0 10px;">
-                                                                <i class="bi bi-tag text-muted"></i>
-                                                            </span>
-                                                            <select id="product_ID_add" name="product_ID"
-                                                                class="form-select bg-light border-start-0 js-product-select"
-                                                                style="border-radius: 0 10px 10px 0; height: 45px;"
-                                                                required>
-                                                                <option value="">Select Product</option>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-semibold"
+                                                                style="color: #475569;">Product</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text bg-light border-end-0"
+                                                                    style="border-radius: 10px 0 0 10px;">
+                                                                    <i class="bi bi-tag text-muted"></i>
+                                                                </span>
+                                                                <select id="product_ID_add" name="product_ID"
+                                                                    class="form-select bg-light border-start-0 js-product-select"
+                                                                    style="border-radius: 0 10px 10px 0; height: 45px;"
+                                                                    required>
+                                                                    <option value="">Select Product</option>
 
-                                                            </select>
+                                                                </select>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
 
-                                            {{-- Stock Management Section --}}
-                                            <div class="mb-4">
-                                                <label class="text-uppercase text-muted fw-bold mb-3"
-                                                    style="font-size: 11px; letter-spacing: 1px;">Stock
-                                                    Management</label>
-                                                <hr class="mt-0 mb-4" style="opacity: 0.1;">
 
-                                                <div class="row g-3">
-                                                    <div class="col-md-4">
-                                                        <label class="form-label fw-semibold">Cost Price</label>
-                                                        <div class="input-group">
-                                                            <span class="input-group-text">$</span>
-                                                            <input id="product_cost_add" type="number"
-                                                                name="product_cost" class="form-control js-product-cost"
-                                                                step="0.01" placeholder="0.00">
+                                                <div class="mb-4">
+                                                    <label class="text-uppercase text-muted fw-bold mb-3"
+                                                        style="font-size: 11px; letter-spacing: 1px;">Stock
+                                                        Management</label>
+                                                    <hr class="mt-0 mb-4" style="opacity: 0.1;">
+
+                                                    <div class="row g-3">
+
+                                                        <div class="col-md-4">
+                                                            <label class="form-label fw-semibold">Cost Price</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text">$</span>
+                                                                <input id="product_cost_add" type="number"
+                                                                    name="product_cost"
+                                                                    class="form-control js-product-cost" step="0.01"
+                                                                    placeholder="0.00">
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <label class="form-label fw-semibold">Selling Price</label>
-                                                        <div class="input-group">
-                                                            <span class="input-group-text">$</span>
-                                                            <input id="product_price_add" type="number"
-                                                                name="product_price" class="form-control js-product-price"
-                                                                step="0.01" placeholder="0.00" value=""
-                                                                required>
+                                                        <div class="col-md-4">
+                                                            <label class="form-label fw-semibold">Selling Price</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text">$</span>
+                                                                <input id="product_price_add" type="number"
+                                                                    name="product_price"
+                                                                    class="form-control js-product-price" step="0.01"
+                                                                    placeholder="0.00" value="" required>
+                                                            </div>
                                                         </div>
+                                                        <div class="col-md-4">
+                                                            <label class="form-label fw-semibold"
+                                                                style="color: #475569;">Available Quantity</label>
+                                                            <input type="number" name="batch_quantity"
+                                                                class="js-product-qty form-control" readonly>
+                                                        </div>
+
                                                     </div>
-                                                    <div class="col-md-4">
-                                                        <label class="form-label fw-semibold"
-                                                            style="color: #475569;">Available Quantity</label>
-                                                        <input type="number" name="batch_quantity"
-                                                            class="js-product-qty form-control" readonly>
-                                                    </div>
+
                                                 </div>
-                                            </div>
 
-                                            {{-- Modal Footer --}}
-                                            <div class="d-flex justify-content-end gap-2 mt-5">
-                                                <button type="button" class="btn btn-light px-4 fw-semibold"
-                                                    data-bs-dismiss="modal"
-                                                    style="border-radius: 10px; color: #64748b;">Cancel</button>
-                                                <button type="submit" class="btn btn-primary px-5 fw-semibold"
-                                                    style="border-radius: 10px; background: #007bff; border: none;">Save
-                                                    Inventory</button>
-                                            </div>
-                                        </form>
+                                                <div class="d-flex justify-content-end gap-2 mt-5">
+                                                    <button type="button" class="btn btn-light px-4 fw-semibold"
+                                                        data-bs-dismiss="modal"
+                                                        style="border-radius: 10px; color: #64748b;">Cancel</button>
+                                                    <button type="submit" class="btn btn-primary px-5 fw-semibold"
+                                                        style="border-radius: 10px; background: #007bff; border: none;">Save
+                                                        Inventory</button>
+                                                </div>
+                                            </form>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        <!-- /.card-header -->
 
-                        {{-- ==========================================
-                             4.3 INVENTORY TABLE WITH FILTERS
-                             ========================================== --}}
+
+                        <!-- /.card-header -->
                         <div class="table-container" style="overflow-x: auto; padding: 0 10px;">
-                            {{-- Table Controls --}}
                             <div class="row mb-3 mt-3 align-items-center justify-content-between">
                                 <div class="col-auto">
                                     <button type="button" id="btn-close-period" class="btn btn-danger btn-sm">
@@ -319,8 +314,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            {{-- Inventory DataTable --}}
                             <table id="example2" class="table table-bordered table-hover" style="width:100%">
                                 <thead>
                                     <tr>
@@ -335,16 +328,19 @@
                                         <th>Remaining Stock</th>
                                         <th>Status</th>
                                         <th>Action</th>
+
+
+                                        <!-- <th>ACtion</th> -->
                                     </tr>
                                 </thead>
                                 <tbody style="font-family: 'Inter', sans-serif; text-align: center;">
+
                                 </tbody>
                             </table>
+
+
                         </div>
 
-                        {{-- ==========================================
-                             4.4 UPDATE PRODUCT MODAL
-                             ========================================== --}}
                         <div class="modal fade" id="UpdateProductModal" tabindex="-1" aria-hidden="true">
                             <div class="modal-dialog">
                                 <div class="modal-content">
@@ -356,6 +352,8 @@
                                         method="POST">
                                         @csrf
                                         <div class="modal-body">
+
+
                                             <input type="hidden" name="inventory_ID" id="edit_inventory_ID">
                                             <input type="hidden" name="product_ID" id="edit_product_ID">
 
@@ -369,11 +367,13 @@
                                                 <select name="category_ID" id="edit_category" class="form-control"
                                                     required>
                                                     <option value="">-- Select Category --</option>
+
                                                     @foreach ($categories as $category)
                                                         <option value="{{ $category->category_ID }}">
                                                             {{ strtoupper($category->category_name) }}
                                                         </option>
                                                     @endforeach
+
                                                 </select>
                                             </div>
                                             <div class="mb-3">
@@ -386,6 +386,7 @@
                                                 <input type="number" id="edit_remainingstock"
                                                     name="update_remainingstock" class="form-control" readonly>
                                             </div>
+
                                         </div>
                                         <div class="modal-footer">
                                             <button type="submit" class="btn btn-primary w-100">Update</button>
@@ -394,13 +395,8 @@
                                 </div>
                             </div>
                         </div>
-
-                        {{-- /.card-body --}}
+                        <!-- /.card-body -->
                     </div>
-
-                    {{-- ==========================================
-                         4.5 PRODUCT PERFORMANCE CHART
-                         ========================================== --}}
                     <div class="row mb-4">
                         <div class="col-12">
                             <div class="card border-0 shadow-sm mb-4" style="border-radius: 15px;">
@@ -433,9 +429,11 @@
             <!-- /.container-fluid -->
     </section>
 
+
 @endsection
 
 @section('scripts src')
+    `
     <script>
         $(document).ready(function() {
             // ==========================================
@@ -518,10 +516,6 @@
                     }
                 ],
             });
-
-            // ==========================================
-            // 1.1 DELETE ACTION HANDLER
-            // ==========================================
             $('#example2 tbody').on('click', '.delete-btn', function() {
                 var id = $(this).data('id');
 
@@ -755,7 +749,7 @@
             });
 
             // ==========================================
-            // 5. POS SALE IMPORT (AJAX File Upload)
+            // 6. POS SALE IMPORT (AJAX File Upload)
             // ==========================================
             $(document).on('submit', '.import-container form', function(e) {
                 e.preventDefault(); // Prevent page refresh
@@ -804,9 +798,8 @@
                     }
                 });
             });
-
             // ==========================================
-            // 6. ADD INVENTORY (With Review Confirmation)
+            // ADD INVENTORY (With Review Confirmation)
             // ==========================================
             $('#addInventoryForm').on('submit', function(e) {
                 e.preventDefault();
@@ -887,7 +880,7 @@
             });
 
             // ==========================================
-            // 7. MONTHLY ROLLOVER (Security Logic)
+            // 5. MONTHLY ROLLOVER (Security Logic)
             // ==========================================
             $(document).on('click', '#btn-close-period', function(e) {
                 e.preventDefault();
@@ -973,5 +966,7 @@
             refreshChartOnly(); // Initial load
         });
     </script>
+
+
 
 @endsection
