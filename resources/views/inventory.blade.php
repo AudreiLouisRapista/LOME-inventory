@@ -173,6 +173,7 @@
                                             aria-label="Close"></button>
                                     </div>
 
+
                                     <div class="modal-body px-4 pb-4">
                                         @include('layout.partials.alerts')
 
@@ -180,7 +181,6 @@
                                             enctype="multipart/form-data">
                                             @csrf
 
-                                            {{-- Basic Information Section --}}
                                             <div class="mb-4">
                                                 <label class="text-uppercase text-muted fw-bold mb-3"
                                                     style="font-size: 11px; letter-spacing: 1px;">Basic
@@ -227,7 +227,7 @@
                                                 </div>
                                             </div>
 
-                                            {{-- Stock Management Section --}}
+
                                             <div class="mb-4">
                                                 <label class="text-uppercase text-muted fw-bold mb-3"
                                                     style="font-size: 11px; letter-spacing: 1px;">Stock
@@ -235,6 +235,7 @@
                                                 <hr class="mt-0 mb-4" style="opacity: 0.1;">
 
                                                 <div class="row g-3">
+
                                                     <div class="col-md-4">
                                                         <label class="form-label fw-semibold">Cost Price</label>
                                                         <div class="input-group">
@@ -260,7 +261,9 @@
                                                         <input type="number" name="batch_quantity"
                                                             class="js-product-qty form-control" readonly>
                                                     </div>
+
                                                 </div>
+
                                             </div>
 
                                             {{-- Modal Footer --}}
