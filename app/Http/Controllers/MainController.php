@@ -368,14 +368,24 @@ private function logActivity($action, $description)
         }
 
         // COGS by month: sum(QuantitySold * product_cost)
-        $cogsRows = DB::table('posimportdata')
-            ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
-            ->selectRaw(
-                'YEAR(posimportdata.created_at) as y, MONTH(posimportdata.created_at) as m, SUM(posimportdata.QuantitySold * products.product_cost) as total'
-            )
-            ->where('posimportdata.created_at', '>=', $startMonth)
-            ->groupBy('y', 'm')
-            ->get();
+      $cogsRows = DB::table('posimportdata as p')
+    ->join('products', 'p.product_ID', '=', 'products.product_ID')
+    ->join(DB::raw('(
+        SELECT product_ID, invt_unitCost
+        FROM inventory
+        WHERE inventory_ID IN (
+            SELECT MAX(inventory_ID) FROM inventory GROUP BY product_ID
+        )
+    ) as inv'), 'inv.product_ID', '=', 'p.product_ID')
+    ->selectRaw('
+        YEAR(p.created_at) as y,
+        MONTH(p.created_at) as m,
+        products.product_name,
+        SUM(p.QuantitySold * inv.invt_unitCost) as total
+    ')
+    ->where('p.created_at', '>=', $startMonth)
+    ->groupBy('y', 'm', 'products.product_name')
+    ->get();
 
         $cogsByMonth = [];
         foreach ($cogsRows as $row) {
@@ -575,9 +585,16 @@ public function inventory_report(Request $request)
             return ['revenue' => 0.0, 'cogs' => 0.0];
         }
 
-        $base = DB::table('posimportdata')
-            ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
-            ->whereNull('products.deleted_at')
+       $base = DB::table('posimportdata')
+    ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
+    ->join(DB::raw('(
+        SELECT product_ID, invt_unitCost
+        FROM inventory
+        WHERE inventory_ID IN (
+            SELECT MAX(inventory_ID) FROM inventory GROUP BY product_ID
+        )
+    ) as inv'), 'inv.product_ID', '=', 'posimportdata.product_ID')
+    ->whereNull('products.deleted_at')
             ->whereBetween('posimportdata.created_at', [$rangeStart, $rangeEnd]);
 
         if ($categoryId !== 'all' && $categoryId !== '') {
@@ -587,7 +604,7 @@ public function inventory_report(Request $request)
         $revenue = (float) (clone $base)->sum('posimportdata.TotalSalesPerQty');
 
         $cogs = (float) ((clone $base)
-            ->selectRaw('SUM(posimportdata.QuantitySold * products.product_cost) as total')
+            ->selectRaw('SUM(posimportdata.QuantitySold * inv.invt_unitCost) as total')
             ->value('total') ?? 0);
 
         return ['revenue' => $revenue, 'cogs' => $cogs];
@@ -685,32 +702,39 @@ public function inventory_report(Request $request)
             return $d->format('M Y');
         })->all();
 
-        $trendBase = DB::table('posimportdata')
-            ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
-            ->whereNull('products.deleted_at')
-            ->whereBetween('posimportdata.created_at', [$trendStart, $end]);
+       $trendBase = DB::table('posimportdata')
+    ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
+    ->join(DB::raw('(
+        SELECT product_ID, invt_unitCost
+        FROM inventory
+        WHERE inventory_ID IN (
+            SELECT MAX(inventory_ID) FROM inventory GROUP BY product_ID
+        )
+    ) as inv'), 'inv.product_ID', '=', 'posimportdata.product_ID')
+    ->whereNull('products.deleted_at')
+    ->whereBetween('posimportdata.created_at', [$trendStart, $end]);
 
-        if ($categoryId !== 'all' && $categoryId !== '') {
-            $trendBase->where('products.category_ID', $categoryId);
-        }
+    if ($categoryId !== 'all' && $categoryId !== '') {
+        $trendBase->where('products.category_ID', $categoryId);
+    }
 
-        $revenueRows = (clone $trendBase)
-            ->selectRaw('YEAR(posimportdata.created_at) as y, MONTH(posimportdata.created_at) as m, SUM(posimportdata.TotalSalesPerQty) as total')
-            ->groupBy('y', 'm')
-            ->get();
+    $revenueRows = (clone $trendBase)
+        ->selectRaw('YEAR(posimportdata.created_at) as y, MONTH(posimportdata.created_at) as m, SUM(posimportdata.TotalSalesPerQty) as total')
+        ->groupBy('y', 'm')
+        ->get();
 
-        $revenueByMonth = [];
-        foreach ($revenueRows as $row) {
-            $key = sprintf('%04d-%02d', (int) $row->y, (int) $row->m);
-            $revenueByMonth[$key] = (float) $row->total;
-        }
+$revenueByMonth = [];
+foreach ($revenueRows as $row) {
+    $key = sprintf('%04d-%02d', (int) $row->y, (int) $row->m);
+    $revenueByMonth[$key] = (float) $row->total;
+}
 
-        $cogsRows = (clone $trendBase)
-            ->selectRaw(
-                'YEAR(posimportdata.created_at) as y, MONTH(posimportdata.created_at) as m, SUM(posimportdata.QuantitySold * products.product_cost) as total'
-            )
-            ->groupBy('y', 'm')
-            ->get();
+$cogsRows = (clone $trendBase)
+    ->selectRaw(
+        'YEAR(posimportdata.created_at) as y, MONTH(posimportdata.created_at) as m, SUM(posimportdata.QuantitySold * inv.invt_unitCost) as total'
+    )
+    ->groupBy('y', 'm')
+    ->get();
 
         $cogsByMonth = [];
         foreach ($cogsRows as $row) {
@@ -786,75 +810,90 @@ public function inventory_report(Request $request)
     }
 
     // ----- Top Products by Profit (Dynamic) -----
-    $topProductsByProfit = collect();
-    if (Schema::hasTable('posimportdata') && Schema::hasTable('products')) {
-        $topBase = DB::table('posimportdata')
-            ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
-            ->whereNull('products.deleted_at')
-            ->whereBetween('posimportdata.created_at', [$start, $end]);
-
-        if ($categoryId !== 'all' && $categoryId !== '') {
-            $topBase->where('products.category_ID', $categoryId);
-        }
-
-        $rows = (clone $topBase)
-            ->selectRaw(
-                'products.product_ID, products.product_name,
-                 SUM(posimportdata.TotalSalesPerQty) as revenue,
-                 SUM(posimportdata.QuantitySold * products.product_cost) as cogs'
+   $topProductsByProfit = collect();
+if (Schema::hasTable('posimportdata') && Schema::hasTable('products')) {
+    $topBase = DB::table('posimportdata')
+        ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
+        ->join(DB::raw('(
+            SELECT product_ID, invt_unitCost
+            FROM inventory
+            WHERE inventory_ID IN (
+                SELECT MAX(inventory_ID) FROM inventory GROUP BY product_ID
             )
-            ->groupBy('products.product_ID', 'products.product_name')
-            ->get();
+        ) as inv'), 'inv.product_ID', '=', 'posimportdata.product_ID')
+        ->whereNull('products.deleted_at')
+        ->whereBetween('posimportdata.created_at', [$start, $end]);
 
-        $topProductsByProfit = collect($rows)
-            ->map(function ($r) {
-                /** @var object $r */
-                $revenue = (float) ($r->revenue ?? 0);
-                $cogs = (float) ($r->cogs ?? 0);
-                $profit = $revenue - $cogs;
-                $margin = $revenue > 0 ? ($profit / $revenue) * 100 : 0;
-
-                return [
-                    'name' => (string) $r->product_name,
-                    'revenue' => round($revenue, 2),
-                    'profit' => round($profit, 2),
-                    'margin' => round($margin, 1),
-                ];
-            })
-            ->sortByDesc('profit')
-            ->values()
-            ->take(5);
+    if ($categoryId !== 'all' && $categoryId !== '') {
+        $topBase->where('products.category_ID', $categoryId);
     }
+
+    $rows = (clone $topBase)
+        ->selectRaw(
+            'products.product_ID, products.product_name,
+             SUM(posimportdata.TotalSalesPerQty) as revenue,
+             SUM(posimportdata.QuantitySold * inv.invt_unitCost) as cogs'
+        )
+        ->groupBy('products.product_ID', 'products.product_name')
+        ->get();
+
+    $topProductsByProfit = collect($rows)
+        ->map(function ($r) {
+            /** @var object $r */
+            $revenue = (float) ($r->revenue ?? 0);
+            $cogs = (float) ($r->cogs ?? 0);
+            $profit = $revenue - $cogs;
+            $margin = $revenue > 0 ? ($profit / $revenue) * 100 : 0;
+
+            return [
+                'name' => (string) $r->product_name,
+                'revenue' => round($revenue, 2),
+                'profit' => round($profit, 2),
+                'margin' => round($margin, 1),
+            ];
+        })
+        ->sortByDesc('profit')
+        ->values()
+        ->take(5);
+}
 
     // ----- Expense Breakdown (Dynamic) -----
     // This project does not have an operating-expense table yet, so we break down "expenses" as COGS.
-    $expenseTotal = 0.0;
-    $expenseBreakdown = collect();
-    if (Schema::hasTable('posimportdata') && Schema::hasTable('products')) {
-        $expenseBase = DB::table('posimportdata')
-            ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
-            ->whereNull('products.deleted_at')
-            ->whereBetween('posimportdata.created_at', [$start, $end]);
+$expenseTotal = 0.0;
+$expenseBreakdown = collect();
+if (Schema::hasTable('posimportdata') && Schema::hasTable('products')) {
+    $expenseBase = DB::table('posimportdata')
+        ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
+        ->join(DB::raw('(
+            SELECT product_ID, invt_unitCost
+            FROM inventory
+            WHERE inventory_ID IN (
+                SELECT MAX(inventory_ID) FROM inventory GROUP BY product_ID
+            )
+        ) as inv'), 'inv.product_ID', '=', 'posimportdata.product_ID')
+        ->whereNull('products.deleted_at')
+        ->whereBetween('posimportdata.created_at', [$start, $end]);
 
-        if ($categoryId !== 'all' && $categoryId !== '') {
-            $expenseBase->where('products.category_ID', $categoryId);
+    if ($categoryId !== 'all' && $categoryId !== '') {
+        $expenseBase->where('products.category_ID', $categoryId);
+    }
+
+    $expenseTotal = (float) ((clone $expenseBase)
+        ->selectRaw('SUM(posimportdata.QuantitySold * inv.invt_unitCost) as total')
+        ->value('total') ?? 0);
+
+    $expenseRows = null;
+    if ($categoryId === 'all' || $categoryId === '') {
+        if (Schema::hasTable('category')) {
+            $expenseRows = (clone $expenseBase)
+                ->join('category', 'products.category_ID', '=', 'category.category_ID')
+                ->selectRaw('category.category_name as label, SUM(posimportdata.QuantitySold * inv.invt_unitCost) as total')
+                ->groupBy('label')
+                ->orderByDesc('total')
+                ->get();
         }
-
-        $expenseTotal = (float) ((clone $expenseBase)
-            ->selectRaw('SUM(posimportdata.QuantitySold * products.product_cost) as total')
-            ->value('total') ?? 0);
-
-        $expenseRows = null;
-        if ($categoryId === 'all' || $categoryId === '') {
-            if (Schema::hasTable('category')) {
-                $expenseRows = (clone $expenseBase)
-                    ->join('category', 'products.category_ID', '=', 'category.category_ID')
-                    ->selectRaw('category.category_name as label, SUM(posimportdata.QuantitySold * products.product_cost) as total')
-                    ->groupBy('label')
-                    ->orderByDesc('total')
-                    ->get();
-            }
-        } else {
+    }
+        else {
             $expenseRows = (clone $expenseBase)
                 ->selectRaw('products.product_name as label, SUM(posimportdata.QuantitySold * products.product_cost) as total')
                 ->groupBy('label')
