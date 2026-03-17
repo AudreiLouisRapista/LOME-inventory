@@ -344,7 +344,6 @@
                 $('#edit_name').val(name);
                 $('#edit_category').val(catID);
 
-
                 $('#UpdateProductModal').modal('show');
             });
 

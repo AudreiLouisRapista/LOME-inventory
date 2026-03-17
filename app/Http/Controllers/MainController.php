@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB; // For direct database queries
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Session; // For session usage
@@ -183,13 +184,113 @@ private function logActivity($action, $description)
         $totalQuantity = DB::table('inventory')->sum('invt_remainingStock');  
         $totalSold = DB::table('inventory')->sum('invt_totalSold');
         $instockProducts = DB::table('inventory')->where('status_ID', 1)->count();
-        $lowStockProducts = DB::table('inventory')->where('status_ID', 2)->count();
+        $lowStockProducts = DB::table('inventory')->where('status_ID',  2)->count();
         $outOfStock = DB::table('inventory')->where('status_ID', 3)->count();    
-        
-    $totalStockPossible = $totalQuantity + $totalSold;
-        $quantityPercent = ($totalStockPossible > 0) 
-        ? round(($totalQuantity / $totalStockPossible) * 100, 2) 
-        : 0;
+
+        // Reorder Required (Dynamic)
+        // Uses invt_StartingQuantity as the target level to reorder up to.
+        $reorderRequiredRows = DB::table('inventory')
+            ->join('products', 'inventory.product_ID', '=', 'products.product_ID')
+            ->whereNull('inventory.deleted_at')
+            ->whereNull('products.deleted_at')
+            ->whereNotNull('inventory.invt_StartingQuantity')
+            ->where('inventory.invt_StartingQuantity', '>', 0)
+            ->select([
+                'products.product_name',
+                'inventory.invt_remainingStock',
+                'inventory.invt_StartingQuantity',
+            ])
+            ->get();
+
+        $reorderRequired = $reorderRequiredRows
+            ->map(function ($row) {
+                $current = (int) ($row->invt_remainingStock ?? 0);
+                $reorderTo = (int) ($row->invt_StartingQuantity ?? 0);
+                if ($reorderTo <= 0) {
+                    return null;
+                }
+
+                $percent = (int) round(min(100, max(0, ($current / $reorderTo) * 100)));
+                $needsReorder = $current < $reorderTo;
+                if (!$needsReorder) {
+                    return null;
+                }
+
+                $level = ($current <= 0 || $percent <= 25) ? 'urgent' : (($percent <= 60) ? 'soon' : 'soon');
+
+                return [
+                    'name' => $row->product_name,
+                    'current' => $current,
+                    'reorder_to' => $reorderTo,
+                    'percent' => $percent,
+                    'level' => $level,
+                ];
+            })
+            ->filter()
+            ->sortBy('percent')
+            ->take(5)
+            ->values();
+
+        // Expiration Center (Dynamic)
+        $itemsNearExpiry = 0;
+        $criticalExpiryCount = 0;
+        $warningExpiryCount = 0;
+        $criticalExpiryItems = collect();
+        $warningExpiryItems = collect();
+
+        if (Schema::hasTable('batches')) {
+            try {
+                $today = \Carbon\Carbon::today();
+                $critEnd = $today->copy()->addDays(7);
+                $warnEnd = $today->copy()->addDays(30);
+
+                $allNearExpiry = DB::table('batches')
+                    ->join('products', 'batches.product_ID', '=', 'products.product_ID')
+                    ->whereNull('products.deleted_at')
+                    ->whereNotNull('batches.expiration_date')
+                    ->whereDate('batches.expiration_date', '>=', $today)
+                    ->whereDate('batches.expiration_date', '<=', $warnEnd)
+                    ->select([
+                        'batches.expiration_date',
+                        'products.product_ID',
+                        'products.product_name',
+                    ])
+                    ->orderBy('batches.expiration_date', 'asc')
+                    ->get();
+
+                $criticalExpiryItems = $allNearExpiry
+                    ->filter(function ($row) use ($critEnd) {
+                        return \Carbon\Carbon::parse($row->expiration_date)->lte($critEnd);
+                    })
+                    ->values();
+
+                $warningExpiryItems = $allNearExpiry
+                    ->filter(function ($row) use ($critEnd) {
+                        return \Carbon\Carbon::parse($row->expiration_date)->gt($critEnd);
+                    })
+                    ->values();
+
+                $criticalExpiryCount = $criticalExpiryItems->count();
+                $warningExpiryCount = $warningExpiryItems->count();
+                $itemsNearExpiry = $criticalExpiryCount + $warningExpiryCount;
+            } catch (\Throwable $e) {
+                // If the table exists but schema/columns differ, fall back to empty.
+                $itemsNearExpiry = 0;
+                $criticalExpiryCount = 0;
+                $warningExpiryCount = 0;
+                $criticalExpiryItems = collect();
+                $warningExpiryItems = collect();
+            }
+        }
+
+        $unpaidInvoiceTotal = (float) DB::table('purchases')
+            ->whereNotIn('status', ['paid', 'Paid'])
+            ->sum('net_amount');
+
+        $totalStockPossible = $totalQuantity + $totalSold;
+        $quantityPercent = ($totalStockPossible > 0)
+            ? round(($totalQuantity / $totalStockPossible) * 100, 2)
+            : 0;
 
         $importedData = DB::table('posimportdata')
             ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
@@ -220,10 +321,117 @@ private function logActivity($action, $description)
     $bestSellerRecord = $allFilteredSales->sortByDesc('TotalSalesPerQty')->first();
     $bestSellerName = $bestSellerRecord ? $bestSellerRecord->product_name : 'No Sales';
 
+    // Top Sales Product list (Top 5), percent is relative to the best seller
+    $topSalesRaw = $allFilteredSales->sortByDesc('TotalSalesPerQty')->take(5)->values();
+    $topSalesMax = (float) ($topSalesRaw->max('TotalSalesPerQty') ?? 0);
+    $topSalesProducts = $topSalesRaw->map(function ($row) use ($topSalesMax) {
+        $percent = $topSalesMax > 0
+            ? (int) round(((float) $row->TotalSalesPerQty / $topSalesMax) * 100)
+            : 0;
+
+        return [
+            'name' => $row->product_name,
+            'percent' => $percent,
+        ];
+    });
+
     // 4. GET TOP 10 FOR CHART ONLY
     $chartData = $allFilteredSales->sortByDesc('TotalSalesPerQty')->take(10)->reverse();
     $labels = $chartData->pluck('product_name');
     $values = $chartData->pluck('TotalSalesPerQty');
+
+        // 5. Expense vs Profit (Monthly) - Gross Profit Method (Revenue - COGS), last 6 months
+        $monthsBack = 5;
+        $startMonth = \Carbon\Carbon::now()->startOfMonth()->subMonths($monthsBack);
+        $months = collect(range($monthsBack, 0))->map(function ($i) {
+            return \Carbon\Carbon::now()->startOfMonth()->subMonths($i);
+        });
+
+        $monthKeys = $months->map(function ($d) {
+            return $d->format('Y-m');
+        })->all();
+        $expenseProfitLabels = $months->map(function ($d) {
+            return $d->format('M Y');
+        })->all();
+
+        // Revenue (Sales) by month
+        $revenueRows = DB::table('posimportdata')
+            ->selectRaw('YEAR(created_at) as y, MONTH(created_at) as m, SUM(TotalSalesPerQty) as total')
+            ->where('created_at', '>=', $startMonth)
+            ->groupBy('y', 'm')
+            ->get();
+
+        $revenueByMonth = [];
+        foreach ($revenueRows as $row) {
+            $key = sprintf('%04d-%02d', (int) $row->y, (int) $row->m);
+            $revenueByMonth[$key] = (float) $row->total;
+        }
+
+        // COGS by month: sum(QuantitySold * product_cost)
+        $cogsRows = DB::table('posimportdata')
+            ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
+            ->selectRaw(
+                'YEAR(posimportdata.created_at) as y, MONTH(posimportdata.created_at) as m, SUM(posimportdata.QuantitySold * products.product_cost) as total'
+            )
+            ->where('posimportdata.created_at', '>=', $startMonth)
+            ->groupBy('y', 'm')
+            ->get();
+
+        $cogsByMonth = [];
+        foreach ($cogsRows as $row) {
+            $key = sprintf('%04d-%02d', (int) $row->y, (int) $row->m);
+            $cogsByMonth[$key] = (float) $row->total;
+        }
+
+        $profitSeries = [];
+        $expenseSeries = [];
+        foreach ($monthKeys as $key) {
+            $revenue = (float) ($revenueByMonth[$key] ?? 0);
+            $cogs = (float) ($cogsByMonth[$key] ?? 0);
+            $profitSeries[] = round($revenue - $cogs, 2); // Gross Profit
+            $expenseSeries[] = round($cogs, 2); // COGS (Expenses)
+        }
+
+        // 6. Monthly Inventory vs Sales (Last 6 months)
+        $inventorySalesLabels = $expenseProfitLabels;
+
+        $soldRows = DB::table('posimportdata')
+            ->selectRaw('YEAR(created_at) as y, MONTH(created_at) as m, SUM(QuantitySold) as total')
+            ->where('created_at', '>=', $startMonth)
+            ->groupBy('y', 'm')
+            ->get();
+
+        $soldByMonth = [];
+        foreach ($soldRows as $row) {
+            $key = sprintf('%04d-%02d', (int) $row->y, (int) $row->m);
+            $soldByMonth[$key] = (float) $row->total;
+        }
+
+        $stockByMonth = [];
+        if (Schema::hasTable('inventory_history')) {
+            try {
+                $stockRows = DB::table('inventory_history')
+                    ->selectRaw('YEAR(snapshot_date) as y, MONTH(snapshot_date) as m, SUM(closing_stock) as total')
+                    ->where('snapshot_date', '>=', $startMonth)
+                    ->groupBy('y', 'm')
+                    ->get();
+
+                foreach ($stockRows as $row) {
+                    $key = sprintf('%04d-%02d', (int) $row->y, (int) $row->m);
+                    $stockByMonth[$key] = (float) $row->total;
+                }
+            } catch (\Throwable $e) {
+                // If the table exists but schema/columns differ, fall back to current stock.
+                $stockByMonth = [];
+            }
+        }
+
+        $itemsSoldSeries = [];
+        $stockLevelSeries = [];
+        foreach ($monthKeys as $key) {
+            $itemsSoldSeries[] = (int) round((float) ($soldByMonth[$key] ?? 0));
+            $stockLevelSeries[] = (int) round((float) ($stockByMonth[$key] ?? $totalQuantity));
+        }
     
     // AJAX Check
     if ($request->ajax()) {
@@ -231,14 +439,49 @@ private function logActivity($action, $description)
             'labels' => $labels,
             'values' => $values,
             'totalSum' => $totalSum,
-            'totalAverages' => $totalAverages
+            'totalAverages' => $totalAverages,
+            'bestSellerName' => $bestSellerName,
+            'topSalesProducts' => $topSalesProducts,
         ]);
     }
-    return view('dashboard', compact('logs', 'totalProducts', 'totalQuantity',
-     'totalSold', 'instockProducts', 'lowStockProducts', 'outOfStock', 'quantityPercent' ,
-      'totalSales', 'totalStockPossible', 'totalSum', 'labels', 'values', 'totalAverages',
-       'filter', 'availableDates', 'importedData', 'allFilteredSales', 'bestSellerName','chartData','bestSellerRecord'));
-    
+
+    return view('dashboard', compact(
+        'logs',
+        'totalProducts',
+        'totalQuantity',
+        'totalSold',
+        'instockProducts',
+        'lowStockProducts',
+        'outOfStock',
+        'quantityPercent',
+        'unpaidInvoiceTotal',
+        'reorderRequired',
+        'itemsNearExpiry',
+        'criticalExpiryCount',
+        'warningExpiryCount',
+        'criticalExpiryItems',
+        'warningExpiryItems',
+        'totalSales',
+        'totalStockPossible',
+        'totalSum',
+        'labels',
+        'values',
+        'expenseProfitLabels',
+        'profitSeries',
+        'expenseSeries',
+        'inventorySalesLabels',
+        'itemsSoldSeries',
+        'stockLevelSeries',
+        'totalAverages',
+        'topSalesProducts',
+        'filter',
+        'availableDates',
+        'importedData',
+        'allFilteredSales',
+        'bestSellerName',
+        'chartData',
+        'bestSellerRecord'
+    ));
 }
 
 
@@ -283,7 +526,9 @@ public function download_importedFile($id) {
     $log = DB::table('import_logs')->where('Import_logs_ID', $id)->first();
 
     if ($log && Storage::disk('public')->exists($log->FilePath)) {
-        return Storage::disk('public')->download($log->FilePath, $log->FileName);
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk('public');
+        return $disk->download($log->FilePath, $log->FileName);
     }
 
     return back()->with('error', 'File not found.');
@@ -292,10 +537,410 @@ public function download_importedFile($id) {
 
 
 
-public function inventory_report() {
-   
+public function inventory_report(Request $request)
+{
+    $period = (string) $request->query('period', 'this_month');
+    $categoryId = (string) $request->query('category_id', 'all');
 
-    return view('inventory_report');
+    $categories = DB::table('category')
+        ->orderBy('category_name', 'ASC')
+        ->get();
+
+    $now = \Carbon\Carbon::now();
+    $start = null;
+    $end = null;
+    $prevStart = null;
+    $prevEnd = null;
+
+    if ($period === 'last_quarter') {
+        // Previous full quarter
+        $end = $now->copy()->firstOfQuarter()->subDay()->endOfDay();
+        $start = $end->copy()->firstOfQuarter()->startOfDay();
+
+        // Quarter before that (for % change)
+        $prevEnd = $start->copy()->subDay()->endOfDay();
+        $prevStart = $prevEnd->copy()->firstOfQuarter()->startOfDay();
+    } else {
+        // Default: this month
+        $period = 'this_month';
+        $start = $now->copy()->startOfMonth()->startOfDay();
+        $end = $now->copy()->endOfDay();
+
+        $prevStart = $start->copy()->subMonth()->startOfMonth()->startOfDay();
+        $prevEnd = $prevStart->copy()->endOfMonth()->endOfDay();
+    }
+
+    $getRevenueAndCogs = function (\Carbon\Carbon $rangeStart, \Carbon\Carbon $rangeEnd) use ($categoryId) {
+        if (!Schema::hasTable('posimportdata')) {
+            return ['revenue' => 0.0, 'cogs' => 0.0];
+        }
+
+        $base = DB::table('posimportdata')
+            ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
+            ->whereNull('products.deleted_at')
+            ->whereBetween('posimportdata.created_at', [$rangeStart, $rangeEnd]);
+
+        if ($categoryId !== 'all' && $categoryId !== '') {
+            $base->where('products.category_ID', $categoryId);
+        }
+
+        $revenue = (float) (clone $base)->sum('posimportdata.TotalSalesPerQty');
+
+        $cogs = (float) ((clone $base)
+            ->selectRaw('SUM(posimportdata.QuantitySold * products.product_cost) as total')
+            ->value('total') ?? 0);
+
+        return ['revenue' => $revenue, 'cogs' => $cogs];
+    };
+
+    $current = $getRevenueAndCogs($start, $end);
+    $previous = $getRevenueAndCogs($prevStart, $prevEnd);
+
+    $revenue = (float) ($current['revenue'] ?? 0);
+    $cogs = (float) ($current['cogs'] ?? 0);
+    $grossProfit = $revenue - $cogs;
+
+    // No separate operating-expense table in this project yet; treat net profit as gross profit.
+    $netProfit = $grossProfit;
+
+    $grossMargin = $revenue > 0 ? ($grossProfit / $revenue) * 100 : 0;
+    $netMargin = $revenue > 0 ? ($netProfit / $revenue) * 100 : 0;
+
+    $revenuePrev = (float) ($previous['revenue'] ?? 0);
+    $cogsPrev = (float) ($previous['cogs'] ?? 0);
+    $netProfitPrev = ($revenuePrev - $cogsPrev);
+
+    $changeBadge = function (float $cur, float $prev): array {
+        // When previous period is zero, percent-change is undefined.
+        // Show something user-friendly instead.
+        if (abs($prev) < 0.0000001) {
+            if (abs($cur) < 0.0000001) {
+                return ['text' => '0.0%', 'style' => 'secondary'];
+            }
+            return ['text' => 'New', 'style' => 'success'];
+        }
+
+        $pct = (($cur - $prev) / $prev) * 100;
+        $sign = $pct > 0 ? '+' : '';
+        $text = $sign . number_format($pct, 1) . '%';
+
+        $style = 'secondary';
+        if ($pct > 0) {
+            $style = 'success';
+        } elseif ($pct < 0) {
+            $style = 'danger';
+        }
+
+        return ['text' => $text, 'style' => $style];
+    };
+
+    $revenueBadge = $changeBadge($revenue, $revenuePrev);
+    $profitBadge = $changeBadge($netProfit, $netProfitPrev);
+
+    $formatPeso = function (float $amount): string {
+        return '₱' . number_format($amount, 2);
+    };
+
+    $marginStatus = function (float $pct): array {
+        if ($pct >= 40) {
+            return ['text' => 'Healthy', 'style' => 'success'];
+        }
+        if ($pct >= 25) {
+            return ['text' => 'Fair', 'style' => 'warning'];
+        }
+        return ['text' => 'Low', 'style' => 'danger'];
+    };
+
+    $grossMarginStatus = $marginStatus((float) $grossMargin);
+    $netMarginStatus = $marginStatus((float) $netMargin);
+    $netMarginStatus['text'] = $netMarginStatus['style'] === 'success' ? 'Strong' : $netMarginStatus['text'];
+
+    // ----- Charts (Dynamic) -----
+    // 1) Revenue & Profit trend (last 6 months ending at $end)
+    $trendChart = [
+        'labels' => [],
+        'revenue' => [],
+        'profit' => [],
+    ];
+
+    // 2) Revenue sources (category when viewing all; otherwise products within the selected category)
+    $sourcesChart = [
+        'labels' => [],
+        'values' => [],
+    ];
+
+    if (Schema::hasTable('posimportdata') && Schema::hasTable('products')) {
+        $monthsBack = 5;
+        $trendStart = $end->copy()->startOfMonth()->subMonths($monthsBack)->startOfDay();
+
+        $months = collect(range($monthsBack, 0))->map(function ($i) use ($end) {
+            return $end->copy()->startOfMonth()->subMonths($i);
+        });
+
+        $monthKeys = $months->map(function ($d) {
+            return $d->format('Y-m');
+        })->all();
+
+        $trendChart['labels'] = $months->map(function ($d) {
+            return $d->format('M Y');
+        })->all();
+
+        $trendBase = DB::table('posimportdata')
+            ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
+            ->whereNull('products.deleted_at')
+            ->whereBetween('posimportdata.created_at', [$trendStart, $end]);
+
+        if ($categoryId !== 'all' && $categoryId !== '') {
+            $trendBase->where('products.category_ID', $categoryId);
+        }
+
+        $revenueRows = (clone $trendBase)
+            ->selectRaw('YEAR(posimportdata.created_at) as y, MONTH(posimportdata.created_at) as m, SUM(posimportdata.TotalSalesPerQty) as total')
+            ->groupBy('y', 'm')
+            ->get();
+
+        $revenueByMonth = [];
+        foreach ($revenueRows as $row) {
+            $key = sprintf('%04d-%02d', (int) $row->y, (int) $row->m);
+            $revenueByMonth[$key] = (float) $row->total;
+        }
+
+        $cogsRows = (clone $trendBase)
+            ->selectRaw(
+                'YEAR(posimportdata.created_at) as y, MONTH(posimportdata.created_at) as m, SUM(posimportdata.QuantitySold * products.product_cost) as total'
+            )
+            ->groupBy('y', 'm')
+            ->get();
+
+        $cogsByMonth = [];
+        foreach ($cogsRows as $row) {
+            $key = sprintf('%04d-%02d', (int) $row->y, (int) $row->m);
+            $cogsByMonth[$key] = (float) $row->total;
+        }
+
+        foreach ($monthKeys as $key) {
+            $rev = (float) ($revenueByMonth[$key] ?? 0);
+            $cogsMonth = (float) ($cogsByMonth[$key] ?? 0);
+            $trendChart['revenue'][] = round($rev, 2);
+            $trendChart['profit'][] = round($rev - $cogsMonth, 2);
+        }
+
+        // Revenue sources for the selected range
+        $sourceBase = DB::table('posimportdata')
+            ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
+            ->whereNull('products.deleted_at')
+            ->whereBetween('posimportdata.created_at', [$start, $end]);
+
+        if ($categoryId !== 'all' && $categoryId !== '') {
+            $sourceBase->where('products.category_ID', $categoryId);
+        }
+
+        $sourceRows = null;
+        if ($categoryId === 'all' || $categoryId === '') {
+            if (Schema::hasTable('category')) {
+                $sourceRows = (clone $sourceBase)
+                    ->join('category', 'products.category_ID', '=', 'category.category_ID')
+                    ->selectRaw('category.category_name as label, SUM(posimportdata.TotalSalesPerQty) as total')
+                    ->groupBy('label')
+                    ->orderByDesc('total')
+                    ->get();
+            }
+        } else {
+            $sourceRows = (clone $sourceBase)
+                ->selectRaw('products.product_name as label, SUM(posimportdata.TotalSalesPerQty) as total')
+                ->groupBy('label')
+                ->orderByDesc('total')
+                ->get();
+        }
+
+        if ($sourceRows) {
+            $sourceRows = $sourceRows
+                ->filter(function ($r) {
+                    return (float) $r->total > 0;
+                })
+                ->values();
+
+            // Keep the doughnut chart simple (3 slices max): Top 2 + Other
+            if ($sourceRows->count() > 3) {
+                $top = $sourceRows->take(2);
+                $otherSum = (float) $sourceRows->slice(2)->sum('total');
+                $sourcesChart['labels'] = [
+                    (string) $top[0]->label,
+                    (string) $top[1]->label,
+                    'Other',
+                ];
+                $sourcesChart['values'] = [
+                    round((float) $top[0]->total, 2),
+                    round((float) $top[1]->total, 2),
+                    round($otherSum, 2),
+                ];
+            } else {
+                $sourcesChart['labels'] = $sourceRows->pluck('label')->map(function ($v) {
+                    return (string) $v;
+                })->all();
+                $sourcesChart['values'] = $sourceRows->pluck('total')->map(function ($v) {
+                    return round((float) $v, 2);
+                })->all();
+            }
+        }
+    }
+
+    // ----- Top Products by Profit (Dynamic) -----
+    $topProductsByProfit = collect();
+    if (Schema::hasTable('posimportdata') && Schema::hasTable('products')) {
+        $topBase = DB::table('posimportdata')
+            ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
+            ->whereNull('products.deleted_at')
+            ->whereBetween('posimportdata.created_at', [$start, $end]);
+
+        if ($categoryId !== 'all' && $categoryId !== '') {
+            $topBase->where('products.category_ID', $categoryId);
+        }
+
+        $rows = (clone $topBase)
+            ->selectRaw(
+                'products.product_ID, products.product_name,
+                 SUM(posimportdata.TotalSalesPerQty) as revenue,
+                 SUM(posimportdata.QuantitySold * products.product_cost) as cogs'
+            )
+            ->groupBy('products.product_ID', 'products.product_name')
+            ->get();
+
+        $topProductsByProfit = collect($rows)
+            ->map(function ($r) {
+                /** @var object $r */
+                $revenue = (float) ($r->revenue ?? 0);
+                $cogs = (float) ($r->cogs ?? 0);
+                $profit = $revenue - $cogs;
+                $margin = $revenue > 0 ? ($profit / $revenue) * 100 : 0;
+
+                return [
+                    'name' => (string) $r->product_name,
+                    'revenue' => round($revenue, 2),
+                    'profit' => round($profit, 2),
+                    'margin' => round($margin, 1),
+                ];
+            })
+            ->sortByDesc('profit')
+            ->values()
+            ->take(5);
+    }
+
+    // ----- Expense Breakdown (Dynamic) -----
+    // This project does not have an operating-expense table yet, so we break down "expenses" as COGS.
+    $expenseTotal = 0.0;
+    $expenseBreakdown = collect();
+    if (Schema::hasTable('posimportdata') && Schema::hasTable('products')) {
+        $expenseBase = DB::table('posimportdata')
+            ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
+            ->whereNull('products.deleted_at')
+            ->whereBetween('posimportdata.created_at', [$start, $end]);
+
+        if ($categoryId !== 'all' && $categoryId !== '') {
+            $expenseBase->where('products.category_ID', $categoryId);
+        }
+
+        $expenseTotal = (float) ((clone $expenseBase)
+            ->selectRaw('SUM(posimportdata.QuantitySold * products.product_cost) as total')
+            ->value('total') ?? 0);
+
+        $expenseRows = null;
+        if ($categoryId === 'all' || $categoryId === '') {
+            if (Schema::hasTable('category')) {
+                $expenseRows = (clone $expenseBase)
+                    ->join('category', 'products.category_ID', '=', 'category.category_ID')
+                    ->selectRaw('category.category_name as label, SUM(posimportdata.QuantitySold * products.product_cost) as total')
+                    ->groupBy('label')
+                    ->orderByDesc('total')
+                    ->get();
+            }
+        } else {
+            $expenseRows = (clone $expenseBase)
+                ->selectRaw('products.product_name as label, SUM(posimportdata.QuantitySold * products.product_cost) as total')
+                ->groupBy('label')
+                ->orderByDesc('total')
+                ->get();
+        }
+
+        if ($expenseRows) {
+            $expenseRows = collect($expenseRows)
+                ->filter(function ($r) {
+                    /** @var object $r */
+                    return (float) $r->total > 0;
+                })
+                ->values();
+
+            // Keep list compact: Top 4 + Other
+            if ($expenseRows->count() > 5) {
+                $top = $expenseRows->take(4);
+                $otherSum = (float) $expenseRows->slice(4)->sum('total');
+                $expenseRows = $top;
+                if ($otherSum > 0) {
+                    $expenseRows = $expenseRows->concat([
+                        (object) ['label' => 'Other', 'total' => $otherSum],
+                    ]);
+                }
+            }
+
+            $expenseBreakdown = $expenseRows->map(function ($r) use ($expenseTotal) {
+                /** @var object $r */
+                $total = (float) ($r->total ?? 0);
+                $pct = $expenseTotal > 0 ? ($total / $expenseTotal) * 100 : 0;
+                return [
+                    'label' => (string) $r->label,
+                    'total' => round($total, 2),
+                    'percent' => (int) round($pct),
+                ];
+            });
+        }
+    }
+
+    $stats = [
+        [
+            'label' => 'Total Revenue',
+            'value' => $formatPeso($revenue),
+            'badge' => $revenueBadge['text'],
+            'badgeStyle' => $revenueBadge['style'],
+            'icon' => 'currency-dollar',
+            'color' => 'primary',
+        ],
+        [
+            'label' => 'Net Profit',
+            'value' => $formatPeso($netProfit),
+            'badge' => $profitBadge['text'],
+            'badgeStyle' => $profitBadge['style'],
+            'icon' => 'wallet2',
+            'color' => 'success',
+        ],
+        [
+            'label' => 'Gross Margin',
+            'value' => number_format($grossMargin, 1) . '%',
+            'badge' => $grossMarginStatus['text'],
+            'badgeStyle' => $grossMarginStatus['style'],
+            'icon' => 'percent',
+            'color' => 'purple',
+        ],
+        [
+            'label' => 'Net Margin',
+            'value' => number_format($netMargin, 1) . '%',
+            'badge' => $netMarginStatus['text'],
+            'badgeStyle' => $netMarginStatus['style'],
+            'icon' => 'graph-up',
+            'color' => 'orange',
+        ],
+    ];
+
+    return view('inventory_report', compact(
+        'stats',
+        'trendChart',
+        'sourcesChart',
+        'topProductsByProfit',
+        'expenseBreakdown',
+        'expenseTotal',
+        'categories',
+        'period',
+        'categoryId'
+    ));
 }
 
 
@@ -908,6 +1553,7 @@ public function saveInvoiceAndItem(Request $request)
             'updated_at'     => now(),
         ]);
 
+        // STEP 2: Loop through each row submitted from the table
         foreach ($request->product_name as $key => $name) {
             
             // STEP 2: Product Check/Creation
@@ -1015,8 +1661,11 @@ public function add_invoice(Request $request)
 
     return view('add_invoice', compact('suppliers', 'products'));
 }
+<<<<<<< Updated upstream
 
 
+=======
+>>>>>>> Stashed changes
 public function stockMovement(Request $request)
 {
     // 1. Get Inbound (Stock Adjustments/Purchases)

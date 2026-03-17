@@ -14,55 +14,29 @@
             </button>
         </div>
 
-        <div class="row g-3 mb-4">
-            <div class="col-md-4">
-                <select class="form-select border-0 shadow-sm py-2">
-                    <option>This Month</option>
-                    <option>Last Quarter</option>
-                </select>
+        <form id="reportFilters" method="GET" action="{{ route('inventory_report') }}">
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <select name="period" class="form-select border-0 shadow-sm py-2">
+                        <option value="this_month" {{ ($period ?? 'this_month') === 'this_month' ? 'selected' : '' }}>This Month</option>
+                        <option value="last_quarter" {{ ($period ?? '') === 'last_quarter' ? 'selected' : '' }}>Last Quarter</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <select name="category_id" class="form-select border-0 shadow-sm py-2">
+                        <option value="all" {{ ($categoryId ?? 'all') === 'all' ? 'selected' : '' }}>All Categories</option>
+                        @foreach(($categories ?? []) as $cat)
+                            <option value="{{ $cat->category_ID }}" {{ (string)($categoryId ?? 'all') === (string)$cat->category_ID ? 'selected' : '' }}>
+                                {{ $cat->category_name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
-            <div class="col-md-4">
-                <select class="form-select border-0 shadow-sm py-2">
-                    <option>All Categories</option>
-                </select>
-            </div>
-        </div>
+        </form>
 
         <div class="row g-3 mb-4">
-            @php
-                $stats = [
-                    [
-                        'label' => 'Total Revenue',
-                        'value' => '$292.8k',
-                        'change' => '5.1%',
-                        'icon' => 'currency-dollar',
-                        'color' => 'primary',
-                    ],
-                    [
-                        'label' => 'Net Profit',
-                        'value' => '$70.8k',
-                        'change' => '4.6%',
-                        'icon' => 'wallet2',
-                        'color' => 'success',
-                    ],
-                    [
-                        'label' => 'Gross Margin',
-                        'value' => '40.0%',
-                        'status' => 'Healthy',
-                        'icon' => 'percent',
-                        'color' => 'purple',
-                    ],
-                    [
-                        'label' => 'Net Margin',
-                        'value' => '24.2%',
-                        'status' => 'Strong',
-                        'icon' => 'graph-up',
-                        'color' => 'orange',
-                    ],
-                ];
-            @endphp
-
-            @foreach ($stats as $stat)
+            @foreach (($stats ?? []) as $stat)
                 <div class="col-md-3">
                     <div class="card border-0 shadow-sm rounded-4">
                         <div class="card-body p-4">
@@ -71,8 +45,8 @@
                                     <i class="bi bi-{{ $stat['icon'] }} fs-4"></i>
                                 </div>
                                 <span
-                                    class="badge bg-{{ isset($stat['change']) ? 'success' : 'warning' }}-subtle text-{{ isset($stat['change']) ? 'success' : 'orange' }} rounded-pill align-self-center">
-                                    {{ $stat['change'] ?? $stat['status'] }}
+                                    class="badge bg-{{ $stat['badgeStyle'] ?? 'secondary' }}-subtle text-{{ $stat['badgeStyle'] ?? 'secondary' }} rounded-pill align-self-center">
+                                    {{ $stat['badge'] ?? '—' }}
                                 </span>
                             </div>
                             <h3 class="fw-bold mb-1">{{ $stat['value'] }}</h3>
@@ -123,19 +97,33 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td class="fw-bold">Organic Milk (1 Gallon)</td>
-                                        <td>$42,150</td>
-                                        <td class="text-success fw-bold">$12,645</td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <span class="me-2 small">30%</span>
-                                                <div class="progress w-100" style="height: 6px;">
-                                                    <div class="progress-bar bg-success" style="width: 30%"></div>
+                                    @forelse(($topProductsByProfit ?? []) as $row)
+                                        @php
+                                            $margin = (float) ($row['margin'] ?? 0);
+                                            $marginWidth = max(0, min(100, $margin));
+                                            $profit = (float) ($row['profit'] ?? 0);
+                                        @endphp
+                                        <tr>
+                                            <td class="fw-bold">{{ $row['name'] ?? '—' }}</td>
+                                            <td>₱{{ number_format((float)($row['revenue'] ?? 0), 2) }}</td>
+                                            <td class="{{ $profit >= 0 ? 'text-success' : 'text-danger' }} fw-bold">
+                                                ₱{{ number_format($profit, 2) }}
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <span class="me-2 small">{{ number_format($margin, 1) }}%</span>
+                                                    <div class="progress w-100" style="height: 6px;">
+                                                        <div class="progress-bar {{ $profit >= 0 ? 'bg-success' : 'bg-danger' }}"
+                                                            style="width: {{ $marginWidth }}%"></div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="4" class="text-muted small">No data for selected filters.</td>
+                                        </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
@@ -147,26 +135,50 @@
                     <div class="card-body p-4">
                         <h6 class="fw-bold mb-4">Expense Breakdown</h6>
                         <ul class="list-unstyled">
-                            <li class="mb-4">
-                                <div class="d-flex justify-content-between mb-1">
-                                    <span class="small fw-semibold">Store Operations</span>
-                                    <span class="small text-muted">40% <strong>$18,536</strong></span>
-                                </div>
-                                <div class="progress rounded-pill" style="height: 8px;">
-                                    <div class="progress-bar bg-primary" style="width: 40%"></div>
-                                </div>
-                            </li>
+                            @forelse(($expenseBreakdown ?? []) as $row)
+                                <li class="mb-4">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="small fw-semibold">{{ $row['label'] ?? '—' }}</span>
+                                        <span class="small text-muted">{{ (int)($row['percent'] ?? 0) }}%
+                                            <strong>₱{{ number_format((float)($row['total'] ?? 0), 2) }}</strong>
+                                        </span>
+                                    </div>
+                                    <div class="progress rounded-pill" style="height: 8px;">
+                                        <div class="progress-bar bg-primary" style="width: {{ (int)($row['percent'] ?? 0) }}%"></div>
+                                    </div>
+                                </li>
+                            @empty
+                                <li class="mb-4">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="small fw-semibold">No data</span>
+                                        <span class="small text-muted">0% <strong>₱0.00</strong></span>
+                                    </div>
+                                    <div class="progress rounded-pill" style="height: 8px;">
+                                        <div class="progress-bar bg-primary" style="width: 0%"></div>
+                                    </div>
+                                </li>
+                            @endforelse
                         </ul>
                         <hr>
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="fw-bold">Total Expenses</span>
-                            <h4 class="fw-bold mb-0">$46,340</h4>
+                            <h4 class="fw-bold mb-0">₱{{ number_format((float)($expenseTotal ?? 0), 2) }}</h4>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('reportFilters');
+            if (!form) return;
+            form.querySelectorAll('select').forEach((el) => {
+                el.addEventListener('change', () => form.submit());
+            });
+        });
+    </script>
 
     <style>
         .bg-primary-subtle {
@@ -208,33 +220,56 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
 
+            const trendLabels = @json(($trendChart['labels'] ?? []));
+            const trendRevenue = @json(($trendChart['revenue'] ?? []));
+            const trendProfit = @json(($trendChart['profit'] ?? []));
+
+            const sourceLabels = @json(($sourcesChart['labels'] ?? []));
+            const sourceValues = @json(($sourcesChart['values'] ?? []));
+
+            const formatPesoCompact = (value) => {
+                const v = Number(value) || 0;
+                if (Math.abs(v) >= 1_000_000) return '₱' + (v / 1_000_000).toFixed(1) + 'M';
+                if (Math.abs(v) >= 1_000) return '₱' + (v / 1_000).toFixed(1) + 'k';
+                return '₱' + v.toFixed(0);
+            };
+
             // 1. Revenue & Profit Trend Chart
             const trendCtx = document.getElementById('financialTrendChart');
             if (trendCtx) {
                 new Chart(trendCtx, {
                     type: 'line',
                     data: {
-                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        labels: trendLabels,
                         datasets: [{
-                            label: 'Revenue',
-                            data: [180, 160, 210, 240, 260, 292],
-                            borderColor: '#4489fe',
-                            backgroundColor: 'rgba(68, 137, 254, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        }]
+                                label: 'Revenue',
+                                data: trendRevenue,
+                                borderColor: '#4489fe',
+                                backgroundColor: 'rgba(68, 137, 254, 0.1)',
+                                fill: true,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Profit',
+                                data: trendProfit,
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                                fill: true,
+                                tension: 0.4
+                            }
+                        ]
                     },
                     options: {
                         maintainAspectRatio: false,
                         plugins: {
                             legend: {
-                                display: false
+                                display: true
                             }
                         },
                         scales: {
                             y: {
                                 ticks: {
-                                    callback: v => '$' + v + 'k'
+                                    callback: v => formatPesoCompact(v)
                                 }
                             },
                             x: {
@@ -250,13 +285,14 @@
             // 2. Revenue Sources (Doughnut)
             const sourceCtx = document.getElementById('revenueSourcesChart');
             if (sourceCtx) {
+                const sourceColors = ['#4489fe', '#8e24aa', '#10b981'];
                 new Chart(sourceCtx, {
                     type: 'doughnut',
                     data: {
-                        labels: ['Deli Counter', 'Prepared Foods', 'Other'],
+                        labels: sourceLabels,
                         datasets: [{
-                            data: [75, 16, 9],
-                            backgroundColor: ['#4489fe', '#8e24aa', '#10b981'],
+                            data: sourceValues,
+                            backgroundColor: sourceColors.slice(0, sourceValues.length),
                             borderWidth: 0
                         }]
                     },
