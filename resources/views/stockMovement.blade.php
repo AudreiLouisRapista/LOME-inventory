@@ -51,7 +51,7 @@
                         </div>
                         <div class="ms-3">
                             <p class="stat-label">Transfers</p>
-                            <h4 class="stat-value">90</h4>
+                            <h4 class="stat-value">{{ number_format($transferCount ?? 0) }}</h4>
                         </div>
                     </div>
                 </div>
@@ -65,7 +65,7 @@
                         </div>
                         <div class="ms-3">
                             <p class="stat-label">Adjustments</p>
-                            <h4 class="stat-value">5</h4>
+                            <h4 class="stat-value">{{ number_format($adjustmentCount ?? 0) }}</h4>
                         </div>
                     </div>
                 </div>

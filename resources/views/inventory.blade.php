@@ -26,9 +26,10 @@
                     <div style="display: flex; justify-content: space-between; align-items: flex-end;">
                         <h3 style="font-size: 28px; font-weight: 700; margin: 0; color: #1e293b;">
                             {{ number_format($totalProducts) }}</h3>
+                        @php($delta = $cardDeltas['totalProducts'] ?? ['pct' => 0, 'dir' => 'up'])
                         <div
-                            style="background: #f0fdf4; color: #16a34a; padding: 4px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
-                            ↗ 0.5%
+                            style="background: {{ $delta['dir'] === 'up' ? '#f0fdf4' : '#fef2f2' }}; color: {{ $delta['dir'] === 'up' ? '#16a34a' : '#dc2626' }}; padding: 4px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
+                            {{ $delta['dir'] === 'up' ? '↗' : '↘' }} {{ number_format(abs($delta['pct'] ?? 0), 1) }}%
                         </div>
                     </div>
                     <small style="color: #94a3b8; font-size: 11px;">From last week</small>
@@ -45,9 +46,10 @@
                     <div style="display: flex; justify-content: space-between; align-items: flex-end;">
                         <h3 style="font-size: 28px; font-weight: 700; margin: 0; color: #1e293b;">
                             {{ number_format($totalQuantity) }}</h3>
+                        @php($delta = $cardDeltas['availableStock'] ?? ['pct' => 0, 'dir' => 'up'])
                         <div
-                            style="background: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
-                            ↘ 1.2%
+                            style="background: {{ $delta['dir'] === 'up' ? '#f0fdf4' : '#fef2f2' }}; color: {{ $delta['dir'] === 'up' ? '#16a34a' : '#dc2626' }}; padding: 4px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
+                            {{ $delta['dir'] === 'up' ? '↗' : '↘' }} {{ number_format(abs($delta['pct'] ?? 0), 1) }}%
                         </div>
                     </div>
                     <small style="color: #94a3b8; font-size: 11px;">From last week</small>
@@ -65,9 +67,10 @@
                         <h3 style="font-size: 28px; font-weight: 700; margin: 0; color: #1e293b;">
                             {{ number_format($lowStockProducts) }}
                         </h3>
+                        @php($delta = $cardDeltas['lowStock'] ?? ['pct' => 0, 'dir' => 'up'])
                         <div
-                            style="background: #f0fdf4; color: #16a34a; padding: 4px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
-                            ↗ 1.5%
+                            style="background: {{ $delta['dir'] === 'up' ? '#f0fdf4' : '#fef2f2' }}; color: {{ $delta['dir'] === 'up' ? '#16a34a' : '#dc2626' }}; padding: 4px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
+                            {{ $delta['dir'] === 'up' ? '↗' : '↘' }} {{ number_format(abs($delta['pct'] ?? 0), 1) }}%
                         </div>
                     </div>
                     <small style="color: #94a3b8; font-size: 11px;">From last week</small>
@@ -84,9 +87,10 @@
                     <div style="display: flex; justify-content: space-between; align-items: flex-end;">
                         <h3 style="font-size: 28px; font-weight: 700; margin: 0; color: #1e293b;">
                             {{ number_format($outOfStock) }}</h3>
+                        @php($delta = $cardDeltas['outOfStock'] ?? ['pct' => 0, 'dir' => 'up'])
                         <div
-                            style="background: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
-                            ↘ 1.5%
+                            style="background: {{ $delta['dir'] === 'up' ? '#f0fdf4' : '#fef2f2' }}; color: {{ $delta['dir'] === 'up' ? '#16a34a' : '#dc2626' }}; padding: 4px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
+                            {{ $delta['dir'] === 'up' ? '↗' : '↘' }} {{ number_format(abs($delta['pct'] ?? 0), 1) }}%
                         </div>
                     </div>
                     <small style="color: #94a3b8; font-size: 11px;">From last week</small>
@@ -103,9 +107,10 @@
                     <div style="display: flex; justify-content: space-between; align-items: flex-end;">
                         <h3 style="font-size: 28px; font-weight: 700; margin: 0; color: #1e293b;">
                             {{ number_format($totalSold) }}</h3>
+                        @php($delta = $cardDeltas['totalSold'] ?? ['pct' => 0, 'dir' => 'up'])
                         <div
-                            style="background: #fef2f2; color: #dc2626; padding: 4px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
-                            ↘ 1.5%
+                            style="background: {{ $delta['dir'] === 'up' ? '#f0fdf4' : '#fef2f2' }}; color: {{ $delta['dir'] === 'up' ? '#16a34a' : '#dc2626' }}; padding: 4px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">
+                            {{ $delta['dir'] === 'up' ? '↗' : '↘' }} {{ number_format(abs($delta['pct'] ?? 0), 1) }}%
                         </div>
                     </div>
                     <small style="color: #94a3b8; font-size: 11px;">From last week</small>

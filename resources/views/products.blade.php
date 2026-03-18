@@ -40,8 +40,6 @@
                                         </div>
 
                                         <div class="modal-body p-4">
-                                            @include('layout.partials.alerts')
-
                                             <form id="addProductForm" method="POST" action="{{ route('save_product') }}"
                                                 enctype="multipart/form-data">
                                                 @csrf
