@@ -23,8 +23,6 @@
             </div>
 
             <div class="card-body p-4 p-lg-5">
-                @include('layout.partials.alerts')
-
                 <form id="invoiceEncoderForm" action="{{ route('saveInvoiceAndItem') }}" method="POST">
                     @csrf
 

@@ -156,22 +156,27 @@ private function logActivity($action, $description)
 
 
 
-
-
-
-
    public function dashboard(Request $request)
 {
     // dd(session()->all());
 
     $filter = $request->get('created_at', "all");
 
+    // POS sales table name is inconsistent in this project (posimportdata vs POSImportData).
+    $posTable = null;
+    if (Schema::hasTable('posimportdata')) {
+        $posTable = 'posimportdata';
+    } elseif (Schema::hasTable('POSImportData')) {
+        $posTable = 'POSImportData';
+    }
 
-    $availableDates = DB::table('posimportdata')
-        ->select(DB::raw('DATE(created_at) as date'))
-        ->distinct()
-        ->orderBy('date', 'desc')
-        ->get();
+    $availableDates = $posTable
+        ? DB::table($posTable)
+            ->select(DB::raw('DATE(created_at) as date'))
+            ->distinct()
+            ->orderBy('date', 'desc')
+            ->get()
+        : collect();
 
     $logs = ActivityLog::latest()->take(10)->get();
    
@@ -180,25 +185,42 @@ private function logActivity($action, $description)
                    ->take(10)
                    ->get();
 
-        $totalProducts = DB::table('inventory')->count();  
-        $totalQuantity = DB::table('inventory')->sum('invt_remainingStock');  
-        $totalSold = DB::table('inventory')->sum('invt_totalSold');
-        $instockProducts = DB::table('inventory')->where('status_ID', 1)->count();
-        $lowStockProducts = DB::table('inventory')->where('status_ID',  2)->count();
-        $outOfStock = DB::table('inventory')->where('status_ID', 3)->count();    
+        // Dashboard card stats should be computed from a single "current snapshot" per product.
+        // Inventory can contain multiple rows per product, so we take the latest inventory_ID per product.
+        $latestInventoryIds = DB::table('inventory')
+            ->whereNull('deleted_at')
+            ->selectRaw('MAX(inventory_ID) as inventory_ID, product_ID')
+            ->groupBy('product_ID');
+
+        $inventorySnapshot = DB::table('inventory as inv')
+            ->joinSub($latestInventoryIds, 'latest', function ($join) {
+                $join->on('inv.inventory_ID', '=', 'latest.inventory_ID');
+            })
+            ->join('products as p', 'inv.product_ID', '=', 'p.product_ID')
+            ->whereNull('inv.deleted_at')
+            ->whereNull('p.deleted_at');
+
+        $totalProducts = DB::table('products')->whereNull('deleted_at')->count();
+        $totalQuantity = (float) (clone $inventorySnapshot)->sum('inv.invt_remainingStock');
+        $totalSold = (float) (clone $inventorySnapshot)->sum('inv.invt_totalSold');
+        $instockProducts = (int) (clone $inventorySnapshot)->where('inv.status_ID', 1)->count();
+        $lowStockProducts = (int) (clone $inventorySnapshot)->where('inv.status_ID', 2)->count();
+        $outOfStock = (int) (clone $inventorySnapshot)->where('inv.status_ID', 3)->count();
 
         // Reorder Required (Dynamic)
-        // Uses invt_StartingQuantity as the target level to reorder up to.
-        $reorderRequiredRows = DB::table('inventory')
-            ->join('products', 'inventory.product_ID', '=', 'products.product_ID')
-            ->whereNull('inventory.deleted_at')
-            ->whereNull('products.deleted_at')
-            ->whereNotNull('inventory.invt_StartingQuantity')
-            ->where('inventory.invt_StartingQuantity', '>', 0)
+        // Uses invt_StartingQuantity as the target level; falls back to products.tie_qty when starting quantity isn't set.
+        $reorderRequiredRows = DB::table('inventory as inv')
+            ->joinSub($latestInventoryIds, 'latest', function ($join) {
+                $join->on('inv.inventory_ID', '=', 'latest.inventory_ID');
+            })
+            ->join('products as p', 'inv.product_ID', '=', 'p.product_ID')
+            ->whereNull('inv.deleted_at')
+            ->whereNull('p.deleted_at')
             ->select([
-                'products.product_name',
-                'inventory.invt_remainingStock',
-                'inventory.invt_StartingQuantity',
+                'p.product_name',
+                'inv.invt_remainingStock',
+                'inv.invt_StartingQuantity',
+                'p.tie_qty',
             ])
             ->get();
 
@@ -206,6 +228,9 @@ private function logActivity($action, $description)
             ->map(function ($row) {
                 $current = (int) ($row->invt_remainingStock ?? 0);
                 $reorderTo = (int) ($row->invt_StartingQuantity ?? 0);
+                if ($reorderTo <= 0) {
+                    $reorderTo = (int) ($row->tie_qty ?? 0);
+                }
                 if ($reorderTo <= 0) {
                     return null;
                 }
@@ -292,13 +317,17 @@ private function logActivity($action, $description)
             ? round(($totalQuantity / $totalStockPossible) * 100, 2)
             : 0;
 
-        $importedData = DB::table('posimportdata')
-            ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
-            ->select('products.product_name', DB::raw('SUM(posimportdata.TotalSalesPerQty) as TotalSalesPerQty'))
-            ->groupBy('products.product_name');
+        $importedData = $posTable
+            ? DB::table($posTable)
+                ->join('products', $posTable . '.product_ID', '=', 'products.product_ID')
+                ->select('products.product_name', DB::raw('SUM(' . $posTable . '.TotalSalesPerQty) as TotalSalesPerQty'))
+                ->groupBy('products.product_name')
+            : DB::table('products')->select('products.product_name', DB::raw('0 as TotalSalesPerQty'))->whereRaw('1=0');
         if ($filter !== 'all' && !empty($filter)) {
             // If the user selects a specific date (e.g., 2026-03-10)
-            $importedData->whereDate('posimportdata.created_at', $filter);
+            if ($posTable) {
+                $importedData->whereDate($posTable . '.created_at', $filter);
+            }
         }
 
         // 3. GET FULL DATASET FIRST (For Totals)
@@ -340,7 +369,7 @@ private function logActivity($action, $description)
     $labels = $chartData->pluck('product_name');
     $values = $chartData->pluck('TotalSalesPerQty');
 
-        // 5. Expense vs Profit (Monthly) - Gross Profit Method (Revenue - COGS), last 6 months
+        // 5. Expense vs Profit (Monthly) - Profit = Revenue - Expenses, last 6 months
         $monthsBack = 5;
         $startMonth = \Carbon\Carbon::now()->startOfMonth()->subMonths($monthsBack);
         $months = collect(range($monthsBack, 0))->map(function ($i) {
@@ -355,11 +384,14 @@ private function logActivity($action, $description)
         })->all();
 
         // Revenue (Sales) by month
-        $revenueRows = DB::table('posimportdata')
-            ->selectRaw('YEAR(created_at) as y, MONTH(created_at) as m, SUM(TotalSalesPerQty) as total')
-            ->where('created_at', '>=', $startMonth)
-            ->groupBy('y', 'm')
-            ->get();
+        $revenueRows = collect();
+        if ($posTable) {
+            $revenueRows = DB::table($posTable)
+                ->selectRaw('YEAR(created_at) as y, MONTH(created_at) as m, SUM(TotalSalesPerQty) as total')
+                ->whereBetween('created_at', [$startMonth->copy()->startOfDay(), \Carbon\Carbon::now()->endOfDay()])
+                ->groupBy('y', 'm')
+                ->get();
+        }
 
         $revenueByMonth = [];
         foreach ($revenueRows as $row) {
@@ -387,29 +419,31 @@ private function logActivity($action, $description)
     ->groupBy('y', 'm', 'products.product_name')
     ->get();
 
-        $cogsByMonth = [];
-        foreach ($cogsRows as $row) {
-            $key = sprintf('%04d-%02d', (int) $row->y, (int) $row->m);
-            $cogsByMonth[$key] = (float) $row->total;
+            foreach ($expenseRows as $row) {
+                $key = sprintf('%04d-%02d', (int) $row->y, (int) $row->m);
+                $expenseByMonth[$key] = (float) $row->total;
+            }
         }
 
-        $profitSeries = [];
+        $revenueSeries = [];
         $expenseSeries = [];
         foreach ($monthKeys as $key) {
             $revenue = (float) ($revenueByMonth[$key] ?? 0);
-            $cogs = (float) ($cogsByMonth[$key] ?? 0);
-            $profitSeries[] = round($revenue - $cogs, 2); // Gross Profit
-            $expenseSeries[] = round($cogs, 2); // COGS (Expenses)
+            $expense = (float) ($expenseByMonth[$key] ?? 0);
+            $revenueSeries[] = round($revenue, 2);
+            $expenseSeries[] = round($expense, 2);
         }
 
         // 6. Monthly Inventory vs Sales (Last 6 months)
         $inventorySalesLabels = $expenseProfitLabels;
 
-        $soldRows = DB::table('posimportdata')
+        $soldRows = $posTable
+            ? DB::table($posTable)
             ->selectRaw('YEAR(created_at) as y, MONTH(created_at) as m, SUM(QuantitySold) as total')
-            ->where('created_at', '>=', $startMonth)
+            ->whereBetween('created_at', [$startMonth->copy()->startOfDay(), \Carbon\Carbon::now()->endOfDay()])
             ->groupBy('y', 'm')
-            ->get();
+            ->get()
+            : collect();
 
         $soldByMonth = [];
         foreach ($soldRows as $row) {
@@ -477,7 +511,7 @@ private function logActivity($action, $description)
         'labels',
         'values',
         'expenseProfitLabels',
-        'profitSeries',
+        'revenueSeries',
         'expenseSeries',
         'inventorySalesLabels',
         'itemsSoldSeries',
@@ -552,6 +586,15 @@ public function inventory_report(Request $request)
     $period = (string) $request->query('period', 'this_month');
     $categoryId = (string) $request->query('category_id', 'all');
 
+    // POS sales table name is inconsistent in this project (posimportdata vs POSImportData).
+    // Pick whichever exists so reports don't silently show zero.
+    $posTable = null;
+    if (Schema::hasTable('posimportdata')) {
+        $posTable = 'posimportdata';
+    } elseif (Schema::hasTable('POSImportData')) {
+        $posTable = 'POSImportData';
+    }
+
     $categories = DB::table('category')
         ->orderBy('category_name', 'ASC')
         ->get();
@@ -580,31 +623,24 @@ public function inventory_report(Request $request)
         $prevEnd = $prevStart->copy()->endOfMonth()->endOfDay();
     }
 
-    $getRevenueAndCogs = function (\Carbon\Carbon $rangeStart, \Carbon\Carbon $rangeEnd) use ($categoryId) {
-        if (!Schema::hasTable('posimportdata')) {
+    $getRevenueAndCogs = function (\Carbon\Carbon $rangeStart, \Carbon\Carbon $rangeEnd) use ($categoryId, $posTable) {
+        if (!$posTable) {
             return ['revenue' => 0.0, 'cogs' => 0.0];
         }
 
-       $base = DB::table('posimportdata')
-    ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
-    ->join(DB::raw('(
-        SELECT product_ID, invt_unitCost
-        FROM inventory
-        WHERE inventory_ID IN (
-            SELECT MAX(inventory_ID) FROM inventory GROUP BY product_ID
-        )
-    ) as inv'), 'inv.product_ID', '=', 'posimportdata.product_ID')
-    ->whereNull('products.deleted_at')
+        $base = DB::table('posimportdata')
+            ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
+            ->whereNull('products.deleted_at')
             ->whereBetween('posimportdata.created_at', [$rangeStart, $rangeEnd]);
 
         if ($categoryId !== 'all' && $categoryId !== '') {
-            $base->where('products.category_ID', $categoryId);
+            $salesBase->where('products.category_ID', $categoryId);
         }
 
         $revenue = (float) (clone $base)->sum('posimportdata.TotalSalesPerQty');
 
         $cogs = (float) ((clone $base)
-            ->selectRaw('SUM(posimportdata.QuantitySold * inv.invt_unitCost) as total')
+            ->selectRaw('SUM(posimportdata.QuantitySold * products.product_cost) as total')
             ->value('total') ?? 0);
 
         return ['revenue' => $revenue, 'cogs' => $cogs];
@@ -686,7 +722,7 @@ public function inventory_report(Request $request)
         'values' => [],
     ];
 
-    if (Schema::hasTable('posimportdata') && Schema::hasTable('products')) {
+    if ($posTable && Schema::hasTable('products')) {
         $monthsBack = 5;
         $trendStart = $end->copy()->startOfMonth()->subMonths($monthsBack)->startOfDay();
 
@@ -702,26 +738,19 @@ public function inventory_report(Request $request)
             return $d->format('M Y');
         })->all();
 
-       $trendBase = DB::table('posimportdata')
-    ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
-    ->join(DB::raw('(
-        SELECT product_ID, invt_unitCost
-        FROM inventory
-        WHERE inventory_ID IN (
-            SELECT MAX(inventory_ID) FROM inventory GROUP BY product_ID
-        )
-    ) as inv'), 'inv.product_ID', '=', 'posimportdata.product_ID')
-    ->whereNull('products.deleted_at')
-    ->whereBetween('posimportdata.created_at', [$trendStart, $end]);
+        $trendBase = DB::table('posimportdata')
+            ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
+            ->whereNull('products.deleted_at')
+            ->whereBetween('posimportdata.created_at', [$trendStart, $end]);
 
     if ($categoryId !== 'all' && $categoryId !== '') {
         $trendBase->where('products.category_ID', $categoryId);
     }
 
-    $revenueRows = (clone $trendBase)
-        ->selectRaw('YEAR(posimportdata.created_at) as y, MONTH(posimportdata.created_at) as m, SUM(posimportdata.TotalSalesPerQty) as total')
-        ->groupBy('y', 'm')
-        ->get();
+        $revenueRows = (clone $trendBase)
+            ->selectRaw('YEAR(posimportdata.created_at) as y, MONTH(posimportdata.created_at) as m, SUM(posimportdata.TotalSalesPerQty) as total')
+            ->groupBy('y', 'm')
+            ->get();
 
 $revenueByMonth = [];
 foreach ($revenueRows as $row) {
@@ -729,17 +758,17 @@ foreach ($revenueRows as $row) {
     $revenueByMonth[$key] = (float) $row->total;
 }
 
-$cogsRows = (clone $trendBase)
-    ->selectRaw(
-        'YEAR(posimportdata.created_at) as y, MONTH(posimportdata.created_at) as m, SUM(posimportdata.QuantitySold * inv.invt_unitCost) as total'
-    )
-    ->groupBy('y', 'm')
-    ->get();
+        $cogsRows = (clone $trendBase)
+            ->selectRaw(
+                'YEAR(posimportdata.created_at) as y, MONTH(posimportdata.created_at) as m, SUM(posimportdata.QuantitySold * products.product_cost) as total'
+            )
+            ->groupBy('y', 'm')
+            ->get();
 
-        $cogsByMonth = [];
-        foreach ($cogsRows as $row) {
-            $key = sprintf('%04d-%02d', (int) $row->y, (int) $row->m);
-            $cogsByMonth[$key] = (float) $row->total;
+            foreach ($cogsRows as $row) {
+                $key = sprintf('%04d-%02d', (int) $row->y, (int) $row->m);
+                $cogsByMonth[$key] = (float) $row->total;
+            }
         }
 
         foreach ($monthKeys as $key) {
@@ -750,10 +779,10 @@ $cogsRows = (clone $trendBase)
         }
 
         // Revenue sources for the selected range
-        $sourceBase = DB::table('posimportdata')
-            ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
+        $sourceBase = DB::table($posTable . ' as pos')
+            ->join('products', 'pos.product_ID', '=', 'products.product_ID')
             ->whereNull('products.deleted_at')
-            ->whereBetween('posimportdata.created_at', [$start, $end]);
+            ->whereBetween('pos.created_at', [$start, $end]);
 
         if ($categoryId !== 'all' && $categoryId !== '') {
             $sourceBase->where('products.category_ID', $categoryId);
@@ -764,14 +793,14 @@ $cogsRows = (clone $trendBase)
             if (Schema::hasTable('category')) {
                 $sourceRows = (clone $sourceBase)
                     ->join('category', 'products.category_ID', '=', 'category.category_ID')
-                    ->selectRaw('category.category_name as label, SUM(posimportdata.TotalSalesPerQty) as total')
+                    ->selectRaw('category.category_name as label, SUM(pos.TotalSalesPerQty) as total')
                     ->groupBy('label')
                     ->orderByDesc('total')
                     ->get();
             }
         } else {
             $sourceRows = (clone $sourceBase)
-                ->selectRaw('products.product_name as label, SUM(posimportdata.TotalSalesPerQty) as total')
+                ->selectRaw('products.product_name as label, SUM(pos.TotalSalesPerQty) as total')
                 ->groupBy('label')
                 ->orderByDesc('total')
                 ->get();
@@ -810,90 +839,75 @@ $cogsRows = (clone $trendBase)
     }
 
     // ----- Top Products by Profit (Dynamic) -----
-   $topProductsByProfit = collect();
-if (Schema::hasTable('posimportdata') && Schema::hasTable('products')) {
-    $topBase = DB::table('posimportdata')
-        ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
-        ->join(DB::raw('(
-            SELECT product_ID, invt_unitCost
-            FROM inventory
-            WHERE inventory_ID IN (
-                SELECT MAX(inventory_ID) FROM inventory GROUP BY product_ID
+    $topProductsByProfit = collect();
+    if (Schema::hasTable('posimportdata') && Schema::hasTable('products')) {
+        $topBase = DB::table('posimportdata')
+            ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
+            ->whereNull('products.deleted_at')
+            ->whereBetween('posimportdata.created_at', [$start, $end]);
+
+        if ($categoryId !== 'all' && $categoryId !== '') {
+            $topBase->where('products.category_ID', $categoryId);
+        }
+
+        $rows = (clone $topBase)
+            ->selectRaw(
+                'products.product_ID, products.product_name,
+                 SUM(posimportdata.TotalSalesPerQty) as revenue,
+                 SUM(posimportdata.QuantitySold * products.product_cost) as cogs'
             )
-        ) as inv'), 'inv.product_ID', '=', 'posimportdata.product_ID')
-        ->whereNull('products.deleted_at')
-        ->whereBetween('posimportdata.created_at', [$start, $end]);
+            ->groupBy('products.product_ID', 'products.product_name')
+            ->get();
 
-    if ($categoryId !== 'all' && $categoryId !== '') {
-        $topBase->where('products.category_ID', $categoryId);
+        $topProductsByProfit = collect($rows)
+            ->map(function ($r) {
+                /** @var object $r */
+                $revenue = (float) ($r->revenue ?? 0);
+                $cogs = (float) ($r->cogs ?? 0);
+                $profit = $revenue - $cogs;
+                $margin = $revenue > 0 ? ($profit / $revenue) * 100 : 0;
+
+                return [
+                    'name' => (string) $r->product_name,
+                    'revenue' => round($revenue, 2),
+                    'profit' => round($profit, 2),
+                    'margin' => round($margin, 1),
+                ];
+            })
+            ->sortByDesc('profit')
+            ->values()
+            ->take(5);
     }
-
-    $rows = (clone $topBase)
-        ->selectRaw(
-            'products.product_ID, products.product_name,
-             SUM(posimportdata.TotalSalesPerQty) as revenue,
-             SUM(posimportdata.QuantitySold * inv.invt_unitCost) as cogs'
-        )
-        ->groupBy('products.product_ID', 'products.product_name')
-        ->get();
-
-    $topProductsByProfit = collect($rows)
-        ->map(function ($r) {
-            /** @var object $r */
-            $revenue = (float) ($r->revenue ?? 0);
-            $cogs = (float) ($r->cogs ?? 0);
-            $profit = $revenue - $cogs;
-            $margin = $revenue > 0 ? ($profit / $revenue) * 100 : 0;
-
-            return [
-                'name' => (string) $r->product_name,
-                'revenue' => round($revenue, 2),
-                'profit' => round($profit, 2),
-                'margin' => round($margin, 1),
-            ];
-        })
-        ->sortByDesc('profit')
-        ->values()
-        ->take(5);
-}
 
     // ----- Expense Breakdown (Dynamic) -----
     // This project does not have an operating-expense table yet, so we break down "expenses" as COGS.
-$expenseTotal = 0.0;
-$expenseBreakdown = collect();
-if (Schema::hasTable('posimportdata') && Schema::hasTable('products')) {
-    $expenseBase = DB::table('posimportdata')
-        ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
-        ->join(DB::raw('(
-            SELECT product_ID, invt_unitCost
-            FROM inventory
-            WHERE inventory_ID IN (
-                SELECT MAX(inventory_ID) FROM inventory GROUP BY product_ID
-            )
-        ) as inv'), 'inv.product_ID', '=', 'posimportdata.product_ID')
-        ->whereNull('products.deleted_at')
-        ->whereBetween('posimportdata.created_at', [$start, $end]);
+    $expenseTotal = 0.0;
+    $expenseBreakdown = collect();
+    if (Schema::hasTable('posimportdata') && Schema::hasTable('products')) {
+        $expenseBase = DB::table('posimportdata')
+            ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
+            ->whereNull('products.deleted_at')
+            ->whereBetween('posimportdata.created_at', [$start, $end]);
 
-    if ($categoryId !== 'all' && $categoryId !== '') {
-        $expenseBase->where('products.category_ID', $categoryId);
-    }
-
-    $expenseTotal = (float) ((clone $expenseBase)
-        ->selectRaw('SUM(posimportdata.QuantitySold * inv.invt_unitCost) as total')
-        ->value('total') ?? 0);
-
-    $expenseRows = null;
-    if ($categoryId === 'all' || $categoryId === '') {
-        if (Schema::hasTable('category')) {
-            $expenseRows = (clone $expenseBase)
-                ->join('category', 'products.category_ID', '=', 'category.category_ID')
-                ->selectRaw('category.category_name as label, SUM(posimportdata.QuantitySold * inv.invt_unitCost) as total')
-                ->groupBy('label')
-                ->orderByDesc('total')
-                ->get();
+        if ($categoryId !== 'all' && $categoryId !== '') {
+            $expenseBase->where('products.category_ID', $categoryId);
         }
-    }
-        else {
+
+        $expenseTotal = (float) ((clone $expenseBase)
+            ->selectRaw('SUM(posimportdata.QuantitySold * products.product_cost) as total')
+            ->value('total') ?? 0);
+
+        $expenseRows = null;
+        if ($categoryId === 'all' || $categoryId === '') {
+            if (Schema::hasTable('category')) {
+                $expenseRows = (clone $expenseBase)
+                    ->join('category', 'products.category_ID', '=', 'category.category_ID')
+                    ->selectRaw('category.category_name as label, SUM(posimportdata.QuantitySold * products.product_cost) as total')
+                    ->groupBy('label')
+                    ->orderByDesc('total')
+                    ->get();
+            }
+        } else {
             $expenseRows = (clone $expenseBase)
                 ->selectRaw('products.product_name as label, SUM(posimportdata.QuantitySold * products.product_cost) as total')
                 ->groupBy('label')
@@ -908,6 +922,16 @@ if (Schema::hasTable('posimportdata') && Schema::hasTable('products')) {
                     return (float) $r->total > 0;
                 })
                 ->values();
+
+            $rawTotal = (float) $expenseRows->sum('total');
+            $scale = ($rawTotal > 0 && $expenseTotal > 0) ? ($expenseTotal / $rawTotal) : 1.0;
+            if ($scale !== 1.0) {
+                $expenseRows = $expenseRows->map(function ($r) use ($scale) {
+                    /** @var object $r */
+                    $r->total = (float) $r->total * $scale;
+                    return $r;
+                });
+            }
 
             // Keep list compact: Top 4 + Other
             if ($expenseRows->count() > 5) {
@@ -969,7 +993,7 @@ if (Schema::hasTable('posimportdata') && Schema::hasTable('products')) {
         ],
     ];
 
-    return view('inventory_report', compact(
+    $viewData = compact(
         'stats',
         'trendChart',
         'sourcesChart',
@@ -979,7 +1003,14 @@ if (Schema::hasTable('posimportdata') && Schema::hasTable('products')) {
         'categories',
         'period',
         'categoryId'
-    ));
+    );
+
+    if ((string) $request->query('export') === 'pdf') {
+        $fileName = 'financial-report-' . now()->format('Y-m-d_His') . '.pdf';
+        return Pdf::loadView('reports.inventory_report_pdf', $viewData)->download($fileName);
+    }
+
+    return view('inventory_report', $viewData);
 }
 
 
@@ -1208,16 +1239,55 @@ public function view_inventory(Request $request) {
     }
     // 2. Handle Chart AJAX ONLY (Refresh only the chart)
     if ($request->ajax() && $request->has('get_chart')) {
-        $query = DB::table('inventory')
-            ->join('products', 'inventory.product_ID', '=', 'products.product_ID')
-            ->select('products.product_name as name', 'inventory.invt_totalSold as sold', 'inventory.invt_remainingStock as remaining')
-            ->where('inventory.invt_totalSold', '>', 0);
+        $categoryId = (string) $request->get('category_id', 'all');
+        $inventoryHasDeletedAt = Schema::hasColumn('inventory', 'deleted_at');
+        $productsHasDeletedAt = Schema::hasColumn('products', 'deleted_at');
 
-        if ($request->category_id != 'all') {
-            $query->where('products.category_ID', $request->category_id);
+        // When viewing ALL, aggregate by category.
+        if ($categoryId === 'all' || $categoryId === '') {
+            $query = DB::table('inventory')
+                ->join('products', 'inventory.product_ID', '=', 'products.product_ID')
+                ->join('category', 'products.category_ID', '=', 'category.category_ID')
+                ->selectRaw(
+                    'category.category_name as name, ' .
+                        'COALESCE(SUM(inventory.invt_totalSold), 0) as sold, ' .
+                        'COALESCE(SUM(inventory.invt_remainingStock), 0) as remaining'
+                )
+                ->groupBy('category.category_ID', 'category.category_name');
+
+            if ($inventoryHasDeletedAt) {
+                $query->whereNull('inventory.deleted_at');
+            }
+            if ($productsHasDeletedAt) {
+                $query->whereNull('products.deleted_at');
+            }
+
+            return response()->json(
+                $query->orderByDesc('sold')->orderByDesc('remaining')->limit(12)->get()
+            );
         }
 
-        return response()->json($query->orderBy('sold', 'desc')->limit(12)->get());
+        // When a category is selected, aggregate by product within that category.
+        $query = DB::table('inventory')
+            ->join('products', 'inventory.product_ID', '=', 'products.product_ID')
+            ->selectRaw(
+                'products.product_name as name, ' .
+                    'COALESCE(SUM(inventory.invt_totalSold), 0) as sold, ' .
+                    'COALESCE(SUM(inventory.invt_remainingStock), 0) as remaining'
+            )
+            ->where('products.category_ID', $categoryId)
+            ->groupBy('products.product_ID', 'products.product_name');
+
+        if ($inventoryHasDeletedAt) {
+            $query->whereNull('inventory.deleted_at');
+        }
+        if ($productsHasDeletedAt) {
+            $query->whereNull('products.deleted_at');
+        }
+
+        return response()->json(
+            $query->orderByDesc('sold')->orderByDesc('remaining')->limit(12)->get()
+        );
     }
 
     // 3. NORMAL PAGE LOAD (Initial data)
@@ -1234,12 +1304,133 @@ public function view_inventory(Request $request) {
     $selectedCategory = $request->query('category_id', 'all');
 
     // Summary Stats for Cards
-    $totalProducts = DB::table('inventory')->count();  
-    $totalQuantity = DB::table('inventory')->sum('invt_remainingStock');  
-    $totalSold = DB::table('inventory')->sum('invt_totalSold');
-    $instockProducts = DB::table('inventory')->where('status_ID', 1)->count();
-    $lowStockProducts = DB::table('inventory')->where('status_ID', 2)->count();
-    $outOfStock = DB::table('inventory')->where('status_ID', 3)->count();
+    $inventoryHasDeletedAt = Schema::hasColumn('inventory', 'deleted_at');
+    $inventoryHasCreatedAt = Schema::hasColumn('inventory', 'created_at');
+
+    $inventoryBaseQuery = DB::table('inventory');
+    if ($inventoryHasDeletedAt) {
+        $inventoryBaseQuery->whereNull('deleted_at');
+    }
+
+    $totalProducts = (clone $inventoryBaseQuery)->count();
+    $totalQuantity = (clone $inventoryBaseQuery)->sum('invt_remainingStock');
+    $totalSold = (clone $inventoryBaseQuery)->sum('invt_totalSold');
+    $instockProducts = (clone $inventoryBaseQuery)->where('status_ID', 1)->count();
+    $lowStockProducts = (clone $inventoryBaseQuery)->where('status_ID', 2)->count();
+    $outOfStock = (clone $inventoryBaseQuery)->where('status_ID', 3)->count();
+
+    // Week-over-week deltas (dynamic, from DB)
+    $now = \Carbon\Carbon::now();
+    $weekStart = $now->copy()->subDays(7);
+    $prevWeekStart = $now->copy()->subDays(14);
+
+    $calcPercentChange = function ($currentValue, $previousValue): float {
+        $current = (float) ($currentValue ?? 0);
+        $previous = (float) ($previousValue ?? 0);
+
+        if ($previous == 0.0) {
+            return $current == 0.0 ? 0.0 : 100.0;
+        }
+
+        return round((($current - $previous) / abs($previous)) * 100, 1);
+    };
+
+    $direction = function (float $pct): string {
+        return $pct < 0 ? 'down' : 'up';
+    };
+
+    // Total Products: compare current snapshot vs 7 days ago (requires inventory timestamps)
+    $totalProductsLastWeek = $totalProducts;
+    if ($inventoryHasCreatedAt) {
+        $totalProductsLastWeekQuery = DB::table('inventory')->where('created_at', '<=', $weekStart);
+
+        if ($inventoryHasDeletedAt) {
+            $totalProductsLastWeekQuery->where(function ($q) use ($weekStart) {
+                $q->whereNull('deleted_at')->orWhere('deleted_at', '>', $weekStart);
+            });
+        }
+
+        $totalProductsLastWeek = $totalProductsLastWeekQuery->count();
+    }
+    $totalProductsPct = $calcPercentChange($totalProducts, $totalProductsLastWeek);
+
+    // Stock snapshots + status snapshots from stock_movements if available
+    $hasStockMovements = Schema::hasTable('stock_movements')
+        && Schema::hasColumn('stock_movements', 'StockMovementID')
+        && Schema::hasColumn('stock_movements', 'Product_ID')
+        && Schema::hasColumn('stock_movements', 'Balance_After')
+        && Schema::hasColumn('stock_movements', 'MovementType')
+        && Schema::hasColumn('stock_movements', 'Quantity')
+        && Schema::hasColumn('stock_movements', 'created_at');
+
+    $stockSnapshot = function (\Carbon\Carbon $cutoff) use ($hasStockMovements) {
+        if (!$hasStockMovements) {
+            return [
+                'available' => null,
+                'low' => null,
+                'out' => null,
+            ];
+        }
+
+        $latestIdsPerProduct = DB::table('stock_movements')
+            ->select('Product_ID', DB::raw('MAX(StockMovementID) as max_id'))
+            ->where('created_at', '<=', $cutoff)
+            ->groupBy('Product_ID');
+
+        $latestAtCutoff = DB::table('stock_movements as sm')
+            ->joinSub($latestIdsPerProduct, 'latest', function ($join) {
+                $join->on('sm.StockMovementID', '=', 'latest.max_id');
+            });
+
+        $available = (clone $latestAtCutoff)->sum('sm.Balance_After');
+        $counts = (clone $latestAtCutoff)
+            ->selectRaw('SUM(CASE WHEN sm.Balance_After > 0 AND sm.Balance_After <= 5 THEN 1 ELSE 0 END) as low_count')
+            ->selectRaw('SUM(CASE WHEN sm.Balance_After <= 0 THEN 1 ELSE 0 END) as out_count')
+            ->first();
+
+        return [
+            'available' => (int) $available,
+            'low' => (int) ($counts->low_count ?? 0),
+            'out' => (int) ($counts->out_count ?? 0),
+        ];
+    };
+
+    $stockNow = $stockSnapshot($now);
+    $stockLastWeek = $stockSnapshot($weekStart);
+    $availableNow = $stockNow['available'] ?? $totalQuantity;
+    $availableLastWeek = $stockLastWeek['available'] ?? $totalQuantity;
+    $availableStockPct = $calcPercentChange($availableNow, $availableLastWeek);
+
+    $lowNow = $stockNow['low'] ?? $lowStockProducts;
+    $lowLastWeek = $stockLastWeek['low'] ?? $lowStockProducts;
+    $lowStockPct = $calcPercentChange($lowNow, $lowLastWeek);
+
+    $outNow = $stockNow['out'] ?? $outOfStock;
+    $outLastWeek = $stockLastWeek['out'] ?? $outOfStock;
+    $outOfStockPct = $calcPercentChange($outNow, $outLastWeek);
+
+    // Total Sold: compare sold in last 7 days vs the 7 days before that
+    $totalSoldPct = 0.0;
+    if ($hasStockMovements) {
+        $soldThisWeek = DB::table('stock_movements')
+            ->where('MovementType', 'OUT')
+            ->whereBetween('created_at', [$weekStart, $now])
+            ->sum('Quantity');
+        $soldPrevWeek = DB::table('stock_movements')
+            ->where('MovementType', 'OUT')
+            ->whereBetween('created_at', [$prevWeekStart, $weekStart])
+            ->sum('Quantity');
+
+        $totalSoldPct = $calcPercentChange($soldThisWeek, $soldPrevWeek);
+    }
+
+    $cardDeltas = [
+        'totalProducts' => ['pct' => $totalProductsPct, 'dir' => $direction($totalProductsPct)],
+        'availableStock' => ['pct' => $availableStockPct, 'dir' => $direction($availableStockPct)],
+        'lowStock' => ['pct' => $lowStockPct, 'dir' => $direction($lowStockPct)],
+        'outOfStock' => ['pct' => $outOfStockPct, 'dir' => $direction($outOfStockPct)],
+        'totalSold' => ['pct' => $totalSoldPct, 'dir' => $direction($totalSoldPct)],
+    ];
 
     return view('inventory', compact(
         'categories',
@@ -1250,7 +1441,8 @@ public function view_inventory(Request $request) {
         'totalQuantity',
         'selectedCategory',
         'products',
-        'totalSold'   
+        'totalSold',
+        'cardDeltas'
     ));
 }
 
@@ -1704,6 +1896,22 @@ public function add_invoice(Request $request)
 
 public function stockMovement(Request $request)
 {
+    $transferCount = 0;
+    $adjustmentCount = 0;
+
+    if (
+        Schema::hasTable('stock_movements')
+        && Schema::hasColumn('stock_movements', 'MovementType')
+    ) {
+        $transferCount = (int) DB::table('stock_movements')
+            ->where('MovementType', 'RETURN')
+            ->count();
+
+        $adjustmentCount = (int) DB::table('stock_movements')
+            ->where('MovementType', 'ADJUSTMENT')
+            ->count();
+    }
+
     // 1. Get Inbound (Stock Adjustments/Purchases)
     $inbound = DB::table('stock_movements')
         ->join('products', 'stock_movements.product_ID', '=', 'products.product_ID')
@@ -1747,7 +1955,7 @@ public function stockMovement(Request $request)
 
     $movements = $inbound->concat($outbound)->sortByDesc('created_at');
 
-    return view('stockMovement', compact('movements', 'recentIn', 'recentOut'));
+    return view('stockMovement', compact('movements', 'recentIn', 'recentOut', 'transferCount', 'adjustmentCount'));
 }
 
         // LOG OUT

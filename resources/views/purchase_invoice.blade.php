@@ -47,8 +47,6 @@
                 </div>
             </div>
 
-            @include('layout.partials.alerts')
-
             <div class="table-responsive">
                 <table id="example2" class="table">
                     <thead>

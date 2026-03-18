@@ -38,7 +38,7 @@ Route::post('/authenticate', [MainController::class, 'auth_user'])->name('auth_u
 
 
 
-Route::group(['prefix' => 'admin', 'middleware' => ['role:admin']], function () {
+Route::group(['prefix' => 'admin', 'middleware' => ['role:admin', 'nearExpiry']], function () {
     // Place all admin routes here
     Route::get('/dashboard', [MainController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/admin_profile', [MainController::class, 'admin_profile'])->name('admin_profile');

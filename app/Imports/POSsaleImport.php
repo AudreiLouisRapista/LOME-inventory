@@ -4,6 +4,7 @@ namespace App\Imports;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class POSsaleImport implements ToCollection
 {
@@ -39,12 +40,26 @@ class POSsaleImport implements ToCollection
             ->first();
 
         if ($product) {
-            DB::table('POSImportData')->insert([
+            $posTable = 'posimportdata';
+            if (!Schema::hasTable($posTable) && Schema::hasTable('POSImportData')) {
+                $posTable = 'POSImportData';
+            }
+
+            $insert = [
                 'import_logs_ID' => $this->importLogID, 
                 'product_ID'     => $product->product_ID,
                 'QuantitySold'   => $qtySoldNow,
                 'TotalSalesPerQty'     => $salesValue
-            ]);
+            ];
+
+            if (Schema::hasColumn($posTable, 'created_at')) {
+                $insert['created_at'] = now();
+            }
+            if (Schema::hasColumn($posTable, 'updated_at')) {
+                $insert['updated_at'] = now();
+            }
+
+            DB::table($posTable)->insert($insert);
 
             if ($product) {
                 // 1. Record the Stock Movement (Audit Trail)

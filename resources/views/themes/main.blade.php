@@ -50,6 +50,9 @@
         {{-- 6. SCRIPT Partial --}}
         @include('layout.partials.script')
 
+        {{-- 7. ALERTS Partial (SweetAlert2 flash messages) --}}
+        @include('layout.partials.alerts')
+
     </body>
 
     </html>

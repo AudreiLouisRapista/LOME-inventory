@@ -56,7 +56,7 @@
             <div class="col-lg-7">
                 <div class="content-card">
                     <div class="card-head">
-                        <h3>Expense vs Profit</h3>
+                        <h3>Expense vs Revenue</h3>
                     </div>
                     <div style="height: 300px;"><canvas id="expenseChart"></canvas></div>
                 </div>
@@ -323,8 +323,8 @@
                 data: {
                     labels: {!! json_encode($expenseProfitLabels ?? []) !!},
                     datasets: [{
-                            label: 'Profit',
-                            data: {!! json_encode($profitSeries ?? []) !!},
+                            label: 'Revenue',
+                            data: {!! json_encode($revenueSeries ?? []) !!},
                             borderColor: '#6366f1',
                             backgroundColor: 'rgba(99, 102, 241, 0.05)',
                             fill: true,
