@@ -207,8 +207,6 @@
 				</div>
 
 				<div class="modal-body p-4">
-					@include('layout.partials.alerts')
-
 					<form id="purchaseItemForm" action="#" method="POST" onsubmit="return false;">
 						@csrf
 
