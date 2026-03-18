@@ -418,6 +418,14 @@ private function logActivity($action, $description)
     ->where('p.created_at', '>=', $startMonth)
     ->groupBy('y', 'm', 'products.product_name')
     ->get();
+        // Expenses by month: purchases invoice totals (net_amount)
+        $expenseByMonth = [];
+        if (Schema::hasTable('purchases')) {
+            $expenseRows = DB::table('purchases')
+                ->selectRaw('YEAR(created_at) as y, MONTH(created_at) as m, SUM(COALESCE(net_amount, 0)) as total')
+                ->whereBetween('created_at', [$startMonth->copy()->startOfDay(), \Carbon\Carbon::now()->endOfDay()])
+                ->groupBy('y', 'm')
+                ->get();
 
             foreach ($expenseRows as $row) {
                 $key = sprintf('%04d-%02d', (int) $row->y, (int) $row->m);
@@ -628,19 +636,43 @@ public function inventory_report(Request $request)
             return ['revenue' => 0.0, 'cogs' => 0.0];
         }
 
-        $base = DB::table('posimportdata')
-            ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
+        // Revenue: sum of POS imported sales value for the range.
+        $salesBase = DB::table($posTable . ' as pos')
+            ->join('products', 'pos.product_ID', '=', 'products.product_ID')
             ->whereNull('products.deleted_at')
-            ->whereBetween('posimportdata.created_at', [$rangeStart, $rangeEnd]);
+            ->whereBetween('pos.created_at', [$rangeStart, $rangeEnd]);
 
         if ($categoryId !== 'all' && $categoryId !== '') {
             $salesBase->where('products.category_ID', $categoryId);
         }
 
-        $revenue = (float) (clone $base)->sum('posimportdata.TotalSalesPerQty');
+        $revenue = (float) (clone $salesBase)->sum('pos.TotalSalesPerQty');
 
-        $cogs = (float) ((clone $base)
-            ->selectRaw('SUM(posimportdata.QuantitySold * products.product_cost) as total')
+        // COGS/Expenses source (requested): purchases + purchase_items within the range.
+        // NOTE: purchases.invoice_date is a varchar in this DB; use purchases.created_at for reliable filtering.
+        if (!Schema::hasTable('purchases') || !Schema::hasTable('purchase_items')) {
+            return ['revenue' => $revenue, 'cogs' => 0.0];
+        }
+
+        $purchasesBase = DB::table('purchases as pur')
+            ->whereBetween('pur.created_at', [$rangeStart, $rangeEnd]);
+
+        if ($categoryId !== 'all' && $categoryId !== '') {
+            $purchaseIds = DB::table('purchases as pur')
+                ->join('purchase_items as pi', 'pur.purchase_id', '=', 'pi.purchase_id')
+                ->join('products', 'pi.product_id', '=', 'products.product_ID')
+                ->whereNull('products.deleted_at')
+                ->whereBetween('pur.created_at', [$rangeStart, $rangeEnd])
+                ->where('products.category_ID', $categoryId)
+                ->select('pur.purchase_id')
+                ->distinct();
+
+            $purchasesBase->whereIn('pur.purchase_id', $purchaseIds);
+        }
+
+        // Total expenses = sum of invoice net_amount (matches DB's SUM(net_amount)).
+        $cogs = (float) ((clone $purchasesBase)
+            ->selectRaw('SUM(COALESCE(pur.net_amount, 0)) as total')
             ->value('total') ?? 0);
 
         return ['revenue' => $revenue, 'cogs' => $cogs];
@@ -738,19 +770,19 @@ public function inventory_report(Request $request)
             return $d->format('M Y');
         })->all();
 
-        $trendBase = DB::table('posimportdata')
-            ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
+	   $trendBase = DB::table($posTable . ' as pos')
+            ->join('products', 'pos.product_ID', '=', 'products.product_ID')
             ->whereNull('products.deleted_at')
-            ->whereBetween('posimportdata.created_at', [$trendStart, $end]);
+            ->whereBetween('pos.created_at', [$trendStart, $end]);
 
     if ($categoryId !== 'all' && $categoryId !== '') {
         $trendBase->where('products.category_ID', $categoryId);
     }
 
-        $revenueRows = (clone $trendBase)
-            ->selectRaw('YEAR(posimportdata.created_at) as y, MONTH(posimportdata.created_at) as m, SUM(posimportdata.TotalSalesPerQty) as total')
-            ->groupBy('y', 'm')
-            ->get();
+    $revenueRows = (clone $trendBase)
+        ->selectRaw('YEAR(pos.created_at) as y, MONTH(pos.created_at) as m, SUM(pos.TotalSalesPerQty) as total')
+        ->groupBy('y', 'm')
+        ->get();
 
 $revenueByMonth = [];
 foreach ($revenueRows as $row) {
@@ -758,12 +790,29 @@ foreach ($revenueRows as $row) {
     $revenueByMonth[$key] = (float) $row->total;
 }
 
-        $cogsRows = (clone $trendBase)
-            ->selectRaw(
-                'YEAR(posimportdata.created_at) as y, MONTH(posimportdata.created_at) as m, SUM(posimportdata.QuantitySold * products.product_cost) as total'
-            )
-            ->groupBy('y', 'm')
-            ->get();
+        // Expenses by month from Purchases (sum purchases.net_amount)
+        $cogsByMonth = [];
+        if (Schema::hasTable('purchases') && Schema::hasTable('purchase_items')) {
+            $purchasesBase = DB::table('purchases as pur')
+                ->whereBetween('pur.created_at', [$trendStart, $end]);
+
+            if ($categoryId !== 'all' && $categoryId !== '') {
+                $purchaseIds = DB::table('purchases as pur')
+                    ->join('purchase_items as pi', 'pur.purchase_id', '=', 'pi.purchase_id')
+                    ->join('products', 'pi.product_id', '=', 'products.product_ID')
+                    ->whereNull('products.deleted_at')
+                    ->whereBetween('pur.created_at', [$trendStart, $end])
+                    ->where('products.category_ID', $categoryId)
+                    ->select('pur.purchase_id')
+                    ->distinct();
+
+                $purchasesBase->whereIn('pur.purchase_id', $purchaseIds);
+            }
+
+            $cogsRows = (clone $purchasesBase)
+                ->selectRaw('YEAR(pur.created_at) as y, MONTH(pur.created_at) as m, SUM(COALESCE(pur.net_amount, 0)) as total')
+                ->groupBy('y', 'm')
+                ->get();
 
             foreach ($cogsRows as $row) {
                 $key = sprintf('%04d-%02d', (int) $row->y, (int) $row->m);
@@ -839,81 +888,122 @@ foreach ($revenueRows as $row) {
     }
 
     // ----- Top Products by Profit (Dynamic) -----
-    $topProductsByProfit = collect();
-    if (Schema::hasTable('posimportdata') && Schema::hasTable('products')) {
-        $topBase = DB::table('posimportdata')
-            ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
-            ->whereNull('products.deleted_at')
-            ->whereBetween('posimportdata.created_at', [$start, $end]);
+   $topProductsByProfit = collect();
+	if ($posTable && Schema::hasTable('products')) {
+		$revenueRows = DB::table($posTable . ' as pos')
+			->join('products', 'pos.product_ID', '=', 'products.product_ID')
+			->whereNull('products.deleted_at')
+			->whereBetween('pos.created_at', [$start, $end]);
 
-        if ($categoryId !== 'all' && $categoryId !== '') {
-            $topBase->where('products.category_ID', $categoryId);
-        }
+		if ($categoryId !== 'all' && $categoryId !== '') {
+			$revenueRows->where('products.category_ID', $categoryId);
+		}
 
-        $rows = (clone $topBase)
-            ->selectRaw(
-                'products.product_ID, products.product_name,
-                 SUM(posimportdata.TotalSalesPerQty) as revenue,
-                 SUM(posimportdata.QuantitySold * products.product_cost) as cogs'
-            )
-            ->groupBy('products.product_ID', 'products.product_name')
-            ->get();
+		$revenueRows = $revenueRows
+			->selectRaw('products.product_ID, products.product_name, SUM(pos.TotalSalesPerQty) as revenue')
+			->groupBy('products.product_ID', 'products.product_name')
+			->get();
 
-        $topProductsByProfit = collect($rows)
-            ->map(function ($r) {
+		$cogsByProduct = collect();
+		if (Schema::hasTable('purchases') && Schema::hasTable('purchase_items')) {
+			$cogsQuery = DB::table('purchases as pur')
+				->join('purchase_items as pi', 'pur.purchase_id', '=', 'pi.purchase_id')
+				->join('products', 'pi.product_id', '=', 'products.product_ID')
+				->whereNull('products.deleted_at')
+				->whereBetween('pur.created_at', [$start, $end]);
+
+			if ($categoryId !== 'all' && $categoryId !== '') {
+				$cogsQuery->where('products.category_ID', $categoryId);
+			}
+
+			$cogsByProduct = collect($cogsQuery
+				->selectRaw('pi.product_id as product_ID, SUM(COALESCE(pi.total_price, 0)) as cogs')
+				->groupBy('pi.product_id')
+				->get())
+				->keyBy('product_ID');
+		}
+
+        $topProductsByProfit = collect($revenueRows)
+            ->map(function ($r) use ($cogsByProduct) {
                 /** @var object $r */
                 $revenue = (float) ($r->revenue ?? 0);
-                $cogs = (float) ($r->cogs ?? 0);
+                $cogsRow = $cogsByProduct->get($r->product_ID);
+                $cogs = (float) ($cogsRow->cogs ?? 0);
                 $profit = $revenue - $cogs;
                 $margin = $revenue > 0 ? ($profit / $revenue) * 100 : 0;
 
                 return [
-                    'name' => (string) $r->product_name,
+                    'name' => (string) ($r->product_name ?? ''),
                     'revenue' => round($revenue, 2),
                     'profit' => round($profit, 2),
                     'margin' => round($margin, 1),
                 ];
             })
-            ->sortByDesc('profit')
-            ->values()
-            ->take(5);
-    }
+			->sortByDesc('profit')
+			->values()
+			->take(5);
+	}
 
     // ----- Expense Breakdown (Dynamic) -----
     // This project does not have an operating-expense table yet, so we break down "expenses" as COGS.
-    $expenseTotal = 0.0;
-    $expenseBreakdown = collect();
-    if (Schema::hasTable('posimportdata') && Schema::hasTable('products')) {
-        $expenseBase = DB::table('posimportdata')
-            ->join('products', 'posimportdata.product_ID', '=', 'products.product_ID')
+$expenseTotal = 0.0;
+$expenseBreakdown = collect();
+if (Schema::hasTable('purchases') && Schema::hasTable('purchase_items') && Schema::hasTable('products')) {
+    // Total expenses should match purchases.net_amount (invoice totals)
+    $expensePurchasesBase = DB::table('purchases as pur')
+        ->whereBetween('pur.created_at', [$start, $end]);
+
+    if ($categoryId !== 'all' && $categoryId !== '') {
+        $purchaseIds = DB::table('purchases as pur')
+            ->join('purchase_items as pi', 'pur.purchase_id', '=', 'pi.purchase_id')
+            ->join('products', 'pi.product_id', '=', 'products.product_ID')
             ->whereNull('products.deleted_at')
-            ->whereBetween('posimportdata.created_at', [$start, $end]);
+            ->whereBetween('pur.created_at', [$start, $end])
+            ->where('products.category_ID', $categoryId)
+            ->select('pur.purchase_id')
+            ->distinct();
 
-        if ($categoryId !== 'all' && $categoryId !== '') {
-            $expenseBase->where('products.category_ID', $categoryId);
-        }
+        $expensePurchasesBase->whereIn('pur.purchase_id', $purchaseIds);
+    }
 
-        $expenseTotal = (float) ((clone $expenseBase)
-            ->selectRaw('SUM(posimportdata.QuantitySold * products.product_cost) as total')
-            ->value('total') ?? 0);
+    $expenseTotal = (float) ((clone $expensePurchasesBase)
+        ->selectRaw('SUM(COALESCE(pur.net_amount, 0)) as total')
+        ->value('total') ?? 0);
 
-        $expenseRows = null;
-        if ($categoryId === 'all' || $categoryId === '') {
-            if (Schema::hasTable('category')) {
-                $expenseRows = (clone $expenseBase)
-                    ->join('category', 'products.category_ID', '=', 'category.category_ID')
-                    ->selectRaw('category.category_name as label, SUM(posimportdata.QuantitySold * products.product_cost) as total')
-                    ->groupBy('label')
-                    ->orderByDesc('total')
-                    ->get();
-            }
+    // Breakdown is derived from purchase_items totals, then scaled to match invoice net_amount.
+    $expenseBase = DB::table('purchases as pur')
+        ->join('purchase_items as pi', 'pur.purchase_id', '=', 'pi.purchase_id')
+        ->join('products', 'pi.product_id', '=', 'products.product_ID')
+        ->whereNull('products.deleted_at')
+        ->whereBetween('pur.created_at', [$start, $end]);
+
+    if ($categoryId !== 'all' && $categoryId !== '') {
+        $expenseBase->where('products.category_ID', $categoryId);
+    }
+
+    $expenseRows = null;
+    if ($categoryId === 'all' || $categoryId === '') {
+        if (Schema::hasTable('category')) {
+            $expenseRows = (clone $expenseBase)
+                ->join('category', 'products.category_ID', '=', 'category.category_ID')
+                ->selectRaw('category.category_name as label, SUM(COALESCE(pi.total_price, 0)) as total')
+                ->groupBy('label')
+                ->orderByDesc('total')
+                ->get();
         } else {
             $expenseRows = (clone $expenseBase)
-                ->selectRaw('products.product_name as label, SUM(posimportdata.QuantitySold * products.product_cost) as total')
+                ->selectRaw('products.product_name as label, SUM(COALESCE(pi.total_price, 0)) as total')
                 ->groupBy('label')
                 ->orderByDesc('total')
                 ->get();
         }
+    } else {
+        $expenseRows = (clone $expenseBase)
+            ->selectRaw('products.product_name as label, SUM(COALESCE(pi.total_price, 0)) as total')
+            ->groupBy('label')
+            ->orderByDesc('total')
+            ->get();
+    }
 
         if ($expenseRows) {
             $expenseRows = collect($expenseRows)
