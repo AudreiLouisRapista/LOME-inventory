@@ -399,6 +399,25 @@ private function logActivity($action, $description)
             $revenueByMonth[$key] = (float) $row->total;
         }
 
+        // COGS by month: sum(QuantitySold * product_cost)
+      $cogsRows = DB::table('posimportdata as p')
+    ->join('products', 'p.product_ID', '=', 'products.product_ID')
+    ->join(DB::raw('(
+        SELECT product_ID, invt_unitCost
+        FROM inventory
+        WHERE inventory_ID IN (
+            SELECT MAX(inventory_ID) FROM inventory GROUP BY product_ID
+        )
+    ) as inv'), 'inv.product_ID', '=', 'p.product_ID')
+    ->selectRaw('
+        YEAR(p.created_at) as y,
+        MONTH(p.created_at) as m,
+        products.product_name,
+        SUM(p.QuantitySold * inv.invt_unitCost) as total
+    ')
+    ->where('p.created_at', '>=', $startMonth)
+    ->groupBy('y', 'm', 'products.product_name')
+    ->get();
         // Expenses by month: purchases invoice totals (net_amount)
         $expenseByMonth = [];
         if (Schema::hasTable('purchases')) {
