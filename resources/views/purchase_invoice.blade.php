@@ -376,6 +376,10 @@
                 "searching": true,
                 "ordering": true,
                 "responsive": true,
+                order: [
+                    [0, 'desc']
+                ],
+
                 "destroy": true
             });
 

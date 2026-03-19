@@ -98,7 +98,7 @@ private function logActivity($action, $description)
 
     public function admin_profile()
 {
-    $logs = ActivityLog::latest()->take(10)->get();
+    $logs = ActivityLog::latest()->take(50)->get();
 
     $admins = DB::table('users')->get();
 
@@ -1149,18 +1149,32 @@ public function view_products(Request $request) {
     }
 
     $categories = DB::table('category')->orderBy('category_name', 'ASC')->get();
+    $persihableType = DB::table('perishable')->get();
     $products = DB::table('products')->orderBy('product_name', 'ASC')->get();
     $perishables = DB::table('perishable')->orderBy('perishable_title', 'ASC')->get();
 
-    return view('products', compact('categories', 'products', 'perishables'));
+    return view('products', compact('categories', 'products', 'perishables', 'persihableType'));
 }
 
-    public function ProductsoftDelete($id)
+public function ProductsoftDelete($id)
 {
-    // Instead of deleting the row, we just mark it with the current time
+   
+    $product = DB::table('products')->where('product_ID', $id)->first();
+
+    if (!$product) {
+        return response()->json(['error' => 'Product not found!'], 404);
+    }
+
+  
     DB::table('products')
         ->where('product_ID', $id)
         ->update(['deleted_at' => now()]);
+
+    
+    $userName = session('name');
+
+    $this->logActivity('deleted', 
+        "Archive Product ID {$product->product_ID} | Name: {$product->product_name} | Responsible: {$userName}");
 
     return response()->json(['success' => 'Product moved to trash!']);
 }
@@ -1216,7 +1230,9 @@ public function save_product(Request $request)
             ]);
 
             // Create Activity Log
-            $this->logActivity('added', 'Added Product: ' . $product);
+             $userName = session('name');
+            $this->logActivity('added', 
+            "Added Product | Name: {$request->product_name} | Responsible: {$userName} | Bundle Number: {$request->tie_number} | Bundle Size: {$request->tie_qty}" );
         });
 
         // 4. Success Response
@@ -1240,8 +1256,9 @@ public function update_product(Request $request) {
             'product_ID' => $request->product_ID,
             'product_name' => $request->product_name,
             'category_ID' => $request->category_ID,
-            'product_price' => $request->price,
-            'product_cost' => $request->cost,
+            'perishable_ID' => $request->perishable_ID,
+            'tie_number' => $request->bundleQty,
+            'tie_qty' => $request->bundleSize,
             'deleted_at' => null,
             'updated_at' => now(),
             
@@ -1654,45 +1671,41 @@ public function add_new_inventory(Request $request)
     try {
         $product_ID = $request->product_ID;
         
-        // Sum all batches for this product that haven't been processed yet (is_added = 0)
         $incomingQty = DB::table('batches')
             ->where('product_id', $product_ID)
             ->where('is_added', 0)
             ->sum('quantity');
 
         if ($incomingQty <= 0) {
-            return back()->with('errorMessage', 'No new batch quantity found for this product.');
+            return response()->json(['error' => 'No new batch quantity found for this product.'], 422);
         }
 
         $inventory = DB::table('inventory')->where('product_ID', $product_ID)->first();
 
         if (!$inventory) {
-            // Create new record
             DB::table('inventory')->insert([
                 'product_ID'            => $product_ID,
                 'category_ID'           => $request->category_ID,
                 'invt_unitCost'         => $request->product_cost,
-                'invt_sellingPrice'     => $request->product_price, // Fixed variable name
+                'invt_sellingPrice'     => $request->product_price,
                 'invt_StartingQuantity' => $incomingQty,
                 'invt_remainingStock'   => $incomingQty,
-                'status_ID'             => 1, // Set to In Stock
+                'status_ID'             => 1,
                 'created_at'            => now(),
                 'updated_at'            => now()
             ]);
         } else {
-            // Update existing record
             DB::table('inventory')->where('product_ID', $product_ID)->update([
                 'invt_unitCost'       => $request->product_cost,
-                'invt_sellingPrice'   => $request->product_price, // Fixed variable name
+                'invt_sellingPrice'   => $request->product_price,
                 'invt_NewQuantity'    => $incomingQty, 
                 'invt_remainingStock' => $inventory->invt_remainingStock + $incomingQty,
-                'status_ID'           => 1, // Ensure it is marked as In Stock (1)
+                'status_ID'           => 1,
                 'updated_at'          => now(),
                 'deleted_at'          => null
             ]);
         }
 
-        // Mark batches as processed
         DB::table('batches')
             ->where('product_id', $product_ID)
             ->where('is_added', 0)
@@ -1702,11 +1715,11 @@ public function add_new_inventory(Request $request)
             ]);
 
         DB::commit();
-        return back()->with('save', 'Inventory updated successfully!');
+        return response()->json(['save' => 'Inventory updated successfully!']); 
 
     } catch (\Exception $e) {
         DB::rollBack();
-        return back()->with('errorMessage', 'Error: ' . $e->getMessage());
+        return response()->json(['error' => 'Error: ' . $e->getMessage()], 500); 
     }
 }
 
@@ -1769,7 +1782,7 @@ public function purchase_invoice(Request $request)
         $query->where('purchases.supplier_id', $request->supplier_id);
     }
 
-    $purchases = $query->latest('purchases.created_at')->get();
+  $purchases = $query->orderBy('purchases.purchase_id', 'desc')->get();
 
   
    // 2. Fetch all Items and group them by invoice_id
@@ -1784,8 +1797,9 @@ public function purchase_invoice(Request $request)
                 DB::raw('products.tie_number * products.tie_qty as tie_total'),
                 
             ])
+            ->orderBy('purchase_items.purchase_id','desc')
             ->get()
-            ->groupBy('purchase_id'); // Grouping by invoice_id as you mentioned
+            ->groupBy('purchase_id');
 
     // 3. Dropdown data
     $suppliers = DB::table('suppliers')->orderBy('supplier_name', 'ASC')->get();
@@ -1923,11 +1937,11 @@ public function saveInvoiceAndItem(Request $request)
                 'updated_at'       => now(),
             ]);
 
-            // STEP 6: REMOVED
-            // We no longer sync to inventory here. 
-            // The admin will do this manually in the Inventory module.
         }
-
+             $userName = session('name');
+            $this->logActivity('added', 
+            "New Item | Invoice No. : {$request->invoice_number} | Total Amount: {$request->grand_total_raw} | Responsible: {$userName} "  );
+        
         DB::commit(); 
         return redirect()->route('add_invoice')->with('save', 'Invoice saved! Go to Inventory to receive items.');
 
@@ -1935,7 +1949,7 @@ public function saveInvoiceAndItem(Request $request)
         DB::rollback();
         // Exception handling for unique constraints (Invoice Number) remains...
         if ($e->errorInfo[1] == 1062) {
-             return back()->withInput()->with('errorMessage', 'Duplicate Entry: ' . $e->getMessage());
+             return back()->withInput()->with('duplicate', 'Duplicate Invoice Number');
         }
         return back()->withInput()->with('errorMessage', 'Database Error: ' . $e->getMessage());
     } catch (\Exception $e) {

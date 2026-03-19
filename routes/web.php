@@ -57,7 +57,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['role:admin', 'nearExpiry']]
     Route::get('/purchase_invoice', [MainController::class, 'purchase_invoice'])->name('purchase_invoice');
     Route::get('/add_invoice', [MainController::class, 'add_invoice'])->name('add_invoice');
     Route::get('/import_history', [MainController::class, 'import_history'])->name('import_history');
-   Route::get('/getProductsByCategory/{id}', [MainController::class, 'getProductsByCategory'])->name('getProductsByCategory');
+    Route::get('/getProductsByCategory/{id}', [MainController::class, 'getProductsByCategory'])->name('getProductsByCategory');
     Route::get('/getPaymentHistory/{id}', [MainController::class, 'getPaymentHistory'])->name('getPaymentHistory');
     Route::get('/stockMovement', [MainController::class, 'stockMovement'])->name('stockMovement');
 
