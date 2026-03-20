@@ -116,7 +116,7 @@
                                                     Bundle Size</p>
                                                 <div class="row g-3 mb-4">
                                                     <div class="col-md-4">
-                                                        <label class="form-label fw-semibold">Bundle Quantity</label>
+                                                        <label class="form-label fw-semibold">Quantity</label>
                                                         <div class="input-group">
                                                             <span class="input-group-text"></span>
                                                             <input type="number" name="tie_number" class="form-control"
@@ -161,7 +161,7 @@
                                             <th class="text-secondary text-uppercase small fw-bold">Name</th>
                                             <th class="text-secondary text-uppercase small fw-bold">Category</th>
                                             <th class="text-secondary text-uppercase small fw-bold">Perishable Type</th>
-                                            <th class="text-secondary text-uppercase small fw-bold">Bundle Quantity</th>
+                                            <th class="text-secondary text-uppercase small fw-bold">Quantity</th>
                                             <th class="text-secondary text-uppercase small fw-bold">Pack Size</th>
                                             <th class="text-secondary text-uppercase small fw-bold">Actions</th>
                                         </tr>
@@ -205,15 +205,31 @@
                                                 </select>
                                             </div>
                                             <div class="mb-3">
-                                                <label class="form-label">Cost</label>
-                                                <input type="text" id="edit_cost" name="cost" class="form-control"
+                                                <label class="form-label">Persihable Type:</label>
+                                                <select name="perishable_ID" id="edit_perishableID" class="form-control"
                                                     required>
+                                                    <option value="">-- Select Perishable --</option>
+
+                                                    @foreach ($persihableType as $perishable)
+                                                        <option value="{{ $perishable->perishable_ID }}">
+                                                            {{ strtoupper($perishable->perishable_title) }}
+                                                        </option>
+                                                    @endforeach
+
+                                                </select>
                                             </div>
+
                                             <div class="mb-3">
-                                                <label class="form-label">Price</label>
-                                                <input type="text" id="edit_price" name="price"
+                                                <label class="form-label">Quantity</label>
+                                                <input type="text" id="edit_bundleQty" name="bundleQty"
                                                     class="form-control" required>
                                             </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Pack Size</label>
+                                                <input type="text" id="edit_bundleSize" name="bundleSize"
+                                                    class="form-control" required>
+                                            </div>
+
 
                                         </div>
                                         <div class="modal-footer">
@@ -336,11 +352,20 @@
                 var id = $(this).data('id');
                 var name = $(this).data('name');
                 var catID = $(this).data('category-id');
+                var bundleQty = $(this).data('tie_number');
+                var bundleSize = $(this).data('tie_qty');
+                var perishableType = $(this).data('perishable_id');
+
 
 
                 $('#edit_id').val(id);
                 $('#edit_name').val(name);
                 $('#edit_category').val(catID);
+                $('#edit_bundleQty').val(bundleQty);
+                $('#edit_bundleSize').val(bundleSize);
+                $('#edit_perishableID').val(perishableType);
+
+
 
                 $('#UpdateProductModal').modal('show');
             });
@@ -361,6 +386,7 @@
                     success: function(response) {
                         // 1. Hide the modal immediately for a smooth UI
                         $('#UpdateProductModal').modal('hide');
+
 
                         // 2. Trigger SweetAlert using the 'save' key from your Controller
                         Swal.fire({

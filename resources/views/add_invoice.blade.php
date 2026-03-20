@@ -81,8 +81,8 @@
                                     <tr class="small text-uppercase text-muted">
                                         <th style="width: 8%;">QTY</th>
                                         <th>DESCRIPTION (PRODUCT)</th>
-                                        <th style="width: 8%;">TIE #</th>
-                                        <th style="width: 10%;">QTY/TIE</th>
+                                        <th style="width: 8%;">Quantity</th>
+                                        <th style="width: 10%;">Pack Size</th>
                                         <th style="width: 12%;">TYPE</th>
                                         <th class="expiry-column" style="width: 15%; display: none;">EXPIRY DATE
                                         </th>

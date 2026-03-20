@@ -182,8 +182,8 @@
                                     <div class="modal-body px-4 pb-4">
                                         @include('layout.partials.alerts')
 
-                                        <form id="addInventoryForm" method="POST" action="{{ route('add_new_inventory') }}"
-                                            enctype="multipart/form-data">
+                                        <form id="addInventoryForm" method="POST"
+                                            action="{{ route('add_new_inventory') }}" enctype="multipart/form-data">
                                             @csrf
 
                                             <div class="mb-4">
@@ -483,7 +483,7 @@
                     },
                     {
                         data: 'unit_price',
-                        name: 'purchase_items.unit_price'
+                        name: 'inventory.invt_unitCost'
                     },
                     {
                         data: 'invt_sellingPrice',
@@ -813,87 +813,6 @@
                 });
             });
             // ==========================================
-            // ADD INVENTORY (With Review Confirmation)
-            // ==========================================
-            $('#addInventoryForm').on('submit', function(e) {
-                e.preventDefault();
-
-                var form = $(this);
-                var actionUrl = form.attr('action');
-
-                // Capture values for the Review Modal
-                // Change this line:
-                var productName = $('#product_ID_add').find(' option:selected').text().split('(')[0].trim();
-                var categoryName = $('.js-category-select option:selected').text();
-                var cost = form.find('.js-product-cost').val();
-                var qty = form.find('.js-product-qty').val();
-
-                // 1. Show the Professional Review Modal
-                Swal.fire({
-                    title: 'Confirm Stock Entry',
-                    html: `
-            <div style="text-align: left; font-size: 0.9rem; line-height: 1.6; overflow-x: hidden;">
-                <div class="mb-2"><strong>Category:</strong> <span class="text-primary">${categoryName}</span></div>
-                <div class="mb-2"><strong>Product:</strong> ${productName}</div>
-                <hr>
-                <div class="row mx-0">
-                    <div class="col-6 px-0"><strong>Unit Cost:</strong> ₱${cost}</div>
-                    <div class="col-6 px-0 text-end"><strong>Quantity:</strong> ${qty}</div>
-                </div>
-            </div>
-        `,
-                    icon: 'info',
-                    showCancelButton: true,
-                    confirmButtonColor: '#0d6efd',
-                    confirmButtonText: 'Confirm and Save',
-                    reverseButtons: true
-                }).then((result) => {
-                    if (result.isConfirmed) {
-
-                        // 2. Perform the AJAX request
-                        $.ajax({
-                            url: actionUrl,
-                            method: 'POST',
-                            data: form.serialize(),
-                            beforeSend: function() {
-                                Swal.fire({
-                                    title: 'Saving Entry...',
-                                    allowOutsideClick: false,
-                                    didOpen: () => {
-                                        Swal.showLoading();
-                                    }
-                                });
-                            },
-                            success: function(response) {
-                                // Hide your Add Inventory Modal
-                                $('#AddInventoryModal').modal('hide');
-                                form[0].reset();
-
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Stock Added!',
-                                    text: response.save,
-                                    timer: 2000,
-                                    showConfirmButton: false
-                                });
-
-                                // Refresh Table and Chart
-                                if ($.fn.DataTable.isDataTable('#example2')) {
-                                    $('#example2').DataTable().ajax.reload(null, false);
-                                }
-                                refreshChartOnly();
-                            },
-                            error: function(xhr) {
-                                var errorMsg = xhr.responseJSON?.error ||
-                                    'Something went wrong.';
-                                Swal.fire('Error', errorMsg, 'error');
-                            }
-                        });
-                    }
-                });
-            });
-
-            // ==========================================
             // 6. ADD INVENTORY (With Review Confirmation)
             // ==========================================
             $('#addInventoryForm').on('submit', function(e) {
@@ -902,27 +821,24 @@
                 var form = $(this);
                 var actionUrl = form.attr('action');
 
-                // Capture values for the Review Modal
-                // Change this line:
-                var productName = $('#product_ID_add').find(' option:selected').text().split('(')[0].trim();
+                var productName = $('#product_ID_add').find('option:selected').text().split('(')[0].trim();
                 var categoryName = $('.js-category-select option:selected').text();
                 var cost = form.find('.js-product-cost').val();
                 var qty = form.find('.js-product-qty').val();
 
-                // 1. Show the Professional Review Modal
                 Swal.fire({
                     title: 'Confirm Stock Entry',
                     html: `
-            <div style="text-align: left; font-size: 0.9rem; line-height: 1.6; overflow-x: hidden;">
-                <div class="mb-2"><strong>Category:</strong> <span class="text-primary">${categoryName}</span></div>
-                <div class="mb-2"><strong>Product:</strong> ${productName}</div>
-                <hr>
-                <div class="row mx-0">
-                    <div class="col-6 px-0"><strong>Unit Cost:</strong> ₱${cost}</div>
-                    <div class="col-6 px-0 text-end"><strong>Quantity:</strong> ${qty}</div>
-                </div>
-            </div>
-        `,
+                        <div style="text-align: left; font-size: 0.9rem; line-height: 1.6; overflow-x: hidden;">
+                            <div class="mb-2"><strong>Category:</strong> <span class="text-primary">${categoryName}</span></div>
+                            <div class="mb-2"><strong>Product:</strong> ${productName}</div>
+                            <hr>
+                            <div class="row mx-0">
+                                <div class="col-6 px-0"><strong>Unit Cost:</strong> ₱${cost}</div>
+                                <div class="col-6 px-0 text-end"><strong>Quantity:</strong> ${qty}</div>
+                            </div>
+                        </div>
+                    `,
                     icon: 'info',
                     showCancelButton: true,
                     confirmButtonColor: '#0d6efd',
@@ -930,8 +846,6 @@
                     reverseButtons: true
                 }).then((result) => {
                     if (result.isConfirmed) {
-
-                        // 2. Perform the AJAX request
                         $.ajax({
                             url: actionUrl,
                             method: 'POST',
@@ -946,7 +860,6 @@
                                 });
                             },
                             success: function(response) {
-                                // Hide your Add Inventory Modal
                                 $('#AddInventoryModal').modal('hide');
                                 form[0].reset();
 
@@ -956,13 +869,10 @@
                                     text: response.save,
                                     timer: 2000,
                                     showConfirmButton: false
+                                }).then(function() {
+                                    location
+                                        .reload(); // ✅ Refreshes everything including cards
                                 });
-
-                                // Refresh Table and Chart
-                                if ($.fn.DataTable.isDataTable('#example2')) {
-                                    $('#example2').DataTable().ajax.reload(null, false);
-                                }
-                                refreshChartOnly();
                             },
                             error: function(xhr) {
                                 var errorMsg = xhr.responseJSON?.error ||
@@ -973,6 +883,7 @@
                     }
                 });
             });
+
 
             // ==========================================
             // 7. MONTHLY ROLLOVER (Security Logic)
